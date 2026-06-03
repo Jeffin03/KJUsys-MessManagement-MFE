@@ -1,0 +1,615 @@
+<div class="kjt-wrapper">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TOOLBAR
+  ════════════════════════════════════════════════════════════ -->
+  <div class="kjt-toolbar" *ngIf="showToolbar">
+
+    <!-- Search -->
+    <div class="kjt-search" *ngIf="showSearch">
+      <svg class="kjt-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        class="kjt-search-input"
+        [placeholder]="searchPlaceholder"
+        (input)="handleSearch($event)"
+      />
+    </div>
+
+    <div class="kjt-toolbar-right">
+
+      <!-- Date Range quick links -->
+      <div class="kjt-date-ranges" *ngIf="showDateRange">
+        <button type="button"
+          *ngFor="let r of ['ALL','1D','1W','1M','3M','6M','1Y']"
+          class="kjt-range-btn"
+          [class.active]="activeDateRange === r"
+          (click)="setDateRange(r)"
+        >{{ r }}</button>
+      </div>
+
+      <!-- Date Range picker button & menu -->
+      <div class="kjt-export-wrap" *ngIf="showDateRange">
+        <button type="button" class="kjt-btn-outline" (click)="toggleDatePicker($event)" [class.active]="isDateRangeActive">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Date Range
+        </button>
+
+        <div class="kjt-export-menu date-menu" [class.open]="datePickerOpen">
+          <!-- Calendar Header -->
+          <div class="kjt-cal-header">
+            <button type="button" class="kjt-cal-nav" (click)="changeMonth(-1, $event)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span class="kjt-cal-title">{{ viewDate | date:'MMMM yyyy' }}</span>
+            <button type="button" class="kjt-cal-nav" (click)="changeMonth(1, $event)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+
+          <!-- Calendar Grid -->
+          <div class="kjt-cal-grid">
+            <!-- Weekdays -->
+            <span class="kjt-cal-weekday">Sun</span>
+            <span class="kjt-cal-weekday">Mon</span>
+            <span class="kjt-cal-weekday">Tue</span>
+            <span class="kjt-cal-weekday">Wed</span>
+            <span class="kjt-cal-weekday">Thu</span>
+            <span class="kjt-cal-weekday">Fri</span>
+            <span class="kjt-cal-weekday">Sat</span>
+
+            <!-- Days -->
+            <div 
+              *ngFor="let d of calendarDays" 
+              class="kjt-cal-day-cell"
+              [class.current-month]="d.isCurrentMonth"
+              [class.in-range]="isInRange(d.date)"
+              [class.range-start]="isSelectionStart(d.date)"
+              [class.range-end]="isSelectionEnd(d.date)"
+              (click)="selectDate(d.date, $event)"
+            >
+              <span class="kjt-cal-day-num">{{ d.day }}</span>
+            </div>
+          </div>
+
+          <div class="kjt-cal-range-label" *ngIf="startDateSelection && endDateSelection">
+            {{ formatDate(startDateSelection) }} - {{ formatDate(endDateSelection) }}
+          </div>
+
+          <!-- Calendar Footer -->
+          <div class="kjt-cal-footer">
+            <button type="button" class="kjt-cal-btn-clear" (click)="clearCalendar($event)">Clear</button>
+            <button type="button" class="kjt-cal-btn-confirm" (click)="applyCustomDateRange($event)">Confirm</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters button -->
+      <button type="button" class="kjt-btn-outline" *ngIf="filters.length > 0" (click)="openFilterPanel($event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        Filters
+      </button>
+
+      <!-- Export — single option -->
+      <button type="button"
+        *ngIf="isSingleExport"
+        class="kjt-btn-primary"
+        (click)="handleExportClick($event)"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path [attr.d]="exportOptions[0].svgPath"/>
+        </svg>
+        {{ exportOptions[0].label }}
+      </button>
+
+      <!-- Export — multiple options floating menu -->
+      <div class="kjt-export-wrap" *ngIf="isMultiExport">
+        <button type="button" class="kjt-btn-primary" (click)="handleExportClick($event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export
+          <svg class="kjt-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        <div class="kjt-export-menu" [class.open]="exportMenuOpen">
+          <button type="button"
+            *ngFor="let opt of exportOptions"
+            class="kjt-export-item"
+            (click)="selectExport(opt.key)"
+          >
+            <svg [attr.viewBox]="opt.viewBox || '0 0 24 24'" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path [attr.d]="opt.svgPath"/>
+            </svg>
+            {{ opt.label }}
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /kjt-toolbar-right -->
+  </div><!-- /kjt-toolbar -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TABLE
+  ════════════════════════════════════════════════════════════ -->
+  <div class="kjt-table-scroll" [style.max-height]="tableMaxHeight" [style.min-height]="tableMinHeight">
+    <table class="kjt-table">
+
+      <!-- ── HEADER ── -->
+      <thead>
+        <tr>
+          <!-- Bulk-select -->
+          <th class="kjt-th-check" *ngIf="showCheckboxes">
+            <input type="checkbox" class="kjt-checkbox" [checked]="isAllSelected" (change)="toggleAll()"/>
+          </th>
+ 
+          <!-- Data columns -->
+          <th
+            *ngFor="let col of columns; trackBy: trackByKey"
+            class="kjt-th"
+            [class.sortable]="col.sortable"
+            [style.width]="col.width || null"
+            [style.min-width]="col.width || col.minWidth || null"
+            (click)="col.sortable ? sortBy(col.key) : null"
+          >
+            <span class="kjt-th-inner">
+              {{ col.label }}
+              <span class="kjt-sort-icons" *ngIf="col.sortable" [class.active]="sortKey === col.key">
+                <svg viewBox="0 0 24 24" class="kjt-sort-arrow"
+                  [class.active]="sortKey === col.key && sortDirection === 'asc'">
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+                <svg viewBox="0 0 24 24" class="kjt-sort-arrow"
+                  [class.active]="sortKey === col.key && sortDirection === 'desc'">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </span>
+          </th>
+ 
+          <!-- Status column -->
+          <th class="kjt-th" *ngIf="showStatusToggle">STATUS</th>
+ 
+          <!-- Actions column -->
+          <th class="kjt-th kjt-th-actions" *ngIf="hasActions" [class.kjt-sticky-action]="stickyActions">ACTIONS</th>
+        </tr>
+      </thead>
+ 
+      <!-- ── BODY ── -->
+      <tbody>
+ 
+        <!-- Loading skeleton -->
+        <ng-container *ngIf="loading">
+          <tr class="kjt-skeleton-row" *ngFor="let s of [1,2,3,4,5]; trackBy: trackByIndex">
+            <td *ngIf="showCheckboxes"><div class="kjt-skel kjt-skel-sm"></div></td>
+            <td *ngFor="let col of columns"><div class="kjt-skel"></div></td>
+            <td *ngIf="showStatusToggle"><div class="kjt-skel kjt-skel-sm"></div></td>
+            <td class="kjt-td-actions" *ngIf="hasActions" [class.kjt-sticky-action]="stickyActions"><div class="kjt-skel kjt-skel-md"></div></td>
+          </tr>
+        </ng-container>
+ 
+        <!-- Initial State (Before search) -->
+        <tr *ngIf="!isSearchPerformed && !loading">
+          <td
+            [attr.colspan]="columns.length + (showCheckboxes ? 1 : 0) + (showStatusToggle ? 1 : 0) + (hasActions ? 1 : 0)"
+            class="kjt-empty-td"
+          >
+            <div class="kjt-empty-container">
+              <div class="kjt-empty-illustration">
+                <!-- Use a specific "start" illustration if available, else standard search -->
+                <img src="/assets/emptyState/search.png" alt="Search" />
+              </div>
+              <h3 class="kjt-empty-title">{{ initialTitle }}</h3>
+              <p class="kjt-empty-desc">{{ initialDesc }}</p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Empty state (Post search) -->
+        <tr *ngIf="isSearchPerformed && showEmptyState">
+          <td
+            [attr.colspan]="columns.length + (showCheckboxes ? 1 : 0) + (showStatusToggle ? 1 : 0) + (hasActions ? 1 : 0)"
+            class="kjt-empty-td"
+          >
+            <div class="kjt-empty-container">
+              <div class="kjt-empty-illustration">
+                <img src="/assets/emptyState/search.png" alt="No results" />
+              </div>
+              <h3 class="kjt-empty-title">{{ emptyTitle }}</h3>
+              <p class="kjt-empty-desc">{{ emptyDesc }}</p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Data rows -->
+        <tr
+          *ngFor="let row of displayedData; let i = index; trackBy: trackByIndex"
+          class="kjt-tr clickable-row"
+          [class.kjt-tr-checked]="isRowSelected(row)"
+          (click)="triggerRowClick(row)"
+        >
+          <!-- Bulk select -->
+          <td class="kjt-td-check" *ngIf="showCheckboxes">
+            <input
+              type="checkbox"
+              class="kjt-checkbox"
+              [checked]="isRowSelected(row)"
+              (change)="toggleRow(row, $event)"
+              (click)="$event.stopPropagation()"
+            />
+          </td>
+
+          <!-- Data cells -->
+          <td
+            *ngFor="let col of columns; trackBy: trackByKey"
+            class="kjt-td"
+            [style.width]="col.width || null"
+            [style.min-width]="col.width || col.minWidth || null"
+          >
+            <ng-container [ngSwitch]="col.type">
+
+              <!-- Badge -->
+              <span
+                *ngSwitchCase="'badge'"
+                class="kjt-badge"
+                [style.background-color]="col.colorMap?.[row[col.key]]?.bg || col.defaultColor?.bg || null"
+                [style.color]="col.colorMap?.[row[col.key]]?.text || col.defaultColor?.text || null"
+                [attr.data-status]="(row[col.key] + '').toLowerCase()"
+              >{{ row[col.key] }}</span>
+
+              <!-- Stacked (Multi-data / Multi-badges) -->
+              <div *ngSwitchCase="'stacked'" class="kjt-stacked-wrap">
+                <div class="kjt-stacked-main">{{ row[col.key] }}</div>
+                <div class="kjt-stacked-sub" *ngIf="col.subFields?.length">
+                  <ng-container *ngFor="let sf of col.subFields">
+                    <!-- Text subfield -->
+                    <span *ngIf="sf.type === 'text'" class="kjt-sub-text">
+                      <strong *ngIf="sf.prefix">{{ sf.prefix }} </strong>{{ row[sf.key] }}
+                    </span>
+                    <!-- Badge subfield -->
+                    <span *ngIf="sf.type === 'badge' && row[sf.key]" 
+                          class="kjt-badge kjt-badge-sm"
+                          [style.background-color]="sf.colorMap?.[row[sf.key]] || sf.defaultColor">
+                      <strong *ngIf="sf.prefix">{{ sf.prefix }} </strong>{{ row[sf.key] }}
+                    </span>
+                  </ng-container>
+                </div>
+              </div>
+
+              <!-- Default / text / date / number -->
+              <span *ngSwitchDefault>{{ row[col.key] }}</span>
+
+            </ng-container>
+          </td>
+
+          <!-- Status toggle -->
+          <td class="kjt-td" *ngIf="showStatusToggle">
+            <label class="kjt-toggle">
+              <input
+                type="checkbox"
+                [checked]="row[statusKey]"
+                (change)="handleStatusToggle(row, $event)"
+              />
+              <span class="kjt-toggle-track">
+                <span class="kjt-toggle-thumb"></span>
+              </span>
+            </label>
+          </td>
+
+          <!-- Actions cell -->
+          <td class="kjt-td kjt-td-actions" *ngIf="hasActions" 
+              [class.kjt-sticky-action]="stickyActions"
+              [style.z-index]="openKebabIndex === i ? '20' : null">
+            <div class="kjt-actions-wrap">
+
+              <!-- Primary Actions Map -->
+              <ng-container *ngFor="let pa of primaryActions | slice:0:3">
+                <button type="button"
+                  class="kjt-icon-btn"
+                  [title]="pa.label || pa.type"
+                  (click)="triggerPrimaryAction(pa, row, $event)"
+                >
+                  <ng-container [ngSwitch]="pa.type">
+                    <!-- Standard View Icon -->
+                    <svg *ngSwitchCase="'view'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+
+                    <!-- Standard Edit Icon -->
+                    <svg *ngSwitchCase="'edit'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+
+                    <!-- Standard Delete Icon -->
+                    <svg *ngSwitchCase="'delete'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                    </svg>
+
+                    <!-- Custom SVG Icon -->
+                    <svg *ngSwitchDefault [attr.viewBox]="pa.viewBox || '0 0 24 24'" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path *ngIf="pa.svgPath" [attr.d]="pa.svgPath"/>
+                    </svg>
+                  </ng-container>
+                </button>
+              </ng-container>
+
+              <!-- Secondary actions — kebab menu -->
+              <div class="kjt-kebab-wrap" *ngIf="hasSecondaryActions">
+                <button type="button"
+                  class="kjt-icon-btn kjt-icon-kebab"
+                  title="More actions"
+                  (click)="toggleKebab(i, $event)"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                  </svg>
+                </button>
+
+                <div
+                  class="kjt-kebab-menu"
+                  [class.open]="openKebabIndex === i"
+                  [class.kjt-kebab-up]="i >= displayedData.length - 2"
+                >
+                  <button type="button"
+                    *ngFor="let sa of secondaryActions"
+                    class="kjt-kebab-item"
+                    (click)="triggerSecondary(sa.key, row, $event)"
+                  >
+                    <ng-container *ngIf="!sa.svgPath">
+                      <svg *ngIf="sa.key === 'view' || sa.key === 'edit' || sa.key === 'delete'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path *ngIf="sa.key === 'view'" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle *ngIf="sa.key === 'view'" cx="12" cy="12" r="3"/>
+                        <path *ngIf="sa.key === 'edit'" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path *ngIf="sa.key === 'edit'" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        <polyline *ngIf="sa.key === 'delete'" points="3 6 5 6 21 6"/><path *ngIf="sa.key === 'delete'" d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path *ngIf="sa.key === 'delete'" d="M10 11v6"/><path *ngIf="sa.key === 'delete'" d="M14 11v6"/><path *ngIf="sa.key === 'delete'" d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                      </svg>
+                    </ng-container>
+                    <svg *ngIf="sa.svgPath" [attr.viewBox]="sa.viewBox || '0 0 24 24'" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path [attr.d]="sa.svgPath"/>
+                    </svg>
+                    {{ sa.label }}
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div><!-- /kjt-table-scroll -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PAGINATION FOOTER
+  ════════════════════════════════════════════════════════════ -->
+  <div class="kjt-footer" *ngIf="pagination.totalItems > 0">
+
+    <!-- Rows per page -->
+    <div class="kjt-rpp">
+      <span class="kjt-rpp-label">Rows per page</span>
+      <div class="kjt-rpp-select-wrap">
+        <select class="kjt-rpp-select" (change)="changeItemsPerPage($event)">
+          <option
+            *ngFor="let n of itemsPerPageOptions"
+            [value]="n"
+            [selected]="n === pagination.itemsPerPage"
+          >{{ n }}</option>
+        </select>
+        <svg class="kjt-rpp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Page buttons -->
+    <div class="kjt-pages">
+    
+      <!-- Range info moved to the right side next to buttons -->
+      <span class="kjt-range">{{ rangeStart }} - {{ rangeEnd }} of {{ pagination.totalItems }}</span>
+
+      <button type="button"
+        class="kjt-page-btn kjt-page-nav"
+        [disabled]="pagination.currentPage === 1"
+        (click)="prevPage()"
+        title="Previous"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+
+      <ng-container *ngFor="let p of pageNumbers; trackBy: trackByIndex">
+        <button type="button"
+          *ngIf="p !== '...'"
+          class="kjt-page-btn"
+          [class.active]="p === pagination.currentPage"
+          (click)="goToPage(p)"
+        >{{ p }}</button>
+
+        <span *ngIf="p === '...'" class="kjt-page-ellipsis">…</span>
+      </ng-container>
+
+      <button type="button"
+        class="kjt-page-btn kjt-page-nav"
+        [disabled]="pagination.currentPage === pagination.totalPages"
+        (click)="nextPage()"
+        title="Next"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+
+  </div><!-- /kjt-footer -->
+
+  
+  <div class="kjt-bulk-bar" *ngIf="isAnythingSelected && bulkActions.length > 0">
+    <div class="kjt-bulk-inner">
+      <div class="kjt-bulk-info">
+        <span class="kjt-bulk-count">{{ selectedRows.length }}</span>
+        <span class="kjt-bulk-label">items selected</span>
+      </div>
+      <div class="kjt-bulk-actions">
+          <button
+            *ngFor="let ba of bulkActions"
+            type="button"
+            class="kjt-bulk-btn"
+            [class]="'kjt-btn-' + (ba.theme || 'primary')"
+            (click)="triggerBulkAction(ba)"
+          >
+          <svg *ngIf="ba.svgPath" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path [attr.d]="ba.svgPath"/>
+          </svg>
+          {{ ba.label || ba.type }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /kjt-wrapper -->
+
+<!-- Filter Slide-in Panel (Fixed Viewport) -->
+<div class="kjt-filter-panel" [class.open]="filterPanelOpen">
+  <!-- Panel header -->
+  <div class="kjt-fp-header">
+    <div>
+      <h3 class="kjt-fp-title">Filters</h3>
+      <p class="kjt-fp-sub" style="color: #9C9C9C;">Refine your search</p>
+    </div>
+    <button type="button" class="kjt-fp-close" (click)="closeFilterPanel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Panel body — filter controls -->
+  <div class="kjt-fp-body">
+    <div class="kjt-fp-section" *ngFor="let f of filters; trackBy: trackByIndex">
+      <h4 class="kjt-fp-section-title">{{ f.label }}</h4>
+      <!-- Input -->
+      <ng-container *ngIf="f.type === 'input'">
+        <input type="text" class="kjt-fp-input" [placeholder]="f.placeholder || f.label" [(ngModel)]="filterValues[f.key]"/>
+      </ng-container>
+      <!-- Dropdown -->
+      <ng-container *ngIf="f.type === 'dropdown'">
+        <div class="kjt-fp-select-wrap">
+          <select class="kjt-fp-select" [(ngModel)]="filterValues[f.key]">
+            <option value="">{{ f.placeholder || 'Select...' }}</option>
+            <option *ngFor="let opt of f.options" [value]="opt.value">{{ opt.label }}</option>
+          </select>
+          <svg class="kjt-rpp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </ng-container>
+      <!-- Radio -->
+      <ng-container *ngIf="f.type === 'radio'">
+        <div class="kjt-fp-radio-group">
+          <label *ngFor="let opt of f.options" class="kjt-fp-radio-label">
+            <input type="radio" class="kjt-fp-radio" [name]="f.key" [value]="opt.value" [(ngModel)]="filterValues[f.key]"/>
+            <span class="kjt-fp-radio-dot"></span>
+            {{ opt.label }}
+          </label>
+        </div>
+      </ng-container>
+      <!-- Checkbox -->
+      <ng-container *ngIf="f.type === 'checkbox'">
+        <div class="kjt-fp-check-group">
+          <label *ngFor="let opt of f.options" class="kjt-fp-check-label">
+            <input type="checkbox" class="kjt-fp-checkbox" [checked]="isCheckboxSelected(f.key, opt.value)" (change)="toggleCheckboxOption(f.key, opt.value)"/>
+            <span class="kjt-fp-checkmark"></span>
+            {{ opt.label }}
+          </label>
+        </div>
+      </ng-container>
+      <!-- Multiselect -->
+      <ng-container *ngIf="f.type === 'multiselect'">
+        <div class="kjt-fp-multiselect">
+          <label *ngFor="let opt of f.options" class="kjt-fp-ms-chip" [class.selected]="isCheckboxSelected(f.key, opt.value)" (click)="toggleCheckboxOption(f.key, opt.value)">
+            <span>{{ opt.label }}</span>
+            <svg *ngIf="isCheckboxSelected(f.key, opt.value)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="kjt-ms-check">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </label>
+        </div>
+      </ng-container>
+
+        <!-- Custom Multi-select Dropdown -->
+        <ng-container *ngIf="f.type === 'multidropdown'">
+          <div class="kjt-fp-mselect-wrap">
+            <div 
+              class="kjt-fp-mselect-box" 
+              [class.open]="openMultiDropdownKey === f.key"
+              (click)="toggleMultiDropdown(f.key, $event)"
+            >
+              <span class="kjt-mselect-value">{{ getMultiDropdownLabel(f) }}</span>
+              <svg class="kjt-rpp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+            
+            <div class="kjt-fp-mselect-menu" [class.open]="openMultiDropdownKey === f.key">
+              <div class="kjt-ms-option" *ngFor="let opt of f.options" (click)="toggleCheckboxOption(f.key, opt.value); $event.stopPropagation()">
+                <div class="kjt-ms-check-box" [class.checked]="isCheckboxSelected(f.key, opt.value)">
+                  <svg *ngIf="isCheckboxSelected(f.key, opt.value)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+                <span class="kjt-ms-opt-label">{{ opt.label }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Custom Single-select Dropdown -->
+        <ng-container *ngIf="f.type === 'singleselect'">
+          <div class="kjt-fp-mselect-wrap">
+            <div 
+              class="kjt-fp-mselect-box" 
+              [class.open]="openMultiDropdownKey === f.key"
+              (click)="toggleMultiDropdown(f.key, $event)"
+            >
+              <span class="kjt-mselect-value">
+                {{ getSingleSelectLabel(f) }}
+              </span>
+              <svg class="kjt-rpp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+            
+            <div class="kjt-fp-mselect-menu" [class.open]="openMultiDropdownKey === f.key">
+              <div class="kjt-ms-option" *ngFor="let opt of f.options" (click)="selectSingleOption(f.key, opt.value); $event.stopPropagation()">
+                <div class="kjt-ms-radio-circle" [class.checked]="filterValues[f.key] === opt.value">
+                  <div *ngIf="filterValues[f.key] === opt.value" class="kjt-ms-radio-dot"></div>
+                </div>
+                <span class="kjt-ms-opt-label">{{ opt.label }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+  <!-- Panel footer -->
+    <div class="kjt-fp-footer" style="background: #fff; border-top: none;">
+      <button type="button" class="kjt-fp-btn-clear" (click)="clearFilters()">Clear Filters</button>
+      <button type="button" class="kjt-fp-btn-apply" (click)="applyFilters()">Apply Filters</button>
+    </div>
+  </div><!-- /kjt-filter-panel -->

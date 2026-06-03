@@ -1,0 +1,93 @@
+<div class="w-full flex flex-col font-sans">
+  <label class="text-[10px] font-medium text-gray-800 mb-1.5" *ngIf="label">{{ label }}</label>
+  
+  <div class="relative w-full">
+    <!-- Trigger Button -->
+    <div 
+      #triggerDiv
+      (click)="toggleDropdown()"
+      [ngClass]="{
+        'bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200': disabled,
+        'bg-white cursor-pointer hover:bg-slate-50 border-gray-300 focus-within:ring-2 focus-within:ring-blue-50 focus-within:border-blue-300': !disabled
+      }"
+      class="flex items-center justify-between border rounded-lg px-3 py-1.5 text-xs transition-all w-full"
+      [style.min-height]="customHeight"
+      [style.width]="customWidth"
+    >
+      <div class="flex items-center gap-1.5 flex-1 overflow-hidden">
+        <span [ngClass]="{
+          'font-medium': true,
+          'text-gray-400/80': disabled,
+          'text-gray-400 italic': !disabled && !selectedValue,
+          'text-gray-900': !disabled && selectedValue
+        }">
+          <ng-container *ngIf="selectedValue">
+            <span *ngIf="type === 'country' && (selectedValue.flag || selectedValue.emoji)" class="mr-2">
+              {{ selectedValue.flag || selectedValue.emoji }}
+            </span>
+            {{ selectedValue[bindLabel] || selectedValue.name }}
+          </ng-container>
+          <ng-container *ngIf="!selectedValue">
+            {{ placeholder }}
+          </ng-container>
+        </span>
+      </div>
+
+      <!-- Loading or Arrow Icon -->
+      <div class="flex items-center shrink-0 ml-2">
+        <div *ngIf="isLoading" class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <svg *ngIf="!isLoading" [ngClass]="isOpen ? 'rotate-180' : 'rotate-0'" class="w-4 h-4 transition-transform duration-200 ease-in-out" [ngStyle]="{'color': disabled ? '#9ca3af' : '#6b7280'}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Dropdown Menu -->
+    <div *ngIf="isOpen && !disabled" class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg z-[9999] flex flex-col overflow-hidden shadow-xl">
+      
+      <!-- Search Box -->
+      <div class="p-2 border-b border-gray-100">
+        <div class="relative w-full">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8.75 8.75L7.5 7.5" stroke="#414D63" stroke-width="0.625" stroke-linecap="round"/>
+            <circle cx="4.58331" cy="5" r="3.75" stroke="#414D63" stroke-width="0.625"/>
+          </svg>
+          <input 
+            type="text" 
+            [(ngModel)]="searchText"
+            placeholder="Search..." 
+            class="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 font-medium"
+          >
+        </div>
+      </div>
+
+      <!-- Dropdown Items List -->
+      <div class="max-h-[220px] overflow-y-auto px-1 py-1 custom-scrollbar">
+        <div 
+          *ngFor="let item of filteredData"
+          (click)="selectItem(item)"
+          class="flex items-center px-3 py-2 cursor-pointer rounded-md group transition-colors hover:bg-blue-50"
+          [ngClass]="selectedValue && (selectedValue.isoCode === item.isoCode || selectedValue.iso2 === item.iso2) ? 'bg-blue-50' : ''"
+        >
+          <span *ngIf="type === 'country' && (item.flag || item.emoji)" class="mr-3 text-sm shrink-0">
+            {{ item.flag || item.emoji }}
+          </span>
+          <span 
+            class="text-[12px] font-medium select-none truncate flex-1"
+            [ngClass]="selectedValue && (selectedValue.isoCode === item.isoCode || selectedValue.iso2 === item.iso2) ? 'text-blue-700 font-semibold' : 'text-gray-700'"
+          >
+            {{ item[bindLabel] || item.name }}
+          </span>
+          <span *ngIf="item.phonecode" class="text-[10px] text-gray-400 font-mono ml-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            +{{ item.phonecode.replace('+', '') }}
+          </span>
+        </div>
+        
+        <div *ngIf="filteredData.length === 0" class="px-3 py-4 text-xs text-gray-500 text-center font-medium">
+          <span *ngIf="!isLoading">No results found</span>
+          <span *ngIf="isLoading">Loading...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

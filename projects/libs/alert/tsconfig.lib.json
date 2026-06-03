@@ -1,0 +1,13 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../../out-tsc/lib",
+    "tsBuildInfoFile": "../../../.angular/cache/libs/alert.tsbuildinfo",
+    "declaration": true,
+    "declarationMap": true,
+    "types": []
+  },
+  "exclude": [
+    "**/*.spec.ts"
+  ]
+}

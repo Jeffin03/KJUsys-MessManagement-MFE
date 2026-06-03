@@ -1,0 +1,53 @@
+<div class="relative w-full border-b border-slate-200 bg-slate-50/30 mt-4">
+  
+  <!-- Left Arrow Overlay with Shadow -->
+  <div *ngIf="showLeftArrow" 
+       class="absolute left-0 top-0 bottom-0 z-10 w-8 flex items-center justify-start bg-gradient-to-r from-slate-100/90 to-transparent pointer-events-none">
+    <button (click)="scrollLeft()" 
+            class="p-1 rounded-full hover:bg-white text-blue-600 transition-all -ml-5 md:ml-1 shadow-md bg-white/90 border border-slate-100 pointer-events-auto active:scale-95 z-20">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Scrollable Tab Container -->
+  <div #scrollContainer 
+       (scroll)="onScroll()"
+       class="flex items-center overflow-x-auto scroll-smooth hide-scrollbar">
+    
+    <div *ngFor="let tab of tabs" 
+         #tabElement
+         (click)="selectTab(tab.id)"
+         class="px-4 py-2 border-b-2 cursor-pointer transition-all mb-[-1px] whitespace-nowrap group"
+         [ngClass]="activeTabId === tab.id ? 'border-blue-600 bg-blue-50/50' : 'border-transparent hover:bg-gray-50/50'">
+      
+      <div class="relative inline-flex items-center gap-2">
+        <span class="text-[11px] transition-colors"
+              [ngClass]="activeTabId === tab.id ? 'text-blue-600 font-medium' : 'text-slate-500 group-hover:text-blue-600'">
+          {{ tab.label }}
+        </span>
+
+        <!-- Count Badge -->
+        <span *ngIf="tab.count !== undefined" 
+              class="bg-blue-600 text-white text-[8px] font-bold px-1 py-0.5 rounded-full min-w-[14px] h-[14px] flex items-center justify-center border border-white shadow-sm">
+          {{ tab.count }}
+        </span>
+      </div>
+      
+    </div>
+
+  </div>
+
+  <!-- Right Arrow Overlay with Shadow -->
+  <div *ngIf="showRightArrow" 
+       class="absolute right-0 top-0 bottom-0 z-10 w-8 flex items-center justify-end bg-gradient-to-l from-slate-100/90 to-transparent pointer-events-none">
+    <button (click)="scrollRight()" 
+            class="p-1 rounded-full hover:bg-white text-blue-600 transition-all -mr-5 md:mr-1 shadow-md bg-white/90 border border-slate-100 pointer-events-auto active:scale-95 z-20">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  </div>
+
+</div>

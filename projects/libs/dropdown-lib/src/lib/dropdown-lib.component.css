@@ -1,0 +1,15 @@
+/* dropdown-lib component styles */
+
+.custom-select-btn {
+  color: #0034AF !important;
+}
+.custom-select-btn:hover {
+  color: #0f4ee0 !important;
+}
+
+.custom-clear-btn {
+  color: #C10003 !important;
+}
+.custom-clear-btn:hover {
+  color: #f00f12 !important;
+}

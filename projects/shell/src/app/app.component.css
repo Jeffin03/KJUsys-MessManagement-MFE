@@ -1,0 +1,15 @@
+.main-container {
+  position: relative;
+  width: calc(100% - 260px);
+  left: 260px;
+  font-family: "Inter", sans-serif;
+}
+.main-container.hide {
+  width: calc(100% - 60px);
+  left: 60px;
+  transition: all 0.3 ease;
+}
+
+.toast-container {
+  z-index: 9999; /* Ensure toasts appear above other elements */
+}

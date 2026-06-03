@@ -1,0 +1,33 @@
+<div class="toast-container">
+  <div 
+    class="toast-card"
+    *ngFor="let toast of toasts"
+    [@toastTrigger]
+    (mouseenter)="pauseToast(toast.id)"
+    (mouseleave)="resumeToast(toast.id)"
+    (click)="removeToastById(toast.id)"
+  >
+    <div 
+      class="toast-content"
+      [style.background]="getStyles(toast).bg"
+      [style.color]="getStyles(toast).color"
+    >
+      <div 
+        class="icon"
+        [style.background]="getStyles(toast).iconBg"
+        [innerHTML]="getStyles(toast).icon"
+      ></div>
+
+      <div class="text-container">
+        <div class="message">{{ toast.message }}</div>
+      </div>
+
+      <button class="close" (click)="$event.stopPropagation(); removeToastById(toast.id)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

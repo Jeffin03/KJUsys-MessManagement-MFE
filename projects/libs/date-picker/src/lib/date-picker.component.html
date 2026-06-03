@@ -1,0 +1,69 @@
+<div class="date-picker-wrapper">
+  <!-- Trigger Button -->
+  <button type="button" class="date-picker-trigger" (click)="toggleDropdown($event)">
+    <span class="trigger-text" [ngClass]="{'placeholder': !confirmedStartDate}">{{ getDateRangeLabel() }}</span>
+    <svg class="trigger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  </button>
+
+  <!-- Dropdown Calendar -->
+  <div *ngIf="isOpen" [ngStyle]="dropdownStyles" class="calendar-dropdown animate-in fade-in zoom-in-95 duration-200">
+    <div class="calendar-container">
+      <!-- Header -->
+      <div class="calendar-header">
+        <button (click)="prevMonth($event)" class="nav-btn">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <span class="calendar-month-text">{{ calendarViewDate | date: 'MMMM yyyy' }}</span>
+        <button (click)="nextMonth($event)" class="nav-btn">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Weekdays -->
+      <div class="calendar-grid">
+        <div *ngFor="let day of weekdays" class="weekday-header">{{ day }}</div>
+      </div>
+
+      <!-- Days Grid -->
+      <div class="calendar-grid">
+        <div *ngFor="let item of calendarDays" 
+          (click)="selectDate(item.day, $event)"
+          class="day-cell"
+          [ngClass]="{'empty': !item.day}">
+          
+          <!-- Range Background -->
+          <div *ngIf="isInSelectedRange(item.day)" class="range-bg middle"></div>
+          <div *ngIf="isSelectedStart(item.day) && tempEndDate" class="range-bg start"></div>
+          <div *ngIf="isSelectedEnd(item.day) && tempStartDate" class="range-bg end"></div>
+
+          <!-- Day Circle -->
+          <div class="day-number"
+            [ngClass]="{
+              'selected': isSelectedStart(item.day) || isSelectedEnd(item.day),
+              'today': isToday(item.day),
+              'current-month': item.isCurrentMonth,
+              'other-month': !item.isCurrentMonth
+            }">
+            {{ item.day?.getDate() }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="calendar-footer">
+        <button (click)="clearDates($event)" class="footer-btn clear">
+          <span>Clear</span>
+        </button>
+        <button *ngIf="!singleSelect" (click)="confirmDates($event)" class="footer-btn confirm">
+          <span>Confirm</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

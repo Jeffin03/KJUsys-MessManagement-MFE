@@ -1,0 +1,47 @@
+:host {
+  display: inline-block;
+}
+
+.pill-tabs-container {
+  background-color: #F2F4F7;
+  padding: 5px;
+  border-radius: 8px;
+  display: inline-flex;
+}
+
+.pill-tabs-track {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pill-tab-item {
+  border: none;
+  background: transparent;
+  padding: 6px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475467;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  white-space: nowrap;
+}
+
+.pill-tab-item:hover {
+  color: #101828;
+}
+
+.pill-tab-item.active {
+  background-color: #ffffff;
+  color: #101828;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 768px) {
+  .pill-tab-item {
+    font-size: 10px;
+    padding: 4px 12px;
+  }
+}

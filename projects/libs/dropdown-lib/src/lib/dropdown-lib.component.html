@@ -1,0 +1,115 @@
+<div class="w-full flex flex-col font-sans">
+  <label class="text-[10px] font-medium text-gray-800 mb-1.5" *ngIf="label">{{ label }}</label>
+  
+  <div class="relative w-full">
+    <!-- Trigger Button -->
+    <div 
+      #triggerDiv
+      (click)="toggleDropdown()"
+      [ngClass]="{
+        'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300': disabled,
+        'bg-white cursor-pointer hover:bg-slate-50 border-gray-300 focus-within:ring-2 focus-within:ring-blue-50 focus-within:border-blue-300': !disabled
+      }"
+
+      class="flex items-center justify-between border rounded-lg px-3 py-2 text-xs transition-all min-h-[42px]"
+      [ngClass]="{'w-full': !triggerWidth}"
+      [ngStyle]="triggerStyle"
+    >
+      <div class="flex items-center gap-1.5 flex-nowrap flex-1 overflow-hidden">
+        <!-- Placeholder & Single Select View -->
+        <ng-container *ngIf="selectedItems.length === 0 || singleSelection">
+          <span class="truncate" [ngClass]="{
+            'font-medium': true,
+            'text-gray-400/80': disabled,
+            'text-gray-500': !disabled && selectedItems.length === 0,
+            'text-gray-900': !disabled && selectedItems.length > 0
+          }">
+            {{ selectedItems.length === 0 ? placeholder : selectedItems[0][textField] }}
+          </span>
+        </ng-container>
+
+        <!-- Selected Items (Chips) For Multi Select -->
+        <ng-container *ngIf="selectedItems.length > 0 && !singleSelection">
+          <ng-container *ngFor="let item of selectedItems.slice(0, 1)">
+            <div class="flex items-center gap-1 border border-gray-200 bg-white rounded-full px-2.5 py-1 text-xs text-gray-700 font-medium shadow-sm flex-1 min-w-0 max-w-full">
+              <span class="truncate">{{ item[textField] }}</span>
+            </div>
+          </ng-container>
+          <span *ngIf="selectedItems.length > 1" 
+                (click)="openWithSelectedFirst($event)"
+                class="text-xs text-gray-600 cursor-pointer font-medium px-1 relative z-10 transition-colors hover:text-gray-800 shrink-0 whitespace-nowrap">
+            + {{ selectedItems.length - 1 }} more
+          </span>
+        </ng-container>
+      </div>
+
+      <!-- Arrow Icon -->
+      <svg [ngClass]="isOpen ? 'rotate-180' : 'rotate-0'" class="w-4 h-4 ml-2 transition-transform duration-200 ease-in-out shrink-0" [ngStyle]="{'color': disabled ? '#9ca3af' : '#6b7280'}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+
+    <!-- Dropdown Menu -->
+    <div *ngIf="isOpen && !disabled" class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg z-[9999] flex flex-col overflow-hidden shadow-xl">
+      
+      <!-- Search Box -->
+      <div class="p-2 border-b border-transparent">
+        <div class="relative w-full">
+          <!-- Magnifying Glass SVG -->
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8.75 8.75L7.5 7.5" stroke="#414D63" stroke-width="0.625" stroke-linecap="round"/>
+            <circle cx="4.58331" cy="5" r="3.75" stroke="#414D63" stroke-width="0.625"/>
+          </svg>
+          <input 
+            type="text" 
+            [(ngModel)]="searchText"
+            placeholder="Search" 
+            class="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white font-medium placeholder-gray-500"
+          >
+        </div>
+      </div>
+
+      <!-- Dropdown Items List -->
+      <div class="max-h-[220px] overflow-y-auto px-1 py-1">
+        <div 
+          *ngFor="let item of filteredData()"
+          (click)="toggleSelection(item, $event)"
+          class="flex items-center px-3 py-2 cursor-pointer rounded-md group transition-colors"
+          [ngClass]="isSelected(item) && singleSelection ? 'bg-blue-50' : 'hover:bg-gray-50'"
+        >
+          <!-- Custom Checkbox Selection Design (Hidden for Single Select) -->
+          <div 
+            *ngIf="!singleSelection"
+            class="w-4 h-4 mr-3 flex flex-shrink-0 items-center justify-center border-2 rounded transition-all duration-200"
+            [ngClass]="{
+              'border-blue-600 bg-blue-600 hover:ring-4 hover:ring-blue-200': isSelected(item),
+              'border-gray-300 bg-white hover:ring-4 hover:ring-blue-100': !isSelected(item)
+            }"
+          >
+            <svg *ngIf="isSelected(item)" class="w-3.3 h-3.3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          
+          <span 
+            class="text-[12px] font-medium select-none truncate"
+            [ngClass]="isSelected(item) && singleSelection ? 'text-blue-800 font-semibold' : 'text-gray-700'"
+          >
+            {{ item[textField] }}
+          </span>
+        </div>
+        
+        <div *ngIf="filteredData().length === 0" class="px-3 py-3 text-xs text-gray-500 text-center font-medium">
+          No items found
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div *ngIf="!singleSelection" class="px-4 py-2 border-t border-transparent flex justify-end gap-3 bg-white">
+        <button type="button" (click)="selectAll($event)" class="text-[12px] font-semibold custom-select-btn transition-colors">Select All</button>
+        <button type="button" (click)="clearAll($event)" class="text-[12px] font-semibold custom-clear-btn transition-colors">Clear All</button>
+      </div>
+      
+    </div>
+  </div>
+</div>

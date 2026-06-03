@@ -1,0 +1,107 @@
+<div class="media-upload-card">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-text">
+      <h2 class="title">{{ title }}</h2>
+      <p class="subtitle">{{ subtitle }}</p>
+    </div>
+  </div>
+
+  <!-- Upload Area -->
+  <div class="drop-zone" 
+       [class.dragging]="isDragging"
+       (dragover)="onDragOver($event)" 
+       (dragleave)="onDragLeave($event)" 
+       (drop)="onDrop($event)">
+    
+    <input type="file" #fileInput class="hidden-input" [accept]="accept" 
+           multiple (change)="onFileSelected($event)">
+
+    <div class="drop-content">
+      <!-- Default Drop Zone State (Empty or Multiple Files) -->
+      <ng-container *ngIf="uploadedFiles.length !== 1">
+        <div class="folder-icon-wrapper">
+          <div class="folder-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="#2563eb" stroke="none">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <div class="arrow-up-overlay">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <p class="drag-text">Drag your file(s) to start uploading</p>
+        
+        <div class="separator">
+          <span class="line"></span>
+          <span class="or-text">OR</span>
+          <span class="line"></span>
+        </div>
+
+        <button class="browse-btn" (click)="triggerFileInput(fileInput); $event.stopPropagation()">
+          Browse files
+        </button>
+      </ng-container>
+
+      <!-- Single File Preview State -->
+      <ng-container *ngIf="uploadedFiles.length === 1">
+        <div class="single-full-preview">
+          <img *ngIf="uploadedFiles[0].isImage" [src]="uploadedFiles[0].previewUrl" alt="Preview" class="full-preview-img">
+          <div *ngIf="!uploadedFiles[0].isImage" class="full-preview-file">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+            <span class="full-file-name">{{ uploadedFiles[0].file.name }}</span>
+          </div>
+          
+          <!-- Bottom Right Actions -->
+          <div class="preview-actions-overlay">
+            <button class="action-btn-pill" (click)="triggerFileInput(fileInput); $event.stopPropagation()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add more
+            </button>
+            <button class="action-btn-pill" (click)="triggerFileInput(fileInput, 0); $event.stopPropagation()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              Change
+            </button>
+            <button class="action-btn-pill delete" (click)="removeFile(0); $event.stopPropagation()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              Remove
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Multi-Preview Section (shown only when > 1 file) -->
+  <div class="preview-container" *ngIf="uploadedFiles.length > 1">
+    <div class="preview-item" *ngFor="let file of uploadedFiles; let i = index">
+      <div class="preview-thumb">
+        <img *ngIf="file.isImage" [src]="file.previewUrl" alt="Preview">
+        <div *ngIf="!file.isImage" class="file-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+            <polyline points="13 2 13 9 20 9"></polyline>
+          </svg>
+        </div>
+        <button class="remove-thumb" (click)="removeFile(i)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <span class="file-name">{{ file.file.name }}</span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer" [class.error]="errorMessage">
+    {{ errorMessage || hint }}
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<div class="mini-upload-wrapper" [style.width]="width">
+  <div class="mini-upload-container" [style.height]="height" (click)="triggerFileInput(fileInput)">
+    <input type="file" #fileInput class="hidden-input" [accept]="accept" (change)="onFileSelected($event)" (click)="onInputClick($event)">
+    
+    <div class="choose-file-btn">
+      Choose file
+    </div>
+    
+    <div class="file-name-display">
+      <span class="file-name-text">{{ selectedFileName || placeholder }}</span>
+    </div>
+  </div>
+  <div *ngIf="showTypeHint && typeHint" class="type-hint-text">
+    {{ typeHint }}
+  </div>
+  <div *ngIf="errorMessage" class="error-text">
+    {{ errorMessage }}
+  </div>
+</div>

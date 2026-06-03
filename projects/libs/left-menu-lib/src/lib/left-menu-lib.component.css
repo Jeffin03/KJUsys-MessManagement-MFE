@@ -1,0 +1,322 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
+:host {
+  display: block;
+  height: calc(100vh - 65px);
+  position: fixed;
+  top: 65px;
+  left: 0;
+  z-index: 49;
+  pointer-events: none;
+  font-family: "Inter", sans-serif;
+  background-color: transparent;
+}
+
+/* Mobile Sidebar Styles */
+.router_wrapper_mob {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 50vw;
+  min-height: 100vh;
+  z-index: 50;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+}
+
+.router_wrapper_mob.active {
+  display: block;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.menu-name {
+  color: #383838;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 14px;
+  margin: 0;
+}
+
+.icon-wrapper {
+  padding: 4px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-wrapper:hover {
+  background-color: transparent;
+  transform: none;
+}
+
+.icon-wrapper svg path {
+  transition: stroke 0.2s ease;
+}
+
+.icon-wrapper:hover svg path {
+  stroke: #000000;
+}
+
+.divider {
+  margin: 8px 0;
+  border: none;
+  height: 1px;
+  background-color: rgba(229, 231, 235, 0.5);
+  transition: transform 0.3s ease;
+  transform-origin: left;
+}
+
+.router_subname li {
+  color: #64748b;
+  padding: 2px;
+  list-style: none;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  line-height: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.router_subname li.active a {
+  color: #1e40af;
+}
+
+.close_btn_wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #dbdbdb;
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  background-color: white;
+  transition: background-color 0.3s ease;
+}
+
+.close_btn_wrapper:hover {
+  background-color: #f1f3f4;
+}
+
+@media only screen and (max-width: 600px) {
+  .router_wrapper_mob {
+    display: block;
+  }
+  .sidebar_default {
+    display: none !important;
+  }
+  .sidebar {
+    display: none !important;
+  }
+}
+
+@media only screen and (min-width: 600px) {
+  .router_wrapper_mob {
+    display: none !important;
+  }
+  .sidebar_default {
+    display: flex;
+  }
+  .sidebar {
+    display: flex;
+  }
+}
+
+/* Desktop Sidebar Styles */
+.sidebar {
+  width: auto;
+  height: 100%;
+  display: flex;
+  position: relative;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+}
+
+.sidebar_default {
+  margin-left: 0;
+  margin-top: 0;
+  width: 70px;
+  height: calc(100vh - 65px - 32px);
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 20px;
+  gap: 8px;
+  position: relative;
+  z-index: 20;
+  transition: all 0.3s ease;
+  border-radius: 0 10px 10px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* .sidebar.expanded .sidebar_default {
+  background-color: transparent;
+  box-shadow: none;
+  border: none;
+} */
+
+/* .shadow-right {
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
+} */
+
+.sample_posi {
+  height: 100%;
+  transition: left 0.3s ease;
+}
+
+.icons {
+  cursor: pointer;
+  padding: 6px 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 10px;
+  transform-origin: center;
+}
+
+.icons:hover {
+  background-color: transparent;
+  transform: scale(1.1);
+}
+
+.icons.active {
+  background-color: #000000;
+  border-radius: 12px;
+  transform: scale(1.05);
+  color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.icons.active ::ng-deep svg {
+  filter: brightness(0) invert(1);
+}
+
+.icons.active p {
+  color: white !important;
+  font-weight: 600;
+}
+
+.sidebar_toggled {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: calc(100vh - 65px - 32px);
+  border-radius: 0 20px 20px 0;
+  transition: width 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0.35s;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 10;
+  background-color: rgba(248, 248, 248, 0.80); /* More see-through */
+  backdrop-filter: blur(12px); /* Frosted glass blur */
+  -webkit-backdrop-filter: blur(12px); /* Safari support */
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+  will-change: width, opacity;
+  border-right: 1px solid rgba(255, 255, 255, 0.4); /* Subtle white edge */
+}
+
+.sidebar_toggled.active {
+  width: 310px;
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar_contents {
+  position: relative;
+  padding-top: 10px;
+  padding-left: 85px; /* Increased for little left margin inside */
+  width: 310px; /* Fixed width to prevent reflow during animation */
+  min-width: 310px;
+  height: 100%;
+  background-color: transparent; /* Main bg is on partent now */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.sidebar_toggled.active .sidebar_contents {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.search_bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+}
+
+.sidebar_toggled.active .search_bar {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.router_name {
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+.sidebar_toggled.active .router_name {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.router_wrapper {
+  overflow-y: auto;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  transition: padding 0.3s ease;
+}
+
+.router_subname {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #000000;
+  color: white;
+  box-shadow: 0px -1px 10px rgba(0, 0, 0, 0.1);
+}
+
+.footer p {
+  margin: 0;
+  padding: 0 20px;
+}

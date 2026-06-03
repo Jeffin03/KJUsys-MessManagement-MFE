@@ -1,0 +1,23 @@
+export const environment = {
+  production: true,
+  manifestPath: '/assets/mf.manifest.dev.json?v=1780471095060',
+  mfe: {
+    admissions: 'https://admissions.dev-kjusys.kristujayanti.edu.in/',
+    core: 'https://core.dev-kjusys.kristujayanti.edu.in/',
+    sim: 'https://sim.dev-kjusys.kristujayanti.edu.in/',
+    hr: 'https://hr.dev-kjusys.kristujayanti.edu.in/',
+    fees: 'https://fees.dev-kjusys.kristujayanti.edu.in/',
+    library: 'https://library.dev-kjusys.kristujayanti.edu.in/',
+    apps: 'https://apps.dev-kjusys.kristujayanti.edu.in/',
+    arena: 'https://arena.dev-kjusys.kristujayanti.edu.in/',
+    guesthouse: 'https://annexe.dev-kjusys.kristujayanti.edu.in/',
+    gymnasium: 'https://gymnasium.dev-kjusys.kristujayanti.edu.in/',
+  },
+  publicPath: 'https://dev-kjusys.kristujayanti.edu.in/',
+  baseUrl: 'https://dev-kjusys.kristujayanti.edu.in/kjusys-api',
+  portalLambdaBaseUrl: 'https://2fezfat6k2.execute-api.ap-south-1.amazonaws.com/development', 
+  project: 'shell',
+  baseRoute: 'kjusys',
+  local: false,
+  //apirefreshUrl:'http://kjusys.kristujayanti.edu.in/kjusys-api/authnauthz/refresh-access-token',
+};

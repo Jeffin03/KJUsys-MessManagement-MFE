@@ -1,0 +1,38 @@
+<div class="upload-container" 
+     [style.width]="width"
+     [class.dragging]="isDragging"
+     (dragover)="onDragOver($event)" 
+     (dragleave)="onDragLeave($event)" 
+     (drop)="onDrop($event)"
+     (click)="triggerFileInput(fileInput)">
+  
+  <input type="file" #fileInput class="hidden-input" [accept]="accept" 
+         (change)="onFileSelected($event)" (click)="onInputClick($event)">
+  
+  <div class="upload-content">
+    <div class="icon-section">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+        <path d="M12 12v9"></path>
+        <path d="m16 16-4-4-4 4"></path>
+      </svg>
+    </div>
+    
+    <div class="text-section">
+      <div class="main-text">{{ selectedFile ? selectedFile.name : title }}</div>
+      <div class="hint-text" *ngIf="!selectedFile && !errorMessage">{{ hint }}</div>
+      <div class="hint-text error" *ngIf="errorMessage">{{ errorMessage }}</div>
+      <div class="hint-text text-blue-600 font-medium" *ngIf="selectedFile && !errorMessage">File selected successfully</div>
+    </div>
+
+    <div class="action-section">
+      <button type="button" class="select-btn" *ngIf="!selectedFile">
+        SELECT FILE
+      </button>
+      <button type="button" class="select-btn border-red-200 text-red-500 hover:bg-red-50" 
+              *ngIf="selectedFile" (click)="clearSelection($event)">
+        REMOVE
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,16 @@
+/* To learn more about this file see: https://angular.io/config/tsconfig. */
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../../out-tsc/lib",
+    "tsBuildInfoFile": "../../../.angular/cache/libs/left-menu-lib.tsbuildinfo",
+    "declaration": true,
+    "declarationMap": true,
+    "types": []
+  },
+  "exclude": [
+    "**/*.spec.ts"
+  ]
+}
+
+

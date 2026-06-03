@@ -1,0 +1,12 @@
+<div class="pill-tabs-container">
+  <div class="pill-tabs-track">
+    <button 
+      *ngFor="let tab of tabs" 
+      type="button"
+      class="pill-tab-item"
+      [class.active]="activeTabId === tab.id"
+      (click)="selectTab(tab.id)">
+      {{ tab.label }}
+    </button>
+  </div>
+</div>

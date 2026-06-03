@@ -1,0 +1,16 @@
+<div class="flex flex-col items-center justify-center p-10 text-center animate-fade-in">
+  <!-- Illustration -->
+  <div class="mb-6 max-w-[280px]">
+    <img [src]="getIllustration()" [alt]="getDisplayTitle()" class="w-full h-auto object-contain transition-transform duration-500 hover:scale-105">
+  </div>
+
+  <!-- Title -->
+  <h3 class="text-xs font-bold text-slate-800 mb-2">
+    {{ getDisplayTitle() }}
+  </h3>
+
+  <!-- Subtext -->
+  <p *ngIf="subtext" class="text-xs text-slate-500 max-w-[300px] leading-relaxed">
+    {{ subtext }}
+  </p>
+</div>

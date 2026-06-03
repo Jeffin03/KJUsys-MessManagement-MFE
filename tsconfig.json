@@ -1,0 +1,96 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "paths": {
+      "@libs/alert": [
+        "dist/libs/alert"
+      ],
+      "@lib/test": [
+        "dist/lib/test"
+      ],
+      "@libs/dropdown-lib": [
+        "dist/libs/dropdown-lib"
+      ],
+      "@libs/http-common": [
+        "dist/libs/http-common"
+      ],
+      "@libs/left-menu-lib": [
+        "dist/libs/left-menu-lib"
+      ],
+      "@libs/menu-header-lib": [
+        "dist/libs/menu-header-lib"
+      ],
+      "@libs/multi-dropdown-lib": [
+        "dist/libs/multi-dropdown-lib"
+      ],
+      "@libs/shared-auth": [
+        "dist/libs/shared-auth"
+      ],
+      "@libs/pill-tabs": [
+        "dist/libs/pill-tabs"
+      ],
+      "@libs/shared-styles-lib": [
+        "dist/libs/shared-styles-lib"
+      ],
+      "@libs/table": [
+        "dist/libs/table"
+      ],
+      "@libs/test": [
+        "dist/libs/test"
+      ],
+      "left-menu-lib": [
+        "dist/left-menu-lib"
+      ],
+      "menu-header-lib": [
+        "dist/menu-header-lib"
+      ],
+      "@libs/date-picker": [
+        "dist/libs/date-picker"
+      ],
+      "shared-styles-lib": [
+        "dist/shared-styles-lib"
+      ],
+      "@libs/tabs": [
+        "dist/libs/tabs"
+      ],
+      "@libs/sub-tabs": [
+        "dist/libs/sub-tabs"
+      ],
+      "@libs/shared-ui": [
+        "dist/libs/shared-ui"
+      ],
+      "@libs/shared-toast": [
+        "dist/libs/shared-toast"
+      ]
+    },
+    "baseUrl": "./",
+    "rootDir": "./projects",
+    "outDir": "./dist/out-tsc",
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "incremental": true,
+    "sourceMap": true,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "useDefineForClassFields": false,
+    "lib": [
+      "ES2022",
+      "dom"
+    ]
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  }
+}

@@ -1,0 +1,73 @@
+.mini-upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-upload-container {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: white;
+  font-family: inherit;
+}
+
+.type-hint-text {
+  font-size: 11px;
+  color: #6b7280;
+  padding-left: 4px;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.choose-file-btn {
+  background-color: #f8f9fa;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.file-name-display {
+  flex-grow: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  overflow: hidden;
+}
+
+.file-name-text {
+  color: #1f2937;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+}
+
+.mini-upload-container:hover {
+  border-color: #d1d5db;
+}
+
+.mini-upload-container:hover .choose-file-btn {
+  background-color: #e5e7eb;
+}
+
+.error-text {
+  font-size: 11px;
+  color: #ef4444;
+  padding-left: 4px;
+  font-weight: 500;
+}
