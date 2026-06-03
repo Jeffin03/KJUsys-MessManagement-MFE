@@ -237,7 +237,7 @@ const envTs = `
 export const environment = {
     production: false,
     mfe: {
-        ${projectName}: 'http://localhost:${port}',
+        '${projectName}': 'http://localhost:${port}',
     },
     publicPath: 'http://localhost:${port}/', 
     baseUrl: 'http://172.21.14.247:8080/kjusys-api', 
@@ -280,7 +280,7 @@ export const environment = {
         core: 'http://localhost:4202',
         sim: 'http://localhost:4203',
         applicant: 'http://localhost:4204',
-        ${projectName}: 'http://localhost:${port}',
+        '${projectName}': 'http://localhost:${port}',
     },
     publicPath: 'http://localhost:4200/',
     baseUrl: 'http://172.21.14.247:8080/api/',
@@ -626,14 +626,60 @@ if (projectConfig) {
 
 console.log(`\nRegistering ${projectName} in Shell Webpack Configs...`);
 
+function findActiveRemotesBlock(content) {
+  const target = /^[ \t]*remotes:\s*\{/m;
+  const match = content.match(target);
+  if (!match) return null;
+
+  let startIndex = match.index;
+  const lineStart = content.lastIndexOf('\n', startIndex) + 1;
+  const line = content.substring(lineStart, startIndex);
+  if (line.trim().startsWith('//')) {
+    let searchStart = startIndex + match[0].length;
+    while (true) {
+      const nextMatch = content.slice(searchStart).match(target);
+      if (!nextMatch) return null;
+      startIndex = searchStart + nextMatch.index;
+      const nextLineStart = content.lastIndexOf('\n', startIndex) + 1;
+      const nextLine = content.substring(nextLineStart, startIndex);
+      if (!nextLine.trim().startsWith('//')) {
+        break;
+      }
+      searchStart = startIndex + nextMatch[0].length;
+    }
+  }
+
+  let braceCount = 1;
+  let index = startIndex + content.substring(startIndex).indexOf('{') + 1;
+  const startOfInside = index;
+
+  while (index < content.length && braceCount > 0) {
+    const char = content[index];
+    if (char === '{') {
+      braceCount++;
+    } else if (char === '}') {
+      braceCount--;
+    }
+    index++;
+  }
+
+  if (braceCount === 0) {
+    return {
+      start: startOfInside,
+      end: index - 1,
+      contentInside: content.substring(startOfInside, index - 1)
+    };
+  }
+  return null;
+}
+
 function updateShellWebpack(filePath, isProd, isDev = false) {
   if (!fs.existsSync(filePath)) return;
   let content = fs.readFileSync(filePath, 'utf8');
-  const remotesRegex = /remotes:\s*{([^}]+)}/;
-  const match = content.match(remotesRegex);
 
-  if (match) {
-    const currentRemotes = match[1];
+  const block = findActiveRemotesBlock(content);
+  if (block) {
+    const currentRemotes = block.contentInside;
     if (!currentRemotes.includes(projectName)) {
       let url;
       if (isProd) {
@@ -644,15 +690,27 @@ function updateShellWebpack(filePath, isProd, isDev = false) {
         url = `http://localhost:${port}/remoteEntry.js`;
       }
 
-      const updatedRemotes = currentRemotes.trimEnd() + `\n        ${projectName}: "${url}",\n      `;
-      content = content.replace(currentRemotes, updatedRemotes);
+      const suffix = currentRemotes.trim().length > 0 ? ',\n' : '';
+      const newEntry = `        "${projectName}": "${url}"`;
+
+      let updatedRemotes;
+      if (currentRemotes.trim().length === 0) {
+        updatedRemotes = `\n${newEntry}\n      `;
+      } else {
+        updatedRemotes = currentRemotes.trimEnd() + `,\n${newEntry},\n      `;
+      }
+
+      const before = content.substring(0, block.start);
+      const after = content.substring(block.end);
+      content = before + updatedRemotes + after;
+
       fs.writeFileSync(filePath, content);
       console.log(`Updated ${path.basename(filePath)}`);
     }
   }
 }
 
-updateShellWebpack(shellWebpackPath, false);
+// We only update dev and prod configs, as local webpack.config.js uses dynamic mf.manifest loading
 updateShellWebpack(shellWebpackProdPath, true);
 updateShellWebpack(shellWebpackDevPath, false, true);
 
