@@ -1,1 +1,16 @@
-{}
+{
+  "mess-management": {
+    "remoteEntry": "http://localhost:4201/remoteEntry.js",
+    "displayName": "MessManagement",
+    "routePath": "mess-management",
+    "subModule": [
+      {
+        "exposedModule": "./DashboardModule",
+        "displayName": "Dashboard",
+        "subPath": "mess-management/dashboard",
+        "ngModuleName": "DashboardModule",
+        "pinned": false
+      }
+    ]
+  }
+}

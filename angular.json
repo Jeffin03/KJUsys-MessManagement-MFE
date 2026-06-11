@@ -731,6 +731,178 @@
           }
         }
       }
+    },
+    "mess-management": {
+      "projectType": "application",
+      "root": "projects/mess-management",
+      "sourceRoot": "projects/mess-management/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-build-plus:browser",
+          "options": {
+            "outputPath": "dist/mess-management",
+            "index": "projects/mess-management/src/index.html",
+            "main": "projects/mess-management/src/main.ts",
+            "polyfills": [
+              "zone.js",
+              "projects/mess-management/src/polyfills.ts"
+            ],
+            "tsConfig": "projects/mess-management/tsconfig.app.json",
+            "assets": [
+              "projects/mess-management/src/favicon.ico",
+              "projects/mess-management/src/assets"
+            ],
+            "styles": [
+              "projects/mess-management/src/styles.css",
+              "node_modules/ngx-toastr/toastr.css",
+              "node_modules/ag-grid-community/styles/ag-grid.css",
+              "node_modules/ag-grid-community/styles/ag-theme-alpine.css"
+            ],
+            "scripts": [],
+            "extraWebpackConfig": "projects/mess-management/webpack.config.js",
+            "commonChunk": false
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "600kb",
+                  "maximumError": "2mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "20kb",
+                  "maximumError": "100kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/mess-management/src/environments/environment.ts",
+                  "with": "projects/mess-management/src/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all",
+              "extraWebpackConfig": "projects/mess-management/webpack.prod.config.js"
+            },
+            "demo": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/mess-management/src/environments/environment.ts",
+                  "with": "projects/mess-management/src/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all",
+              "extraWebpackConfig": "projects/mess-management/webpack.prod.config.js"
+            },
+            "local-server": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "4mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4mb",
+                  "maximumError": "8mb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/mess-management/src/environments/environment.ts",
+                  "with": "projects/mess-management/src/environments/environment.local-server.prod.ts"
+                }
+              ],
+              "outputHashing": "all",
+              "extraWebpackConfig": "projects/mess-management/webpack.config.js"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true,
+              "fileReplacements": [
+                {
+                  "replace": "projects/mess-management/src/environments/environment.ts",
+                  "with": "projects/mess-management/src/environments/environment.dev.ts"
+                }
+              ],
+              "extraWebpackConfig": "projects/mess-management/webpack.dev.config.js"
+            },
+            "local": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "ngx-build-plus:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "mess-management:build:production",
+              "extraWebpackConfig": "projects/mess-management/webpack.prod.config.js"
+            },
+            "development": {
+              "browserTarget": "mess-management:build:development"
+            },
+            "local": {
+              "browserTarget": "mess-management:build:local"
+            }
+          },
+          "defaultConfiguration": "local",
+          "options": {
+            "port": 4201,
+            "publicHost": "http://localhost:4201",
+            "extraWebpackConfig": "projects/mess-management/webpack.config.js"
+          }
+        },
+        "extract-i18n": {
+          "builder": "ngx-build-plus:extract-i18n",
+          "options": {
+            "browserTarget": "mess-management:build",
+            "extraWebpackConfig": "projects/mess-management/webpack.config.js"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "projects/mess-management/tsconfig.spec.json",
+            "assets": [
+              "projects/mess-management/src/favicon.ico",
+              "projects/mess-management/src/assets"
+            ],
+            "styles": [
+              "projects/mess-management/src/styles.css"
+            ],
+            "scripts": []
+          }
+        }
+      }
     }
   },
   "cli": {
