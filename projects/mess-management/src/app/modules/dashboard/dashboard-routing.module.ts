@@ -4,17 +4,17 @@ import { DashboardComponent } from './dashboard.component';
 
 
 
-const routes:Routes = [
+const routes: Routes = [
     {
-        path:'',
-        component:DashboardComponent,
-        data:{
-            breadcrumb:{
-                module:'KJUSYS',
+        path: '',
+        component: DashboardComponent,
+        data: {
+            breadcrumb: {
+                module: 'KJUSYS',
                 subModule: 'dashboard',
                 url: 'mess-management/dashboard'
             },
-            submenu:true,
+            submenu: true,
         }
     }
 ]
@@ -24,4 +24,4 @@ const routes:Routes = [
     imports: [RouterModule.forChild(routes)],
     exports: [RouterModule],
 })
-export class DashboardModuleRoutingModule {}
+export class DashboardModuleRoutingModule { }
