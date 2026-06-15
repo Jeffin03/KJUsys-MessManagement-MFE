@@ -1,11 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
 import { DashboardModuleRoutingModule } from './dashboard-routing.module';
 import { DashboardComponent } from './dashboard.component';
-import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
-import { TabsModule } from '@libs/tabs';
-
+import { SubTabsModule } from '@libs/sub-tabs';
 
 
 @NgModule({
@@ -15,8 +12,7 @@ import { TabsModule } from '@libs/tabs';
   imports: [
     CommonModule,
     DashboardModuleRoutingModule,
-    BreadcrumbsTitleComponent,
-    TabsModule
+    SubTabsModule
   ]
   
 })

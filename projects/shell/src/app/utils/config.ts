@@ -3,7 +3,8 @@ import { Manifest, RemoteConfig } from '@angular-architects/module-federation';
 export type CustomRemoteConfig = RemoteConfig & {
   displayName: string;
   routePath: string;
-  ngModuleName: string;
+  ngModuleName?: string;
+  componentName?: string;
   subModule: [
     {
       remoteEntry: string;
@@ -11,7 +12,8 @@ export type CustomRemoteConfig = RemoteConfig & {
       displayName: string;
       routePath: string;
       subPath: string;
-      ngModuleName: string;
+      ngModuleName?: string;
+      componentName?: string;
     }
   ];
 };

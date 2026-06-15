@@ -1,0 +1,395 @@
+<!-- Overlay -->
+<div *ngIf="isOpen" class="fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,.4);">
+
+    <!-- Conflict Popup -->
+    <div *ngIf="showConflictPopup" class="absolute z-[100] flex items-center justify-center inset-0">
+        <div
+            class="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] w-full max-w-sm mx-4 p-6 flex flex-col items-center gap-4">
+            <!-- Icon -->
+            <div class="w-12 h-12 rounded-full bg-[#FEE2E2] flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path
+                        d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                        stroke="#D92C2B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <!-- Title -->
+            <p class="text-sm font-bold text-[#111827] text-center">Time Conflict Detected</p>
+            <!-- Message -->
+            <p class="text-xs text-[#6B7280] text-center leading-5">{{ conflictMessage }}</p>
+            <!-- Buttons -->
+            <div class="flex flex-col gap-2 w-full">
+                <button (click)="viewConflict()"
+                    class="w-full py-2.5 rounded-xl border border-[#155DFC] text-white text-xs font-semibold bg-[#155DFC]/20">
+                    View conflict
+                </button>
+                <button (click)="dismissConflict()"
+                    class="w-full py-2.5 rounded-xl bg-[#155DFC] text-white text-xs font-semibold">
+                    Got it, fix the time
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Popup -->
+    <div *ngIf="showDeleteConfirmPopup" class="absolute z-[100] flex items-center justify-center inset-0">
+        <div
+            class="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] w-full max-w-sm mx-4 p-6 flex flex-col items-center gap-4">
+            <!-- Icon -->
+            <div class="w-12 h-12 rounded-full bg-[#FEE2E2] flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <polyline points="3 6 5 6 21 6" stroke="#D92C2B" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="#D92C2B" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M10 11v6m4-6v6" stroke="#D92C2B" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="#D92C2B" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <!-- Title -->
+            <p class="text-sm font-bold text-[#111827] text-center">Delete Meal Slot?</p>
+            <!-- Message -->
+            <p class="text-xs text-[#6B7280] text-center leading-5">
+                Are you sure you want to delete
+                <span class="font-semibold text-[#111827]">{{ pendingDeleteIndex !== null ?
+                    slots[pendingDeleteIndex].name : ''
+                    }}</span>?
+                This action cannot be undone.
+            </p>
+            <!-- Buttons -->
+            <div class="flex gap-3 w-full mt-1">
+                <button (click)="cancelDeleteSlot()"
+                    class="flex-1 py-2.5 rounded-xl border border-[#E5E7EB] text-[#374151] text-xs font-semibold bg-white">
+                    Cancel
+                </button>
+                <button (click)="confirmDeleteSlot()"
+                    class="flex-1 py-2.5 rounded-xl bg-[#D92C2B] text-white text-xs font-semibold">
+                    Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: outer clips corners, inner scrolls -->
+    <div
+        class="relative w-full max-w-2xl mx-4 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-h-[90vh] flex flex-col">
+        <div (click)="closeAllDropdowns()" class="overflow-y-auto bg-white flex flex-col">
+
+            <!-- Header -->
+            <div class="px-7 pt-5 pb-4 bg-[#F5F5F7] border-b border-[#E5E7EB]">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold text-[#111827]">Configure Meal Slots</h2>
+                        <p class="text-xs font-medium text-[#86868B] mt-0.5">Add, Edit or Remove meal slots and their
+                            time windows
+                        </p>
+                    </div>
+                    <button (click)="close()"
+                        class="text-[#9CA3AF] text-xl leading-none bg-none border-none cursor-pointer p-1">✕</button>
+                </div>
+            </div>
+
+            <!-- Current Meal Slots -->
+            <div class="px-7 py-5 border-b border-[#E5E7EB]">
+                <h3 class="text-sm font-semibold text-[#4A5565] mb-3">Current Meal Slots</h3>
+                <div class="flex flex-col gap-3">
+                    <div *ngFor="let slot of slots; let i = index"
+                        [attr.data-slot-index]="i"
+                        class="flex items-center justify-between px-4 py-3 rounded-xl border border-[#E5E7EB] bg-white">
+                        <div class="flex items-center gap-3">
+                            <img *ngIf="slot.icon==='default'" src="assets/fi-rr-utensils.svg" class="w-5 h-5" />
+                            <!-- Breakfast / Brunch: blue sun inline SVG -->
+                            <svg *ngIf="slot.icon==='breakfast' || slot.icon==='brunch'" width="20" height="20"
+                                viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M26.5269 12.7757H21.8213C21.7314 12.1358 21.5653 11.5091 21.3265 10.9093L25.3944 8.5353C25.5303 8.46163 25.6502 8.36122 25.7469 8.24002C25.8436 8.11883 25.9151 7.97932 25.9573 7.82976C25.9995 7.6802 26.0114 7.52364 25.9924 7.36936C25.9733 7.21507 25.9237 7.06621 25.8465 6.93159C25.7693 6.79697 25.666 6.67934 25.5428 6.58566C25.4195 6.49198 25.2789 6.42417 25.1292 6.38624C24.9795 6.34831 24.8237 6.34104 24.6711 6.36485C24.5186 6.38867 24.3723 6.44308 24.241 6.52488L20.1697 8.90231C19.7805 8.40722 19.3358 7.95903 18.8445 7.56668L21.2043 3.46569C21.3464 3.19978 21.38 2.8886 21.2981 2.59812C21.2162 2.30763 21.0252 2.06069 20.7656 1.90964C20.5059 1.75859 20.1981 1.71531 19.9073 1.78898C19.6165 1.86265 19.3656 2.04747 19.2078 2.30426L16.8469 6.39828C16.2513 6.15755 15.629 5.99025 14.9935 5.90003V1.16142C14.9935 0.853395 14.872 0.557982 14.6557 0.340173C14.4394 0.122364 14.146 0 13.8401 0C13.5343 0 13.2409 0.122364 13.0246 0.340173C12.8083 0.557982 12.6868 0.853395 12.6868 1.16142V5.90003C12.0513 5.99025 11.429 6.15755 10.8334 6.39828L8.47594 2.30194C8.31817 2.04515 8.0673 1.86033 7.77649 1.78666C7.48569 1.71299 7.17783 1.75627 6.91818 1.90732C6.65853 2.05837 6.46751 2.30531 6.38562 2.5958C6.30372 2.88628 6.3374 3.19746 6.4795 3.46337L8.83924 7.56668C8.34793 7.95903 7.90325 8.40722 7.51405 8.90231L3.44274 6.52488C3.31144 6.44308 3.16518 6.38867 3.01261 6.36485C2.86005 6.34104 2.70429 6.34831 2.55456 6.38624C2.40484 6.42417 2.26421 6.49198 2.14099 6.58566C2.01778 6.67934 1.9145 6.79697 1.83727 6.93159C1.76004 7.06621 1.71043 7.21507 1.6914 7.36936C1.67236 7.52364 1.68428 7.6802 1.72644 7.82976C1.76861 7.97932 1.84016 8.11883 1.93686 8.24002C2.03356 8.36122 2.15344 8.46163 2.28939 8.5353L6.35378 10.9093C6.11498 11.5091 5.94885 12.1358 5.859 12.7757H1.15335C0.847459 12.7757 0.554101 12.898 0.337807 13.1158C0.121513 13.3336 0 13.6291 0 13.9371C0 14.2451 0.121513 14.5405 0.337807 14.7583C0.554101 14.9761 0.847459 15.0985 1.15335 15.0985H5.859C5.94885 15.7384 6.11498 16.3651 6.35378 16.9649L2.28593 19.3389C2.14998 19.4125 2.0301 19.513 1.9334 19.6341C1.8367 19.7553 1.76515 19.8948 1.72298 20.0444C1.68082 20.194 1.6689 20.3505 1.68794 20.5048C1.70697 20.6591 1.75658 20.808 1.83381 20.9426C1.91104 21.0772 2.01432 21.1948 2.13753 21.2885C2.26075 21.3822 2.40138 21.45 2.5511 21.4879C2.70083 21.5259 2.85659 21.5331 3.00915 21.5093C3.16172 21.4855 3.30798 21.4311 3.43928 21.3493L7.51059 18.9719C7.89979 19.467 8.34447 19.9151 8.83578 20.3075L6.4795 24.4085C6.3374 24.6744 6.30372 24.9856 6.38562 25.2761C6.46751 25.5665 6.65853 25.8135 6.91818 25.9645C7.17783 26.1156 7.48569 26.1589 7.77649 26.0852C8.0673 26.0115 8.31817 25.8267 8.47594 25.5699L10.8334 21.4736C11.429 21.7146 12.0513 21.8827 12.6868 21.9741V26.7127C12.6868 27.0208 12.8083 27.3162 13.0246 27.534C13.2409 27.7518 13.5343 27.8742 13.8401 27.8742C14.146 27.8742 14.4394 27.7518 14.6557 27.534C14.872 27.3162 14.9935 27.0208 14.9935 26.7127V21.9741C15.6289 21.8834 16.2512 21.7161 16.8469 21.4759L19.2044 25.5722C19.3621 25.829 19.613 26.0138 19.9038 26.0875C20.1946 26.1612 20.5025 26.1179 20.7621 25.9669C21.0218 25.8158 21.2128 25.5689 21.2947 25.2784C21.3766 24.9879 21.3429 24.6767 21.2008 24.4108L18.8411 20.3098C19.3324 19.9175 19.777 19.4693 20.1662 18.9742L24.2376 21.3516C24.3688 21.4334 24.5151 21.4878 24.6677 21.5116C24.8202 21.5355 24.976 21.5282 25.1257 21.4903C25.2755 21.4523 25.4161 21.3845 25.5393 21.2908C25.6625 21.1972 25.7658 21.0795 25.843 20.9449C25.9203 20.8103 25.9699 20.6614 25.9889 20.5071C26.0079 20.3529 25.996 20.1963 25.9539 20.0467C25.9117 19.8972 25.8401 19.7577 25.7434 19.6365C25.6467 19.5153 25.5269 19.4149 25.3909 19.3412L21.3231 16.9672C21.5632 16.3668 21.7305 15.7393 21.8213 15.0985H26.5269C26.8328 15.0985 27.1262 14.9761 27.3425 14.7583C27.5588 14.5405 27.6803 14.2451 27.6803 13.9371C27.6803 13.6291 27.5588 13.3336 27.3425 13.1158C27.1262 12.898 26.8328 12.7757 26.5269 12.7757ZM13.8401 19.7442C6.21884 19.4003 6.22115 8.3727 13.8401 8.12997C21.4615 8.37387 21.4591 19.5015 13.8401 19.7442Z"
+                                    fill="#155DFC" />
+                            </svg>
+                            <img *ngIf="slot.icon==='lunch'" src="assets/Vector (1).svg" class="w-5 h-5" />
+                            <img *ngIf="slot.icon==='snacks'" src="assets/Cup of Tea.svg" class="w-5 h-5" />
+                            <img *ngIf="slot.icon==='dinner'" src="assets/fi-rs-moon.svg" class="w-5 h-5" />
+                            <div>
+                                <p class="text-sm font-bold text-[#111827]">{{ slot.name }}</p>
+                                <p class="text-xs text-[#6B7280]">{{ slot.timeRange }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                                [ngClass]="getStatusClass(slot.status)">
+                                <span *ngIf="slot.status === 'Live'"
+                                    class="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle"
+                                    style="background-color:#1D9F00;"></span>
+                                {{ slot.status }}
+                            </span>
+                            <button
+                                class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#E5E7EB] text-[#4A5565] bg-[#FAFAFB]">
+                                <img src="assets/edit_button.svg" class="w-4 h-4" />
+                                Edit
+                            </button>
+                            <button (click)="requestDeleteSlot(i)"
+                                class="flex items-center justify-center w-8 h-8 rounded-lg">
+                                <img src="assets/trash-2.png" class="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add New Meal Slots -->
+            <div class="px-7 py-5 border-b border-[#F5F5F7]">
+                <h3 class="text-sm font-semibold text-[#4A5565] mb-4">Add New Meal Slots</h3>
+                <div (click)="closeAllDropdowns()" class="rounded-xl p-5 bg-[#F5F5F7]">
+
+                    <!-- Row 1 -->
+                    <div class="grid grid-cols-2 gap-6">
+
+                        <!-- Meal Name -->
+                        <div>
+                            <label class="block text-[10px] font-medium text-[#1D1D1F] mb-1.5">Meal Name</label>
+                            <input [(ngModel)]="newSlot.name" placeholder="e.g. Breakfast"
+                                class="w-full px-4 h-11 rounded-xl border border-gray-300 bg-white text-[#1D1D1F] outline-none text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                (blur)="nameInvalid = !newSlot.name || newSlot.name.trim() === ''">
+                            <p *ngIf="nameInvalid" class="mt-1 text-[10px] text-[#C70036]">Meal name is required</p>
+                        </div>
+
+                        <!-- Type / Icon -->
+                        <div class="relative">
+                            <label class="block text-[10px] font-medium text-[#1D1D1F] mb-1.5">Type / Icon</label>
+                            <div (click)="toggleIconDropdown($event); $event.stopPropagation()"
+                                class="w-full px-4 h-11 rounded-xl border border-gray-300 bg-white flex items-center justify-between cursor-pointer">
+                                <div class="flex items-center gap-3">
+                                    <img *ngIf="newSlot.icon==='default'" src="assets/fi-rr-utensils.svg"
+                                        class="w-[18px] h-[18px]" />
+                                    <!-- Breakfast: blue sun inline SVG -->
+                                    <svg *ngIf="newSlot.icon==='breakfast'" width="18" height="18" viewBox="0 0 28 28"
+                                        fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M26.5269 12.7757H21.8213C21.7314 12.1358 21.5653 11.5091 21.3265 10.9093L25.3944 8.5353C25.5303 8.46163 25.6502 8.36122 25.7469 8.24002C25.8436 8.11883 25.9151 7.97932 25.9573 7.82976C25.9995 7.6802 26.0114 7.52364 25.9924 7.36936C25.9733 7.21507 25.9237 7.06621 25.8465 6.93159C25.7693 6.79697 25.666 6.67934 25.5428 6.58566C25.4195 6.49198 25.2789 6.42417 25.1292 6.38624C24.9795 6.34831 24.8237 6.34104 24.6711 6.36485C24.5186 6.38867 24.3723 6.44308 24.241 6.52488L20.1697 8.90231C19.7805 8.40722 19.3358 7.95903 18.8445 7.56668L21.2043 3.46569C21.3464 3.19978 21.38 2.8886 21.2981 2.59812C21.2162 2.30763 21.0252 2.06069 20.7656 1.90964C20.5059 1.75859 20.1981 1.71531 19.9073 1.78898C19.6165 1.86265 19.3656 2.04747 19.2078 2.30426L16.8469 6.39828C16.2513 6.15755 15.629 5.99025 14.9935 5.90003V1.16142C14.9935 0.853395 14.872 0.557982 14.6557 0.340173C14.4394 0.122364 14.146 0 13.8401 0C13.5343 0 13.2409 0.122364 13.0246 0.340173C12.8083 0.557982 12.6868 0.853395 12.6868 1.16142V5.90003C12.0513 5.99025 11.429 6.15755 10.8334 6.39828L8.47594 2.30194C8.31817 2.04515 8.0673 1.86033 7.77649 1.78666C7.48569 1.71299 7.17783 1.75627 6.91818 1.90732C6.65853 2.05837 6.46751 2.30531 6.38562 2.5958C6.30372 2.88628 6.3374 3.19746 6.4795 3.46337L8.83924 7.56668C8.34793 7.95903 7.90325 8.40722 7.51405 8.90231L3.44274 6.52488C3.31144 6.44308 3.16518 6.38867 3.01261 6.36485C2.86005 6.34104 2.70429 6.34831 2.55456 6.38624C2.40484 6.42417 2.26421 6.49198 2.14099 6.58566C2.01778 6.67934 1.9145 6.79697 1.83727 6.93159C1.76004 7.06621 1.71043 7.21507 1.6914 7.36936C1.67236 7.52364 1.68428 7.6802 1.72644 7.82976C1.76861 7.97932 1.84016 8.11883 1.93686 8.24002C2.03356 8.36122 2.15344 8.46163 2.28939 8.5353L6.35378 10.9093C6.11498 11.5091 5.94885 12.1358 5.859 12.7757H1.15335C0.847459 12.7757 0.554101 12.898 0.337807 13.1158C0.121513 13.3336 0 13.6291 0 13.9371C0 14.2451 0.121513 14.5405 0.337807 14.7583C0.554101 14.9761 0.847459 15.0985 1.15335 15.0985H5.859C5.94885 15.7384 6.11498 16.3651 6.35378 16.9649L2.28593 19.3389C2.14998 19.4125 2.0301 19.513 1.9334 19.6341C1.8367 19.7553 1.76515 19.8948 1.72298 20.0444C1.68082 20.194 1.6689 20.3505 1.68794 20.5048C1.70697 20.6591 1.75658 20.808 1.83381 20.9426C1.91104 21.0772 2.01432 21.1948 2.13753 21.2885C2.26075 21.3822 2.40138 21.45 2.5511 21.4879C2.70083 21.5259 2.85659 21.5331 3.00915 21.5093C3.16172 21.4855 3.30798 21.4311 3.43928 21.3493L7.51059 18.9719C7.89979 19.467 8.34447 19.9151 8.83578 20.3075L6.4795 24.4085C6.3374 24.6744 6.30372 24.9856 6.38562 25.2761C6.46751 25.5665 6.65853 25.8135 6.91818 25.9645C7.17783 26.1156 7.48569 26.1589 7.77649 26.0852C8.0673 26.0115 8.31817 25.8267 8.47594 25.5699L10.8334 21.4736C11.429 21.7146 12.0513 21.8827 12.6868 21.9741V26.7127C12.6868 27.0208 12.8083 27.3162 13.0246 27.534C13.2409 27.7518 13.5343 27.8742 13.8401 27.8742C14.146 27.8742 14.4394 27.7518 14.6557 27.534C14.872 27.3162 14.9935 27.0208 14.9935 26.7127V21.9741C15.6289 21.8834 16.2512 21.7161 16.8469 21.4759L19.2044 25.5722C19.3621 25.829 19.613 26.0138 19.9038 26.0875C20.1946 26.1612 20.5025 26.1179 20.7621 25.9669C21.0218 25.8158 21.2128 25.5689 21.2947 25.2784C21.3766 24.9879 21.3429 24.6767 21.2008 24.4108L18.8411 20.3098C19.3324 19.9175 19.777 19.4693 20.1662 18.9742L24.2376 21.3516C24.3688 21.4334 24.5151 21.4878 24.6677 21.5116C24.8202 21.5355 24.976 21.5282 25.1257 21.4903C25.2755 21.4523 25.4161 21.3845 25.5393 21.2908C25.6625 21.1972 25.7658 21.0795 25.843 20.9449C25.9203 20.8103 25.9699 20.6614 25.9889 20.5071C26.0079 20.3529 25.996 20.1963 25.9539 20.0467C25.9117 19.8972 25.8401 19.7577 25.7434 19.6365C25.6467 19.5153 25.5269 19.4149 25.3909 19.3412L21.3231 16.9672C21.5632 16.3668 21.7305 15.7393 21.8213 15.0985H26.5269C26.8328 15.0985 27.1262 14.9761 27.3425 14.7583C27.5588 14.5405 27.6803 14.2451 27.6803 13.9371C27.6803 13.6291 27.5588 13.3336 27.3425 13.1158C27.1262 12.898 26.8328 12.7757 26.5269 12.7757ZM13.8401 19.7442C6.21884 19.4003 6.22115 8.3727 13.8401 8.12997C21.4615 8.37387 21.4591 19.5015 13.8401 19.7442Z"
+                                            fill="#155DFC" />
+                                    </svg>
+                                    <img *ngIf="newSlot.icon==='lunch'" src="assets/Vector (1).svg"
+                                        class="w-[18px] h-[18px]" />
+                                    <img *ngIf="newSlot.icon==='snacks'" src="assets/Cup of Tea.svg"
+                                        class="w-[18px] h-[18px]" />
+                                    <img *ngIf="newSlot.icon==='dinner'" src="assets/fi-rs-moon.svg"
+                                        class="w-[18px] h-[18px]" />
+                                    <span class="text-xs" [style.color]="newSlot.icon ? '#414D63' : '#86868B'">
+                                        {{ !newSlot.icon ? 'Select an Icon Type' : newSlot.icon === 'default' ?
+                                        'Default' : newSlot.icon ===
+                                        'breakfast' ? 'Breakfast / Brunch' : newSlot.icon === 'lunch' ? 'Lunch' :
+                                        newSlot.icon === 'snacks'
+                                        ? 'Snacks' : 'Dinner / Supper' }}
+                                    </span>
+                                </div>
+                                <img src="assets/Down.svg" class="w-4 h-4" />
+                            </div>
+                            <div *ngIf="showIconDropdown"
+                                class="absolute z-50 w-full rounded-2xl overflow-hidden bg-white border border-[#E5E7EB] shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
+                                <div (click)="newSlot.icon='default';showIconDropdown=false"
+                                    class="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50">
+                                    <img src="assets/fi-rr-utensils.svg" class="w-[18px] h-[18px]" /><span
+                                        class="text-xs text-[#414D63]">Default</span>
+                                </div>
+                                <div (click)="newSlot.icon='breakfast';showIconDropdown=false"
+                                    class="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50">
+                                    <!-- Blue sun inline SVG in dropdown -->
+                                    <svg width="18" height="18" viewBox="0 0 28 28" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M26.5269 12.7757H21.8213C21.7314 12.1358 21.5653 11.5091 21.3265 10.9093L25.3944 8.5353C25.5303 8.46163 25.6502 8.36122 25.7469 8.24002C25.8436 8.11883 25.9151 7.97932 25.9573 7.82976C25.9995 7.6802 26.0114 7.52364 25.9924 7.36936C25.9733 7.21507 25.9237 7.06621 25.8465 6.93159C25.7693 6.79697 25.666 6.67934 25.5428 6.58566C25.4195 6.49198 25.2789 6.42417 25.1292 6.38624C24.9795 6.34831 24.8237 6.34104 24.6711 6.36485C24.5186 6.38867 24.3723 6.44308 24.241 6.52488L20.1697 8.90231C19.7805 8.40722 19.3358 7.95903 18.8445 7.56668L21.2043 3.46569C21.3464 3.19978 21.38 2.8886 21.2981 2.59812C21.2162 2.30763 21.0252 2.06069 20.7656 1.90964C20.5059 1.75859 20.1981 1.71531 19.9073 1.78898C19.6165 1.86265 19.3656 2.04747 19.2078 2.30426L16.8469 6.39828C16.2513 6.15755 15.629 5.99025 14.9935 5.90003V1.16142C14.9935 0.853395 14.872 0.557982 14.6557 0.340173C14.4394 0.122364 14.146 0 13.8401 0C13.5343 0 13.2409 0.122364 13.0246 0.340173C12.8083 0.557982 12.6868 0.853395 12.6868 1.16142V5.90003C12.0513 5.99025 11.429 6.15755 10.8334 6.39828L8.47594 2.30194C8.31817 2.04515 8.0673 1.86033 7.77649 1.78666C7.48569 1.71299 7.17783 1.75627 6.91818 1.90732C6.65853 2.05837 6.46751 2.30531 6.38562 2.5958C6.30372 2.88628 6.3374 3.19746 6.4795 3.46337L8.83924 7.56668C8.34793 7.95903 7.90325 8.40722 7.51405 8.90231L3.44274 6.52488C3.31144 6.44308 3.16518 6.38867 3.01261 6.36485C2.86005 6.34104 2.70429 6.34831 2.55456 6.38624C2.40484 6.42417 2.26421 6.49198 2.14099 6.58566C2.01778 6.67934 1.9145 6.79697 1.83727 6.93159C1.76004 7.06621 1.71043 7.21507 1.6914 7.36936C1.67236 7.52364 1.68428 7.6802 1.72644 7.82976C1.76861 7.97932 1.84016 8.11883 1.93686 8.24002C2.03356 8.36122 2.15344 8.46163 2.28939 8.5353L6.35378 10.9093C6.11498 11.5091 5.94885 12.1358 5.859 12.7757H1.15335C0.847459 12.7757 0.554101 12.898 0.337807 13.1158C0.121513 13.3336 0 13.6291 0 13.9371C0 14.2451 0.121513 14.5405 0.337807 14.7583C0.554101 14.9761 0.847459 15.0985 1.15335 15.0985H5.859C5.94885 15.7384 6.11498 16.3651 6.35378 16.9649L2.28593 19.3389C2.14998 19.4125 2.0301 19.513 1.9334 19.6341C1.8367 19.7553 1.76515 19.8948 1.72298 20.0444C1.68082 20.194 1.6689 20.3505 1.68794 20.5048C1.70697 20.6591 1.75658 20.808 1.83381 20.9426C1.91104 21.0772 2.01432 21.1948 2.13753 21.2885C2.26075 21.3822 2.40138 21.45 2.5511 21.4879C2.70083 21.5259 2.85659 21.5331 3.00915 21.5093C3.16172 21.4855 3.30798 21.4311 3.43928 21.3493L7.51059 18.9719C7.89979 19.467 8.34447 19.9151 8.83578 20.3075L6.4795 24.4085C6.3374 24.6744 6.30372 24.9856 6.38562 25.2761C6.46751 25.5665 6.65853 25.8135 6.91818 25.9645C7.17783 26.1156 7.48569 26.1589 7.77649 26.0852C8.0673 26.0115 8.31817 25.8267 8.47594 25.5699L10.8334 21.4736C11.429 21.7146 12.0513 21.8827 12.6868 21.9741V26.7127C12.6868 27.0208 12.8083 27.3162 13.0246 27.534C13.2409 27.7518 13.5343 27.8742 13.8401 27.8742C14.146 27.8742 14.4394 27.7518 14.6557 27.534C14.872 27.3162 14.9935 27.0208 14.9935 26.7127V21.9741C15.6289 21.8834 16.2512 21.7161 16.8469 21.4759L19.2044 25.5722C19.3621 25.829 19.613 26.0138 19.9038 26.0875C20.1946 26.1612 20.5025 26.1179 20.7621 25.9669C21.0218 25.8158 21.2128 25.5689 21.2947 25.2784C21.3766 24.9879 21.3429 24.6767 21.2008 24.4108L18.8411 20.3098C19.3324 19.9175 19.777 19.4693 20.1662 18.9742L24.2376 21.3516C24.3688 21.4334 24.5151 21.4878 24.6677 21.5116C24.8202 21.5355 24.976 21.5282 25.1257 21.4903C25.2755 21.4523 25.4161 21.3845 25.5393 21.2908C25.6625 21.1972 25.7658 21.0795 25.843 20.9449C25.9203 20.8103 25.9699 20.6614 25.9889 20.5071C26.0079 20.3529 25.996 20.1963 25.9539 20.0467C25.9117 19.8972 25.8401 19.7577 25.7434 19.6365C25.6467 19.5153 25.5269 19.4149 25.3909 19.3412L21.3231 16.9672C21.5632 16.3668 21.7305 15.7393 21.8213 15.0985H26.5269C26.8328 15.0985 27.1262 14.9761 27.3425 14.7583C27.5588 14.5405 27.6803 14.2451 27.6803 13.9371C27.6803 13.6291 27.5588 13.3336 27.3425 13.1158C27.1262 12.898 26.8328 12.7757 26.5269 12.7757ZM13.8401 19.7442C6.21884 19.4003 6.22115 8.3727 13.8401 8.12997C21.4615 8.37387 21.4591 19.5015 13.8401 19.7442Z"
+                                            fill="#155DFC" />
+                                    </svg>
+                                    <span class="text-xs text-[#414D63]">Breakfast / Brunch</span>
+                                </div>
+                                <div (click)="newSlot.icon='lunch';showIconDropdown=false"
+                                    class="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50">
+                                    <img src="assets/Vector (1).svg" class="w-[18px] h-[18px]" /><span
+                                        class="text-xs text-[#414D63]">Lunch</span>
+                                </div>
+                                <div (click)="newSlot.icon='snacks';showIconDropdown=false"
+                                    class="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50">
+                                    <img src="assets/Cup of Tea.svg" class="w-[18px] h-[18px]" /><span
+                                        class="text-xs text-[#414D63]">Snacks</span>
+                                </div>
+                                <div (click)="newSlot.icon='dinner';showIconDropdown=false"
+                                    class="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50">
+                                    <img src="assets/fi-rs-moon.svg" class="w-[18px] h-[18px]" /><span
+                                        class="text-xs text-[#414D63]">Dinner / Supper</span>
+                                </div>
+                            </div>
+                            <p *ngIf="iconInvalid" class="mt-1 text-[10px] text-[#C70036]">Please select an icon type</p>
+                        </div>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="grid grid-cols-3 gap-6 mt-8">
+
+                        <!-- Start Time -->
+                        <div class="relative">
+                            <label class="block text-[10px] font-medium text-[#374151] mb-1.5">Start Time</label>
+                            <div (click)="toggleStartPicker($event); $event.stopPropagation()"
+                                class="w-full px-4 h-11 rounded-xl border border-gray-300 bg-white flex items-center justify-between cursor-pointer">
+                                <span class="text-xs" [style.color]="startTimeSet ? '#111827' : '#9CA3AF'">
+                                    {{ startTimeSet ? formatTime(newSlot.startHour,newSlot.startMin) : '--:--' }}
+                                </span>
+                                <img src="assets/time.svg" class="w-4 h-4" />
+                            </div>
+                            <div *ngIf="showStartPicker" (click)="$event.stopPropagation()"
+                                class="absolute z-[9999] rounded-2xl bg-white border border-[#F3F4F6] shadow-[0_10px_30px_rgba(0,0,0,0.12)] p-[18px]"
+                                style="top:calc(100% + 1px);left:0;width:220px;">
+                                <p class="text-base font-bold text-[#111827] text-center">Select a time</p>
+                                <div class="border-t border-[#E5E7EB] my-3.5"></div>
+                                <div class="flex justify-center gap-8">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <span class="text-sm text-[#4B5563]">hour</span>
+                                        <button (click)="incrementHour('start')"
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] bg-white">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="m6 15 6-6 6 6" stroke="#4B5563" stroke-width="1.8"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] text-base font-semibold text-[#111827]">
+                                            {{ newSlot.startHour | number:'2.0' }}</div>
+                                        <button (click)="decrementHour('start')"
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] bg-white">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="m6 9 6 6 6-6" stroke="#4B5563" stroke-width="1.8"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-2">
+                                        <span class="text-sm text-[#4B5563]">min</span>
+                                        <button (click)="incrementMin('start')"
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] bg-white">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="m6 15 6-6 6 6" stroke="#4B5563" stroke-width="1.8"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] text-base font-semibold text-[#111827]">
+                                            {{ newSlot.startMin | number:'2.0' }}</div>
+                                        <button (click)="decrementMin('start')"
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] bg-white">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="m6 9 6 6 6-6" stroke="#4B5563" stroke-width="1.8"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p *ngIf="startTimeInvalid" class="mt-1 text-[10px] text-[#C70036]">Please select a start time</p>
+                        </div>
+
+                        <!-- End Time -->
+                        <div class="relative">
+                            <label class="block text-[10px] font-medium text-[#374151] mb-1.5">End Time</label>
+                            <div (click)="toggleEndPicker($event); $event.stopPropagation()"
+                                class="w-full px-4 h-11 rounded-xl border border-gray-300 bg-white flex items-center justify-between cursor-pointer">
+                                <span class="text-xs" [style.color]="endTimeSet ? '#111827' : '#9CA3AF'">
+                                    {{ endTimeSet ? formatTime(newSlot.endHour,newSlot.endMin) : '--:--' }}
+                                </span>
+                                <img src="assets/time.svg" class="w-4 h-4" />
+                            </div>
+                            <div *ngIf="showEndPicker" (click)="$event.stopPropagation()"
+                                class="absolute z-[9999] rounded-2xl bg-white border border-[#F3F4F6] shadow-[0_10px_30px_rgba(0,0,0,0.12)] p-[18px]"
+                                style="top:calc(100% + 1px);left:0;width:220px;">
+                                <p class="text-base font-bold text-[#111827] text-center">Select a time</p>
+                                <div class="border-t border-[#E5E7EB] my-3.5"></div>
+                                <div class="flex justify-center gap-8">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <span class="text-sm text-[#4B5563]">hour</span>
+                                        <button (click)="incrementHour('end')"
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] bg-white">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="m6 15 6-6 6 6" stroke="#4B5563" stroke-width="1.8"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] text-base font-semibold text-[#111827]">
+                                            {{ newSlot.endHour | number:'2.0' }}</div>
+                                        <button (click)="decrementHour('end')"
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] bg-white">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="m6 9 6 6 6-6" stroke="#4B5563" stroke-width="1.8"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-2">
+                                        <span class="text-sm text-[#4B5563]">min</span>
+                                        <button (click)="incrementMin('end')"
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] bg-white">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="m6 15 6-6 6 6" stroke="#4B5563" stroke-width="1.8"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] text-base font-semibold text-[#111827]">
+                                            {{ newSlot.endMin | number:'2.0' }}</div>
+                                        <button (click)="decrementMin('end')"
+                                            class="w-10 h-10 rounded-xl flex items-center justify-center border border-[#E5E7EB] bg-white">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="m6 9 6 6 6-6" stroke="#4B5563" stroke-width="1.8"
+                                                    stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p *ngIf="endTimeInvalid" class="mt-1 text-[10px] text-[#C70036]">Please select an end time</p>
+                            <p *ngIf="timeInvalid" class="mt-1 text-[10px] text-[#C70036]">End time must be after start time</p>
+                        </div>
+
+                        <!-- Status dropdown -->
+                        <div class="relative">
+                            <label class="block text-[10px] font-medium text-[#1D1D1F] mb-1.5">Status</label>
+                            <div (click)="toggleStatusDropdown($event); $event.stopPropagation()"
+                                class="w-full px-4 h-11 rounded-xl border border-gray-300 bg-white flex items-center justify-between cursor-pointer">
+                                <span class="text-xs" [style.color]="newSlot.status ? '#414D63' : '#86868B'">
+                                    {{ newSlot.status || 'Select a status' }}
+                                </span>
+                                <img src="assets/Down.svg" class="w-4 h-4" />
+                            </div>
+                            <div *ngIf="showStatusDropdown"
+                                class="absolute z-50 w-full rounded-2xl overflow-hidden bg-white border border-[#E5E7EB] shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
+                                <div (click)="newSlot.status='Active'; showStatusDropdown=false"
+                                    class="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-xs text-[#414D63]">Active
+                                </div>
+                                <div (click)="newSlot.status='Inactive'; showStatusDropdown=false"
+                                    class="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-xs text-[#414D63]">Inactive
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Slot -->
+                    <div class="flex justify-end mt-24">
+                        <button (click)="addSlot()"
+                            class="px-6 py-3 rounded-xl border border-[#2563EB] bg-[#EEF4FF] text-[#2563EB] text-sm font-normal transition-all">
+                            + Add Slot
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-between px-7 py-5 border-t border-[#E5E7EB]">
+                <button (click)="close()"
+                    class="px-6 py-2.5 rounded-xl text-xs font-semibold border border-gray-300 bg-white text-[#374151]">Cancel</button>
+                <button (click)="saveConfiguration()"
+                    class="px-6 py-2.5 rounded-xl text-xs font-semibold bg-[#2563EB] text-white shadow-[0_4px_12px_rgba(37,99,235,0.25)]">Save
+                    Configuration</button>
+            </div>
+
+        </div>
+    </div>
+</div>

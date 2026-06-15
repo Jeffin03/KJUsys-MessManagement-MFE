@@ -1,0 +1,12 @@
+<svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M8.75 13.75C8.75 11.393 8.75 10.2145 9.48223 9.48223C10.2145 8.75 11.393 8.75 13.75 8.75H16.25C18.607 8.75 19.7855 8.75 20.5178 9.48223C21.25 10.2145 21.25 11.393 21.25 13.75V16.25C21.25 18.607 21.25 19.7855 20.5178 20.5178C19.7855 21.25 18.607 21.25 16.25 21.25H13.75C11.393 21.25 10.2145 21.25 9.48223 20.5178C8.75 19.7855 8.75 18.607 8.75 16.25V13.75Z" stroke="#155DFC" stroke-width="2"/>
+<rect x="12.5" y="12.5" width="5" height="5" rx="1" fill="#155DFC"/>
+<path d="M12.5 8.75V5" stroke="#155DFC" stroke-width="2" stroke-linecap="round"/>
+<path d="M17.5 8.75V5" stroke="#155DFC" stroke-width="2" stroke-linecap="round"/>
+<path d="M21.25 12.5L25 12.5" stroke="#155DFC" stroke-width="2" stroke-linecap="round"/>
+<path d="M21.25 17.5L25 17.5" stroke="#155DFC" stroke-width="2" stroke-linecap="round"/>
+<path d="M12.5 25V21.25" stroke="#155DFC" stroke-width="2" stroke-linecap="round"/>
+<path d="M17.5 25V21.25" stroke="#155DFC" stroke-width="2" stroke-linecap="round"/>
+<path d="M5 12.5L8.75 12.5" stroke="#155DFC" stroke-width="2" stroke-linecap="round"/>
+<path d="M5 17.5L8.75 17.5" stroke="#155DFC" stroke-width="2" stroke-linecap="round"/>
+</svg>

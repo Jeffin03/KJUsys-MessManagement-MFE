@@ -1,0 +1,13 @@
+<div class="flex gap-1 mb-6 border-b border-[#E5E7EB]">
+    <button *ngFor="let tab of tabs" (click)="setActive(tab)"
+        class="px-6 py-0 rounded-t-lg text-left transition-all duration-150 min-w-[120px] h-[67px] flex flex-col justify-center cursor-pointer"
+        [ngClass]="activeTab === tab.id ? 'bg-[#005A9A]' : 'bg-transparent hover'">
+        <div class="text-sm font-semibold leading-tight" [ngClass]="activeTab === tab.id ? 'text-white' : 'text-black'">
+            {{ tab.label }}
+        </div>
+        <div class="text-[10px] font-normal mt-0.5 leading-tight"
+            [ngClass]="activeTab === tab.id ? 'text-[#C7C7C7]' : 'text-[#747474]'">
+            {{ tab.sub }}
+        </div>
+    </button>
+</div>

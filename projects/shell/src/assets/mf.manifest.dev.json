@@ -5,10 +5,17 @@
     "routePath": "mess-management",
     "subModule": [
       {
-        "exposedModule": "./DashboardModule",
+        "exposedModule": "./Dashboard",
         "displayName": "Dashboard",
         "subPath": "mess-management/dashboard",
-        "ngModuleName": "DashboardModule",
+        "componentName": "DashboardComponent",
+        "pinned": false
+      },
+     {
+        "exposedModule": "./SubscriberManagement",
+        "displayName": "Subscriber Management",
+        "subPath": "mess-management/subscriber-management",
+        "componentName": "SubscriberManagementComponent",
         "pinned": false
       }
     ]

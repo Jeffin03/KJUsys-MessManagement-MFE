@@ -1,0 +1,37 @@
+<div class="flex flex-col min-h-screen bg-[#FAFAFC] font-['Inter',sans-serif]">
+  <div class="flex-1 p-5 pb-12">
+    <!-- Breadcrumb -->
+    <div class="mb-3">
+      <p class="text-[10px] mb-0.5 text-[#747474]">
+        Hostel / <span class="text-black">Mess Management</span>
+      </p>
+      <h1 class="text-sm font-semibold text-black">Mess Management</h1>
+    </div>
+    <!-- Tab Bar -->
+    <div class="mb-5 w-full">
+      <app-dashboard-tabs></app-dashboard-tabs>
+    </div>
+    <!-- Stats -->
+    <app-subscriber-stats [stats]="stats"></app-subscriber-stats>
+    <!-- Table -->
+    <app-subscriber-table [subscribers]="subscribers" (addSubscriber)="openAddModal()"
+      (editSubscriber)="openEditModal($event)"></app-subscriber-table>
+  </div>
+  <!-- Footer -->
+  <footer class="py-2 px-6 text-center bg-[#434B57] border-t border-[#E5E7EB]">
+    <p class="text-xs text-white">© Developed by : Software Development Centre, Kristu Jayanti (Deemed to be
+      University), Bangalore</p>
+  </footer>
+</div>
+
+<app-add-subscriber-modal [hidden]="!showAddModal" [isOpen]="showAddModal" (close)="closeAddModal()"
+  (next)="openCardStep($event)">
+</app-add-subscriber-modal>
+
+<app-subscriber-card-modal [hidden]="!showCardModal" [subscriber]="subscriberFormData" (previous)="backToAddModal()"
+  (close)="closeCardModal()" (save)="saveSubscriberConfiguration($event)">
+</app-subscriber-card-modal>
+
+<app-edit-subscriber-modal [hidden]="!showEditModal" [isOpen]="showEditModal" [subscriber]="editSubscriberData"
+  (close)="closeEditModal()" (update)="updateSubscriber($event)">
+</app-edit-subscriber-modal>

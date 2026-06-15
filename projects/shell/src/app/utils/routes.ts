@@ -152,24 +152,38 @@ export function buildRoutes(): Routes {
       if (Array.isArray(value.subModule)) {
         return value.subModule.map((res) => {
           // console.log(`Submodule for ${key}:`, res);
+          const loadRemote = () =>
+            withRetry(() =>
+              loadRemoteModule({
+                type: 'manifest',
+                remoteName: key,
+                exposedModule: res.exposedModule,
+              })
+            );
+
+          const lazyLoader = res.componentName
+            ? {
+                loadComponent: () =>
+                  loadRemote()
+                    .then((m) => m[res.componentName!])
+                    .catch((error) => {
+                      console.error(`Failed to load component ${res.componentName} from ${key}:`, error);
+                      throw error;
+                    }),
+              }
+            : {
+                loadChildren: () =>
+                  loadRemote()
+                    .then((m) => m[res.ngModuleName!])
+                    .catch((error) => {
+                      console.error(`Failed to load module ${res.ngModuleName} from ${key}:`, error);
+                      throw error;
+                    }),
+              };
+
           return {
             path: res.subPath,
-            loadChildren: () =>
-              withRetry(() =>
-                loadRemoteModule({
-                  type: 'manifest',
-                  remoteName: key,
-                  exposedModule: res.exposedModule,
-                })
-              )
-                .then((m) => {
-                  // console.log(`Loaded module ${res.ngModuleName} from ${key}`);
-                  return m[res.ngModuleName!];
-                })
-                .catch((error) => {
-                  console.error(`Failed to load module ${res.ngModuleName} from ${key}:`, error);
-                  throw error;
-                }),
+            ...lazyLoader,
             canActivate: [AuthGuard],
             data: {
               breadcrumb: {
