@@ -217,34 +217,79 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     else this.newSlot.endMin = this.newSlot.endMin <= 0 ? 59 : this.newSlot.endMin - 1;
   }
 
-  onTimeInput(field: 'startHour' | 'startMin' | 'endHour' | 'endMin', event: Event) {
+  formatNumber(n: number): string {
+    if (n === null || n === undefined) return '--';
+    return String(n).padStart(2, '0');
+  }
+
+  onTimeFocus(event: FocusEvent) {
     const input = event.target as HTMLInputElement;
-    let val = input.value.replace(/\D/g, '');
-    if (val.length > 2) val = val.slice(0, 2);
-    input.value = val;
-    let num = parseInt(val, 10);
-    if (isNaN(num)) num = 0;
-    
-    if (field.includes('Hour') && num > 23) num = 23;
-    if (field.includes('Min') && num > 59) num = 59;
-    
-    this.newSlot[field] = num;
+    input.select();
   }
 
   onTimeKeydown(field: 'startHour' | 'startMin' | 'endHour' | 'endMin', event: KeyboardEvent) {
+    const input = event.target as HTMLInputElement;
+
+    if (['Tab', 'Backspace', 'Delete'].includes(event.key)) {
+      return;
+    }
+
     if (event.key === 'ArrowUp') {
       event.preventDefault();
       if (field === 'startHour') this.incrementHour('start');
       else if (field === 'endHour') this.incrementHour('end');
       else if (field === 'startMin') this.incrementMin('start');
       else if (field === 'endMin') this.incrementMin('end');
-    } else if (event.key === 'ArrowDown') {
+      
+      setTimeout(() => {
+          input.value = this.formatNumber(this.newSlot[field]);
+          input.select();
+      });
+      return;
+    }
+    
+    if (event.key === 'ArrowDown') {
       event.preventDefault();
       if (field === 'startHour') this.decrementHour('start');
       else if (field === 'endHour') this.decrementHour('end');
       else if (field === 'startMin') this.decrementMin('start');
       else if (field === 'endMin') this.decrementMin('end');
+      
+      setTimeout(() => {
+          input.value = this.formatNumber(this.newSlot[field]);
+          input.select();
+      });
+      return;
     }
+
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+
+    let currentStr = input.value.replace(/\D/g, '');
+    if (currentStr.length < 2) currentStr = currentStr.padStart(2, '0');
+
+    if (input.selectionStart === 0 && input.selectionEnd === input.value.length) {
+       currentStr = '00';
+    }
+
+    let newStr = currentStr + event.key;
+    newStr = newStr.slice(-2);
+    
+    let num = parseInt(newStr, 10);
+    const max = field.includes('Hour') ? 23 : 59;
+    
+    if (num > max) {
+      num = parseInt(event.key, 10);
+      newStr = '0' + event.key;
+    }
+    
+    this.newSlot[field] = num;
+    input.value = newStr;
+    input.setSelectionRange(newStr.length, newStr.length);
   }
 
   getStatusClass(status: string): string {
