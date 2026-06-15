@@ -3,11 +3,11 @@ export const API_ENDPOINTS = {
   TAP: '/tap',
   TAPS: '/taps',
 
-  // Customers
-  CUSTOMERS: '/customers',
-  CUSTOMER_BY_ID: (id: string | number) => `/customers/${id}`,
-  CUSTOMER_RENEW: (id: string | number) => `/customers/${id}/renew`,
-  CUSTOMERS_EXPIRING: '/customers/expiring',
+  // Students
+  STUDENTS: '/students',
+  STUDENT_BY_ID: (id: string | number) => `/students/${id}`,
+  STUDENT_RENEW: (id: string | number) => `/students/${id}/renew`,
+  STUDENTS_EXPIRING: '/students/expiring',
 
   // RFID
   RFID: '/rfid',

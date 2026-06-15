@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { map, shareReplay, tap } from 'rxjs/operators';
 import { MealSlot, MealEntry } from '../../../shared/models/dashboard.models';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
+import { environment } from '../../../../environments/environment';
 
 export interface BackendSchedule {
   _id: { $oid: string };
@@ -28,16 +30,57 @@ export interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class DashboardService {
-  private baseUrl = '/api';
+  private baseUrl = environment.baseUrl;
+
+  // Cache duration in milliseconds (2 minutes for dashboard data)
+  private readonly CACHE_DURATION = 2 * 60 * 1000;
 
   constructor(private http: HttpClient) { }
 
   getSchedules(): Observable<MealSlot[]> {
-    return this.http.get<MealSlot[]>(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_TODAY}`);
+    return this.http.get<ApiResponse<{ date: string, day_type: string, meals: any[] }>>(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_TODAY}`)
+      .pipe(
+        map(res => {
+          const meals = res.responseData?.data?.meals || [];
+          return meals.map(m => {
+            const now = new Date();
+            const currentHourStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            let status: 'Closed' | 'Live' | 'Upcoming' = 'Upcoming';
+            if (currentHourStr >= m.start && currentHourStr <= m.end) status = 'Live';
+            else if (currentHourStr > m.end) status = 'Closed';
+
+            return {
+              name: m.meal.charAt(0) + m.meal.slice(1).toLowerCase(),
+              icon: m.meal.toLowerCase(),
+              status: status,
+              timeRange: `${m.start} - ${m.end}`,
+              total: 0,
+              hadMeal: null,
+              thirdStat: null,
+              thirdLabel: status === 'Closed' ? 'Skipped' : 'Pending',
+              startTime: m.start
+            };
+          });
+        }),
+        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
+      );
   }
 
   getTaps(): Observable<MealEntry[]> {
-    return this.http.get<MealEntry[]>(`${this.baseUrl}${API_ENDPOINTS.TAPS}`);
+    return this.http.get<ApiResponse<{ taps: any[] }>>(`${this.baseUrl}${API_ENDPOINTS.TAPS}`)
+      .pipe(
+        map(res => {
+          const taps = res.responseData?.data?.taps || [];
+          return taps.map(t => ({
+            customer: t.name,
+            hmsId: t.uid,
+            mealSlot: t.meal.charAt(0) + t.meal.slice(1).toLowerCase() as any,
+            time: new Date(t.tap_DateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: 'Allowed' as 'Allowed' | 'Not Subscribed'
+          }));
+        }),
+        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
+      );
   }
 
   createSchedule(payload: any): Observable<ApiResponse<{ schedule: BackendSchedule }>> {
