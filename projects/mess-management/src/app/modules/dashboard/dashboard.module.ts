@@ -14,5 +14,6 @@ import { SubTabsModule } from '@libs/sub-tabs';
     DashboardModuleRoutingModule,
     SubTabsModule
   ]
+  
 })
 export class DashboardModule { }
