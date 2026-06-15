@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MealEntry } from '../../../../shared/models/dashboard.models';
 @Component({
@@ -7,8 +7,16 @@ import { MealEntry } from '../../../../shared/models/dashboard.models';
   imports: [CommonModule],
   templateUrl: './entries-table.component.html',
 })
-export class EntriesTableComponent {
+export class EntriesTableComponent implements OnChanges {
   @Input() entries: MealEntry[] = [];
+
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['entries']) {
+      this.cdr.detectChanges();
+    }
+  }
 
   getStatusClass(status: MealEntry['status']): string {
     return status === 'Allowed'

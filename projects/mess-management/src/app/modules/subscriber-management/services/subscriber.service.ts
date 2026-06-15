@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { map, shareReplay, tap } from 'rxjs/operators';
 import { Subscriber } from '../../../shared/models/subscriber';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
+import { environment } from '../../../../environments/environment';
 
-interface BackendCustomer {
+export interface BackendStudent {
   _id: { $oid: string };
   name: string;
   phone: string;
@@ -21,7 +22,7 @@ interface BackendCustomer {
   };
 }
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   statusCode: number;
   type: string;
   responseData: {
@@ -34,13 +35,16 @@ interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class SubscriberService {
-  private baseUrl = '/api';
+  private baseUrl = environment.baseUrl;
+
+  // Cache duration in milliseconds (5 minutes for subscriber data - less frequent changes)
+  private readonly CACHE_DURATION = 5 * 60 * 1000;
 
   constructor(private http: HttpClient) { }
 
-  private mapToSubscriber(customer: BackendCustomer): Subscriber {
+  private mapToSubscriber(student: BackendStudent): Subscriber {
     // Convert timestamp to date string (e.g., '10 Jan 26')
-    const date = new Date(customer.subscription?.start_Date || Date.now());
+    const date = new Date(student.subscription?.start_Date || Date.now());
     const dateString = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
 
     // Map meals array to 'B+L+D' format
@@ -49,22 +53,21 @@ export class SubscriberService {
       'LUNCH': 'L',
       'DINNER': 'D'
     };
-    const mealsArray = customer.subscription?.meals || [];
+    const mealsArray = student.subscription?.meals || [];
     const mealPlanStr = mealsArray.map((m: string) => mealPlanMap[m] || m).join('+');
 
     let status: 'Active' | 'Paused' | 'Lapsed' = 'Lapsed';
-    if (customer.subscription) {
-      if (customer.subscription.active) {
+    if (student.subscription) {
+      if (student.subscription.active) {
         status = 'Active';
       }
-      // If there's a concept of paused in your DB, handle it here.
     }
 
     return {
-      id: customer._id.$oid,
-      name: customer.name,
-      email: customer.email,
-      hmsId: customer.hmsId || 'N/A',
+      id: student._id.$oid,
+      name: student.name,
+      email: student.email,
+      hmsId: student.hmsId || 'N/A',
       mealPlan: mealPlanStr || 'None',
       status: status,
       joinedDate: dateString
@@ -72,33 +75,36 @@ export class SubscriberService {
   }
 
   getSubscribers(): Observable<Subscriber[]> {
-    return this.http.get<ApiResponse<{ customers: BackendCustomer[] }>>(`${this.baseUrl}${API_ENDPOINTS.CUSTOMERS}`)
+    return this.http.get<ApiResponse<{ students: BackendStudent[] }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`)
       .pipe(
         map(res => {
-          const customers = res.responseData?.data?.customers || [];
-          return customers.map(c => this.mapToSubscriber(c));
-        })
+          const students = res.responseData?.data?.students || [];
+          return students.map(s => this.mapToSubscriber(s));
+        }),
+        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
       );
   }
 
   getSubscriberById(id: number | string): Observable<Subscriber> {
-    return this.http.get<ApiResponse<{ customer: BackendCustomer }>>(`${this.baseUrl}${API_ENDPOINTS.CUSTOMER_BY_ID(id)}`)
+    return this.http.get<ApiResponse<{ student: BackendStudent }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(id)}`)
       .pipe(
-        map(res => this.mapToSubscriber(res.responseData.data.customer))
+        map(res => this.mapToSubscriber(res.responseData.data.student)),
+        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
       );
   }
 
-  renewSubscriber(id: number | string): Observable<any> {
-    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.CUSTOMER_RENEW(id)}`, {});
+  renewSubscriber(id: number | string, duration_days: number = 30): Observable<any> {
+    return this.http.put(`${this.baseUrl}${API_ENDPOINTS.STUDENT_RENEW(id)}`, { duration_days });
   }
 
   getExpiringSubscribers(): Observable<Subscriber[]> {
-    return this.http.get<ApiResponse<{ customers: BackendCustomer[] }>>(`${this.baseUrl}${API_ENDPOINTS.CUSTOMERS_EXPIRING}`)
+    return this.http.get<ApiResponse<{ students: BackendStudent[] }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS_EXPIRING}`)
       .pipe(
         map(res => {
-          const customers = res.responseData?.data?.customers || [];
-          return customers.map(c => this.mapToSubscriber(c));
-        })
+          const students = res.responseData?.data?.students || [];
+          return students.map(s => this.mapToSubscriber(s));
+        }),
+        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
       );
   }
 
@@ -119,19 +125,17 @@ export class SubscriberService {
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
       phone: formData.phone,
-      subscription: {
-        meals: meals,
-        start_Date: parseDate(formData.mealSlot.startDate),
-        end_Date: parseDate(formData.mealSlot.endDate),
-        active: formData.mealSlot.status === 'Active'
-      }
+      hmsId: formData.hmsId || undefined,
+      meals: meals,
+      start_Date: parseDate(formData.mealSlot.startDate),
+      end_Date: parseDate(formData.mealSlot.endDate)
     };
 
-    return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.CUSTOMERS}`, payload);
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
   }
 
-  assignHmsId(uid: string, customerId: string): Observable<any> {
-    const payload = { customerId: customerId };
+  assignHmsId(uid: string, studentId: string): Observable<any> {
+    const payload = { studentId: studentId };
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.RFID_REASSIGN(uid)}`, payload);
   }
 
@@ -152,14 +156,12 @@ export class SubscriberService {
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
       phone: formData.phone,
-      subscription: {
-        meals: meals,
-        start_Date: parseDate(formData.mealSlot.startDate),
-        end_Date: parseDate(formData.mealSlot.endDate),
-        active: formData.mealSlot.status === 'Active'
-      }
+      hmsId: formData.hmsId || undefined,
+      meals: meals,
+      start_Date: parseDate(formData.mealSlot.startDate),
+      end_Date: parseDate(formData.mealSlot.endDate)
     };
 
-    return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.CUSTOMER_BY_ID(id)}`, payload);
+    return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(id)}`, payload);
   }
 }

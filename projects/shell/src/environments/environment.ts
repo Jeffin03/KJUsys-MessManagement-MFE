@@ -22,14 +22,14 @@ export const environment = {
 
 
 
-    baseUrl: 'http://localhost:8080/kjusys-api',
+    baseUrl: 'https://literary-fri-lawrence-limits.trycloudflare.com/kjusys-api/mess-management',
 
 
 
-   portalLambdaBaseUrl: 'https://2fezfat6k2.execute-api.ap-south-1.amazonaws.com/development',
+    portalLambdaBaseUrl: 'https://2fezfat6k2.execute-api.ap-south-1.amazonaws.com/development',
 
-    project: 'shell', 
-    baseRoute: 'kjusys', 
+    project: 'shell',
+    baseRoute: 'kjusys',
     local: false,
 };
 

@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  manifestPath: '/assets/mf.manifest.prod.json?v=1781494878178',
+  manifestPath: '/assets/mf.manifest.prod.json?v=1781513437098',
   mfe: {
     admissions: 'https://kjusys-admissions.kristujayanti.edu.in/',
     core: 'https://kjusys-core.kristujayanti.edu.in/',
@@ -14,7 +14,7 @@ export const environment = {
     gymnasium: 'https://kjusys-gymnasium.kristujayanti.edu.in/',
   },
   publicPath: 'https://kjusys.kristujayanti.edu.in/',
-  baseUrl: 'https://kjusys.kristujayanti.edu.in/kjusys-api',
+  baseUrl: 'https://waterproof-james-boot-lexington.trycloudflare.com/kjusys-api/mess-management',
   portalLambdaBaseUrl: 'https://zb8ve5evcg.execute-api.ap-south-1.amazonaws.com/prod', 
   project: 'shell',
   baseRoute: 'kjusys',

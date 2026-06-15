@@ -36,7 +36,7 @@ interface MenuCategory {
 })
 export class AuthService implements OnDestroy {
   private logoutSubscription: Subscription | null = null;
-  
+
   private menuSubject: BehaviorSubject<any>;
   public menu$ = this.getMenuObservable();
 
@@ -71,7 +71,7 @@ export class AuthService implements OnDestroy {
     // Initialize menuSubject from localStorage if available
     const storedRoutes = localStorage.getItem('Routes');
     this.menuSubject = new BehaviorSubject<any>(storedRoutes ? JSON.parse(storedRoutes) : null);
-    
+
   }
 
   getResponseData(response: any) {
@@ -84,11 +84,11 @@ export class AuthService implements OnDestroy {
       userPassword_AuthCommon_Text: credentials.password,
     };
 
-   return this.http.post(`${this.env.baseUrl}/authnauthz/authenticate`, data).pipe(
+    return this.http.post(`${this.env.baseUrl}/authnauthz/authenticate`, data).pipe(
       take(1),
       map(this.getResponseData),
       tap((response: any) => {
-        
+
         if (response.statusCode == 200 && response.type == "SUCCESS") {
           const responseData = response.responseData.data[0];
           this.updateTokens(responseData.accessToken, responseData.refreshToken);
@@ -123,8 +123,8 @@ export class AuthService implements OnDestroy {
       });
   }
 
-  rolesdata:any = [];
-  private setCookies(responseData:any){
+  rolesdata: any = [];
+  private setCookies(responseData: any) {
     this.rolesdata = responseData;
     localStorage.setItem('rolesdata', responseData.roles);
   }

@@ -4,10 +4,10 @@ export const environment = {
     mfe: {
         'mess-management': 'http://localhost:4201',
     },
-    publicPath: 'http://localhost:4201/', 
-    baseUrl: 'http://172.21.14.247:8080/kjusys-api', 
+    publicPath: 'http://localhost:4201/',
+    baseUrl: 'https://literary-fri-lawrence-limits.trycloudflare.com/kjusys-api/mess-management',
     project: 'mess-management',
-    baseRoute: 'kjusys', 
+    baseRoute: 'kjusys',
     local: false,
-    apirefreshUrl: 'http://172.21.14.247:8080/kjusys-api/authnauthz/refresh-access-token'
+    apirefreshUrl: 'https://waterproof-james-boot-lexington.trycloudflare.com/kjusys-api/authnauthz/refresh-access-token'
 };

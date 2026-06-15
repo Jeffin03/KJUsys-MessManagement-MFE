@@ -108,6 +108,7 @@ export class SubscriberManagementComponent implements OnInit {
         
         this.showAddModal = false;
         this.showCardModal = true;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to create subscriber:', err);
@@ -115,6 +116,7 @@ export class SubscriberManagementComponent implements OnInit {
         this.subscriberFormData = { ...data, backendId: 'dummy_id_' + Date.now() };
         this.showAddModal = false;
         this.showCardModal = true;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -142,17 +144,20 @@ export class SubscriberManagementComponent implements OnInit {
           console.log('Successfully assigned HMS ID to subscriber:', res);
           this.showCardModal = false;
           this.refreshSubscribers(); // Refresh table
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Failed to assign HMS ID:', err);
           this.showCardModal = false;
           this.refreshSubscribers();
+          this.cdr.detectChanges();
         }
       });
     } else {
        // Just close and refresh if it's a dummy or missing info
        this.showCardModal = false;
        this.refreshSubscribers();
+       this.cdr.detectChanges();
     }
   }
 
@@ -165,12 +170,14 @@ export class SubscriberManagementComponent implements OnInit {
           this.showEditModal = false;
           this.editSubscriberData = null;
           this.refreshSubscribers(); // Refresh table
+          this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Failed to update subscriber:', err);
           this.showEditModal = false;
           this.editSubscriberData = null;
           this.refreshSubscribers();
+          this.cdr.detectChanges();
         }
       });
     } else {
@@ -178,6 +185,7 @@ export class SubscriberManagementComponent implements OnInit {
       this.showEditModal = false;
       this.editSubscriberData = null;
       this.refreshSubscribers();
+      this.cdr.detectChanges();
     }
   }
 
@@ -186,9 +194,11 @@ export class SubscriberManagementComponent implements OnInit {
       next: (data) => {
         this.subscribers = data;
         this.calculateStats();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to refresh subscribers', err);
+        this.cdr.detectChanges();
       }
     });
   }

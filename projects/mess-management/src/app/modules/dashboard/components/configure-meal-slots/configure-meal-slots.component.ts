@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, HostListener, ElementRef, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, ElementRef, OnChanges, OnDestroy, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService, ApiResponse, BackendSchedule } from '../../services/dashboard.service';
@@ -44,7 +44,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   constructor(
     private elementRef: ElementRef,
-    private dashboardService: DashboardService
+    private dashboardService: DashboardService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   @HostListener('document:click', ['$event'])
@@ -216,6 +217,36 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     else this.newSlot.endMin = this.newSlot.endMin <= 0 ? 59 : this.newSlot.endMin - 1;
   }
 
+  onTimeInput(field: 'startHour' | 'startMin' | 'endHour' | 'endMin', event: Event) {
+    const input = event.target as HTMLInputElement;
+    let val = input.value.replace(/\D/g, '');
+    if (val.length > 2) val = val.slice(0, 2);
+    input.value = val;
+    let num = parseInt(val, 10);
+    if (isNaN(num)) num = 0;
+    
+    if (field.includes('Hour') && num > 23) num = 23;
+    if (field.includes('Min') && num > 59) num = 59;
+    
+    this.newSlot[field] = num;
+  }
+
+  onTimeKeydown(field: 'startHour' | 'startMin' | 'endHour' | 'endMin', event: KeyboardEvent) {
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (field === 'startHour') this.incrementHour('start');
+      else if (field === 'endHour') this.incrementHour('end');
+      else if (field === 'startMin') this.incrementMin('start');
+      else if (field === 'endMin') this.incrementMin('end');
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (field === 'startHour') this.decrementHour('start');
+      else if (field === 'endHour') this.decrementHour('end');
+      else if (field === 'startMin') this.decrementMin('start');
+      else if (field === 'endMin') this.decrementMin('end');
+    }
+  }
+
   getStatusClass(status: string): string {
     switch (status) {
       case 'Closed': return 'bg-[#FEE2E2] text-[#D92C2B]';
@@ -262,7 +293,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     this.pendingDeleteIndex = null;
     if (slot.id) {
       this.dashboardService.deleteSchedule(slot.id).subscribe(() => {
-        this.slots.splice(index, 1);
+        this.slots = this.slots.filter((s: MealSlotConfig) => s.id !== slot.id);
+        this.cdr.detectChanges();
       });
     } else {
       this.slots.splice(index, 1);
@@ -329,10 +361,12 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           this.resetForm();
           this.isEditing = false;
           this.editIndex = null;
+          this.cdr.detectChanges();
         },
         error: (err: any) => {
           console.error('Update failed', err);
           alert('Failed to update slot. Please try again.');
+          this.cdr.detectChanges();
         }
       });
     } else {
@@ -350,6 +384,11 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
             end24: e24
           });
           this.resetForm();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to create schedule:', err);
+          this.cdr.detectChanges();
         }
       });
     }
@@ -431,11 +470,13 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
               end24
             } as MealSlotConfig;
           }).sort((a: MealSlotConfig, b: MealSlotConfig) => this.toMins(a.start24) - this.toMins(b.start24));
+          this.cdr.detectChanges();
         }
       });
     } else {
       document.body.style.overflow = '';
     }
+    this.cdr.detectChanges();
   }
 
   ngOnDestroy() {

@@ -52,6 +52,9 @@ export class InterceptorConfigService {
     
     // Payment public endpoints
     '/payment/create-portal-no-auth-payment',
+    
+    // Mess Management
+    '/mess-management'
   ];
 
   /**
