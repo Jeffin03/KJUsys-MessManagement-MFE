@@ -1,1 +1,82 @@
-<p>dashboard works!</p>
+<div class="flex flex-col min-h-screen bg-[#FAFAFC] font-['Inter',sans-serif]">
+
+  <div class="flex-1 p-5 pb-0">
+
+    <!-- Breadcrumb -->
+    <div class="mb-3">
+      <p class="text-[10px] mb-0.5 text-[#747474]">
+        Hostel / <span class="text-black">Mess Management</span>
+      </p>
+      <h1 class="text-sm font-semibold text-black">Mess Management</h1>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="mb-5 w-full">
+      <app-dashboard-tabs></app-dashboard-tabs>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-4 gap-4 mb-5">
+
+        <!-- Total Subscribers -->
+        <div
+          class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-4 pt-[22px] pb-[39px] h-[127px] box-border">
+          <div class="flex items-center gap-2">
+            <img src="assets/subscribers_icon.svg" class="w-4 h-4" alt="subscribers" />
+            <span class="text-xs font-medium text-[#6B7280]">Total Subscribers</span>
+          </div>
+          <p class="font-bold text-[36px] leading-none tracking-[-0.19px] text-[#111827] mt-[9px]">{{ stats[0].value }}
+          </p>
+        </div>
+
+        <!-- Active Subscriptions -->
+        <div
+          class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-4 pt-[22px] pb-[39px] h-[127px] box-border">
+          <div class="flex items-center gap-2">
+            <img src="assets/Active.svg" class="w-4 h-4" alt="active subscriptions" />
+            <span class="text-xs font-medium text-[#6B7280]">Active Subscriptions</span>
+          </div>
+          <p class="font-bold text-[36px] leading-none tracking-[-0.19px] text-[#111827] mt-[9px]">{{ stats[1].value }}
+          </p>
+        </div>
+
+        <!-- Total Meals Served Today -->
+        <div
+          class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-4 pt-[22px] pb-[39px] h-[127px] box-border">
+          <div class="flex items-center gap-2">
+            <img src="assets/total-meals-served.svg" class="w-4 h-4" alt="total meals served" />
+            <span class="text-xs font-medium text-[#6B7280]">Total Meals Served Today</span>
+          </div>
+          <p class="font-bold text-[36px] leading-none tracking-[-0.19px] text-[#111827] mt-[9px]">{{ stats[2].value }}
+          </p>
+        </div>
+
+        <!-- Absent Today -->
+        <div
+          class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-4 pt-[22px] pb-[39px] h-[127px] box-border">
+          <div class="flex items-center gap-2">
+            <img src="assets/exclamation.svg" class="w-4 h-4" alt="absent" />
+            <span class="text-xs font-medium text-[#6B7280]">Absent Today</span>
+          </div>
+          <p class="font-bold text-[36px] leading-none tracking-[-0.19px] text-[#111827] mt-[9px]">{{ stats[3].value }}
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Meal Slots -->
+      <app-meal-slots [mealSlots]="mealSlots"></app-meal-slots>
+
+      <!-- Bottom Row: Table + Hardware -->
+      <div class="flex gap-4">
+        <app-entries-table class="flex-1 min-w-0" [entries]="recentEntries"></app-entries-table>
+        <app-hardware-status [hardware]="hardware" [uptimeSeconds]="uptimeSeconds"></app-hardware-status>
+      </div>
+
+      <footer class="py-2 px-5 text-center bg-[#434B57] -mx-5 -mb-5">
+        <p class="text-xs text-white">© Developed by : Software Development Centre, Kristu Jayanti (Deemed to be
+          University), Bangalore</p>
+      </footer>
+
+    </div>
+  </div>
+</div>

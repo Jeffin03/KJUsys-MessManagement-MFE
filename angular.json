@@ -210,14 +210,7 @@
             "development": {
               "tsConfig": "projects/libs/menu-header-lib/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },
@@ -251,14 +244,7 @@
             "development": {
               "tsConfig": "projects/libs/left-menu-lib/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },
@@ -292,14 +278,7 @@
             "development": {
               "tsConfig": "projects/libs/shared-auth/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },
@@ -333,14 +312,7 @@
             "development": {
               "tsConfig": "projects/libs/http-common/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },
@@ -374,14 +346,7 @@
             "development": {
               "tsConfig": "projects/libs/multi-dropdown-lib/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },
@@ -415,14 +380,7 @@
             "development": {
               "tsConfig": "projects/libs/alert/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         }
@@ -446,14 +404,7 @@
             "development": {
               "tsConfig": "projects/libs/tabs/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },
@@ -487,14 +438,7 @@
             "development": {
               "tsConfig": "projects/libs/sub-tabs/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },
@@ -528,14 +472,7 @@
             "development": {
               "tsConfig": "projects/libs/shared-ui/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },
@@ -569,14 +506,7 @@
             "development": {
               "tsConfig": "projects/libs/table/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },
@@ -610,14 +540,7 @@
             "development": {
               "tsConfig": "projects/libs/dropdown-lib/tsconfig.lib.json"
             },
-            "local": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
+            "local": {}
           },
           "defaultConfiguration": "production"
         },

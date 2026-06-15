@@ -65,7 +65,7 @@ module.exports = {
         jayantianscholar: `https://kjusys-jayantian-scholar.kristujayanti.edu.in/remoteEntry.js?v=${REMOTE_ENTRY_VERSION}`,
         examinations: `https://kjusys-examinations.kristujayanti.edu.in/remoteEntry.js?v=${REMOTE_ENTRY_VERSION}`,
         portal: `https://kjusys-events.kristujayanti.edu.in/remoteEntry.js?v=${REMOTE_ENTRY_VERSION}`,
-        globalrelations: `https://kjusys-global-relations.kristujayanti.edu.in/remoteEntry.js?v=${REMOTE_ENTRY_VERSION}`,,
+        globalrelations: `https://kjusys-global-relations.kristujayanti.edu.in/remoteEntry.js?v=${REMOTE_ENTRY_VERSION}`,
         "mess-management": "https://kjusys-mess-management.kristujayanti.edu.in/remoteEntry.js",
       },
       shared: share({

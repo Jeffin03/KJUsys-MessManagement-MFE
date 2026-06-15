@@ -36,10 +36,9 @@ module.exports = {
         name: "mess-management",
         filename: "remoteEntry.js",
         exposes: {
-             // Example expose, user can add more modules here
-             './Module': './projects/mess-management/src/app/app.module.ts',
-          './DashboardModule': './projects/mess-management/src/app/modules/dashboard/dashboard.module.ts',
-
+          './App': './projects/mess-management/src/app/app.component.ts',
+          './Dashboard': './projects/mess-management/src/app/modules/dashboard/dashboard.component.ts',
+          './SubscriberManagement': './projects/mess-management/src/app/modules/subscriber-management/subscriber-management.component.ts'
         },
         shared: share({
           "@angular/core": { singleton: true, strictVersion: true, requiredVersion: 'auto' }, 

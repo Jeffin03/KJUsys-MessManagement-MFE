@@ -7,7 +7,6 @@
   "files": [
     "src/main.ts",
     "src/polyfills.ts",
-    "src/app/modules/dashboard/dashboard.module.ts"
   ],
   "include": [
     "src/**/*.d.ts"

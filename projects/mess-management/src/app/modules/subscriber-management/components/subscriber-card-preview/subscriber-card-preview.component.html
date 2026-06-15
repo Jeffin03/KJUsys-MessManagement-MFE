@@ -1,0 +1,57 @@
+<div class="flex gap-5 justify-center">
+
+    <!-- FRONT CARD -->
+    <div class="relative w-[230px] h-[370px] rounded-[24px] bg-black overflow-hidden flex flex-col p-5 shrink-0">
+
+        <!-- Top: Wifi top-left, Mentora top-right (rotated vertical) -->
+        <div class="flex items-start justify-between">
+            <img src="assets/Wifi-rfid.svg" alt="wifi" class="w-7 h-auto" style="filter: brightness(0) invert(0.7);" />
+            <img src="assets/Mentora-text.svg" alt="Mentora" style="width:18px; height:auto;" />
+        </div>
+
+        <!-- Center: Mess Pass text — right aligned, fills height -->
+        <div class="flex-1 flex items-center justify-end overflow-hidden py-2">
+            <img src="assets/Mess-Pass-text.svg" alt="Mess Pass" style="height:220px; width:auto;" />
+        </div>
+
+        <!-- Bottom: HMS-ID label + value -->
+        <div class="flex flex-col gap-0.5">
+            <img src="assets/HMS-ID-text.svg" alt="HMS-ID" style="width:44px; height:auto;" />
+            <span *ngIf="hmsId" class="font-bold tracking-wide"
+                style="font-size:20px; background: linear-gradient(180deg, #FFFFFF 0%, #999999 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                {{ hmsId }}
+            </span>
+        </div>
+
+    </div>
+
+    <!-- BACK CARD -->
+    <div class="relative w-[230px] h-[370px] rounded-[24px] bg-black overflow-hidden flex flex-col p-5 shrink-0">
+
+        <!-- Top: Terms and Conditions title -->
+        <img src="assets/TERMS AND CONDITIONS-text.svg" alt="Terms and Conditions" class="w-full h-auto mb-3" />
+
+        <!-- Bullet points -->
+        <img src="assets/conditions-text.svg" alt="conditions" class="w-full h-auto" />
+
+        <!-- Spacer -->
+        <div class="flex-1"></div>
+
+        <!-- Bottom section: SDC logo right + contact left, side by side -->
+        <div class="flex items-end justify-between mb-2">
+            <div class="flex flex-col gap-0.5">
+                <p style="color:#FFFFFF; font-size:7px; margin:0 0 2px 0;">For any queries :</p>
+                <img src="assets/contact-no..svg" alt="contact" style="width:110px; height:auto;" />
+            </div>
+            <img src="assets/SDC-logo.svg" alt="SDC Logo" style="width:48px; height:auto;" />
+        </div>
+
+        <!-- Divider Line -->
+        <img src="assets/Line.svg" alt="" class="w-full mb-2" />
+
+        <!-- KJC SDC footer text — centered -->
+        <img src="assets/kjc-sdc-text.svg" alt="Kristu Jayanti SDC" class="w-full h-auto" />
+
+    </div>
+
+</div>

@@ -21,15 +21,24 @@ export const APP_ROUTES: Routes = [
     children: [
       {
         path: 'dashboard',
-        loadChildren: () =>
-          import('./modules/dashboard/dashboard.module')
-            .then((m) => m.DashboardModule)
+        loadComponent: () =>
+          import('./modules/dashboard/dashboard.component')
+            .then((m) => m.DashboardComponent)
             .catch((error) => {
-               console.error('Error loading DashboardModule', error);
-               throw error;
+              console.error('Error loading DashboardComponent', error);
+              throw error;
             }),
       },
-
+      {
+        path: 'subscriber-management',
+        loadComponent: () =>
+          import('./modules/subscriber-management/subscriber-management.component')
+            .then((m) => m.SubscriberManagementComponent)
+            .catch((error) => {
+              console.error('Error loading SubscriberManagementComponent', error);
+              throw error;
+            }),
+      }
     ],
   },
 ];
