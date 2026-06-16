@@ -111,12 +111,12 @@ export class SubscriberService {
   }
 
   createSubscriber(formData: any): Observable<any> {
-    const meals = [];
-    if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
-    if (formData.mealSlot.brunch) meals.push('BRUNCH');
-    if (formData.mealSlot.lunch) meals.push('LUNCH');
-    if (formData.mealSlot.snacks) meals.push('SNACKS');
-    if (formData.mealSlot.dinner) meals.push('DINNER');
+    const meals: string[] = [];
+    Object.keys(formData.mealSlot).forEach(key => {
+      if (!['startDate', 'endDate', 'status'].includes(key) && formData.mealSlot[key]) {
+        meals.push(key.toUpperCase());
+      }
+    });
 
     // Convert 'DD/MM/YY' to timestamp
     const parseDate = (dateStr: string) => {
@@ -135,7 +135,14 @@ export class SubscriberService {
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
       meals: meals,
-      duration_days: durationDays > 0 ? durationDays : 30
+      duration_days: durationDays > 0 ? durationDays : 30,
+      subscription: {
+        meals: meals,
+        start_Date: startDateTs,
+        end_Date: endDateTs,
+        active: formData.mealSlot.status !== 'Paused',
+        duration_days: durationDays > 0 ? durationDays : 30
+      }
     };
 
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
@@ -147,12 +154,12 @@ export class SubscriberService {
   }
 
   updateSubscriber(id: string | number, formData: any): Observable<any> {
-    const meals = [];
-    if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
-    if (formData.mealSlot.brunch) meals.push('BRUNCH');
-    if (formData.mealSlot.lunch) meals.push('LUNCH');
-    if (formData.mealSlot.snacks) meals.push('SNACKS');
-    if (formData.mealSlot.dinner) meals.push('DINNER');
+    const meals: string[] = [];
+    Object.keys(formData.mealSlot).forEach(key => {
+      if (!['startDate', 'endDate', 'status'].includes(key) && formData.mealSlot[key]) {
+        meals.push(key.toUpperCase());
+      }
+    });
 
     // Convert 'DD/MM/YY' to timestamp
     const parseDate = (dateStr: string) => {
@@ -170,11 +177,15 @@ export class SubscriberService {
       uid: formData.roll_number,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
-      "subscription.meals": meals,
-      "subscription.start_Date": startDateTs,
-      "subscription.end_Date": endDateTs,
-      "subscription.active": formData.mealSlot.status !== 'Paused',
-      "subscription.duration_days": durationDays > 0 ? durationDays : 30
+      meals: meals,
+      duration_days: durationDays > 0 ? durationDays : 30,
+      subscription: {
+        meals: meals,
+        start_Date: startDateTs,
+        end_Date: endDateTs,
+        active: formData.mealSlot.status !== 'Paused',
+        duration_days: durationDays > 0 ? durationDays : 30
+      }
     };
 
     return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(id)}`, payload);

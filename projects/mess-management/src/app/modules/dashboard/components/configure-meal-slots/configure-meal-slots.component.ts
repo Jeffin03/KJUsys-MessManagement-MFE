@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, HostListener, ElementRef, OnCha
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService, ApiResponse, BackendSchedule } from '../../services/dashboard.service';
+import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
 
 interface MealSlotConfig {
   id?: string;
@@ -16,8 +17,20 @@ interface MealSlotConfig {
 @Component({
   selector: 'app-configure-meal-slots',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SubTabsModule],
   templateUrl: './configure-meal-slots.component.html',
+  styles: [`
+    @import url('https://fonts.cdnfonts.com/css/dot-matrix');
+    .lcd-text-container {
+      font-family: 'Dot Matrix', sans-serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      line-height: 1.1;
+      white-space: pre;
+      text-transform: uppercase;
+      text-shadow: 0px 0px 2px rgba(255,255,255,0.4);
+    }
+  `]
 })
 export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
@@ -41,6 +54,56 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   // Edit flow
   editIndex: number | null = null;
   isEditing = false;
+
+  activeTab: 'mealSlots' | 'displayPanel' | 'tokenCustomization' = 'displayPanel';
+  
+  subTabs: SubTabItem[] = [
+    { id: 'mealSlots', label: 'Meal slots' },
+    { id: 'displayPanel', label: 'Display Panel' },
+    { id: 'tokenCustomization', label: 'Token Customization' }
+  ];
+
+  onTabChange(tabId: string) {
+    this.activeTab = tabId as 'mealSlots' | 'displayPanel' | 'tokenCustomization';
+  }
+  
+  displayConfig = {
+    defaultMsg: { line1: '', line2: '' },
+    tapAllowed: { line1: '', line2: '' },
+    alreadyTapped: { line1: '', line2: '' },
+    notSubscribed: { line1: '', line2: '' }
+  };
+
+  displayPlaceholders = {
+    defaultMsg: { line1: 'Mentora Mess', line2: 'Tap your card...' },
+    tapAllowed: { line1: '"name"', line2: 'Tap Successful.' },
+    alreadyTapped: { line1: '"name"', line2: 'Already Tapped.' },
+    notSubscribed: { line1: '"name"', line2: 'Not Subscribed.' }
+  };
+  
+  previewState: 'defaultMsg' | 'tapAllowed' | 'alreadyTapped' | 'notSubscribed' = 'tapAllowed';
+
+  getPreviewLine1() {
+    let line1 = this.displayConfig[this.previewState].line1 || this.displayPlaceholders[this.previewState].line1;
+    let text = line1.replace('"name"', 'Alfie');
+    return text.padEnd(16, ' ').substring(0, 16);
+  }
+
+  getPreviewLine2() {
+    let line2 = this.displayConfig[this.previewState].line2 || this.displayPlaceholders[this.previewState].line2;
+    let text = line2.replace('"name"', 'Alfie');
+    return text.padEnd(16, ' ').substring(0, 16);
+  }
+
+  get previewStateName() {
+    switch(this.previewState) {
+      case 'defaultMsg': return 'Default Message';
+      case 'tapAllowed': return 'Tap Allowed';
+      case 'alreadyTapped': return 'Already Tapped';
+      case 'notSubscribed': return 'Not Subscribed';
+      default: return '';
+    }
+  }
 
   constructor(
     private elementRef: ElementRef,
