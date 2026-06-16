@@ -12,19 +12,19 @@
 
             <!-- Cards Row -->
             <div class="flex justify-center gap-6 mb-8">
-                <app-subscriber-card-preview [hmsId]="hmsId" [subscriberName]="subscriber?.firstName || ''">
+                <app-subscriber-card-preview [roll_number]="roll_number" [subscriberName]="subscriber?.firstName || ''">
                 </app-subscriber-card-preview>
             </div>
 
-            <!-- HMS ID Section -->
+            <!-- Roll Number Section -->
             <div>
                 <p class="text-xs font-semibold mb-3" style="color:#4A5565;">Add Card Details</p>
-                <label class="block text-[10px] font-medium mb-1.5" style="color:#1D1D1F;">HMS-ID</label>
-                <input type="text" [(ngModel)]="hmsId" (ngModelChange)="onHmsIdChange()" placeholder="e.g. ABH976"
-                    maxlength="6" class="w-full h-10 rounded-lg border px-3 text-xs outline-none transition-colors"
-                    [style.border-color]="hmsIdError ? '#C70036' : '#E5E7EB'" style="color:#1D1D1F;" />
-                <p *ngIf="hmsIdError" class="mt-1 text-[10px]" style="color:#C70036;">
-                    {{ hmsIdError }}
+                <label class="block text-[10px] font-medium mb-1.5" style="color:#1D1D1F;">Roll Number</label>
+                <input type="text" [(ngModel)]="roll_number" (ngModelChange)="onRollNumberChange()" placeholder="e.g. 25mca001"
+                    class="w-full h-10 rounded-lg border px-3 text-xs outline-none transition-colors"
+                    [style.border-color]="roll_numberError ? '#C70036' : '#E5E7EB'" style="color:#1D1D1F;" />
+                <p *ngIf="roll_numberError" class="mt-1 text-[10px]" style="color:#C70036;">
+                    {{ roll_numberError }}
                 </p>
             </div>
 

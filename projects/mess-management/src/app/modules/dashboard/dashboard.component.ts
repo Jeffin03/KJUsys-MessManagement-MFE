@@ -27,7 +27,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private uptimeInterval: any;
-  private hmsIdLookup = new Map<string, string>();
+  private roll_numberLookup = new Map<string, string>();
   private activeByMealPlan: { [key: string]: number } = {};
   private subscriptions = new Subscription();
 
@@ -113,9 +113,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const activeByMealPlan: { [key: string]: number } = {};
 
     // Build roll number lookup map while counting active users and active by meal plan
-    this.hmsIdLookup.clear();
+    this.roll_numberLookup.clear();
     for (const s of subscribers) {
-      this.hmsIdLookup.set(s.name, s.hmsId);
+      this.roll_numberLookup.set(s.name, s.roll_number);
       if (s.status === 'Active') {
         active++;
         // Count active subscribers for each meal plan character (skip 'None')
@@ -187,7 +187,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private enrichTapsWithRollNumber(taps: MealEntry[]): MealEntry[] {
     return taps.map(t => ({
       ...t,
-      roll_number: this.hmsIdLookup.get(t.customer) || t.roll_number
+      roll_number: this.roll_numberLookup.get(t.customer) || t.roll_number
     }));
   }
 
@@ -216,7 +216,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Optimistic update: add the new tap to recent entries
     const newEntry = {
       customer: newTapData.name || 'Unknown',
-      roll_number: newTapData.roll_number || '',
+      roll_number: newTapData.roll_number || newTapData.rollNumber || newTapData.hmsId || newTapData.uid || '',
       mealSlot: newTapData.meal.charAt(0) + newTapData.meal.slice(1).toLowerCase() as any,
       time: new Date(newTapData.tap_DateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       status: 'Allowed' as 'Allowed' | 'Not Subscribed'

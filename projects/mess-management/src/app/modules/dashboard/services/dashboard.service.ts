@@ -73,7 +73,7 @@ export class DashboardService {
           const taps = res.responseData?.data?.taps || [];
           return taps.map(t => ({
             customer: t.name,
-            roll_number: t.roll_number,
+            roll_number: t.roll_number || t.rollNumber || t.hmsId || t.uid || 'N/A',
             mealSlot: t.meal.charAt(0) + t.meal.slice(1).toLowerCase() as any,
             time: new Date(t.tap_DateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             status: 'Allowed' as 'Allowed' | 'Not Subscribed'

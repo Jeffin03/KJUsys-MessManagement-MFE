@@ -22,8 +22,8 @@ export class SubscriberCardModalComponent implements OnChanges, OnDestroy {
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
 
-  hmsId = '';
-  hmsIdError = '';
+  roll_number = '';
+  roll_numberError = '';
 
   ngOnChanges(changes: SimpleChanges): void {
     const appRoot = document.querySelector('app-root') as HTMLElement;
@@ -49,24 +49,12 @@ export class SubscriberCardModalComponent implements OnChanges, OnDestroy {
     }
   }
 
-  onHmsIdChange(): void {
-    this.hmsId = this.hmsId.toUpperCase();
-
-    if (this.hmsId.length === 0) {
-      this.hmsIdError = '';
+  onRollNumberChange(): void {
+    if (this.roll_number.length === 0) {
+      this.roll_numberError = '';
       return;
     }
-
-    const hmsRegex = /^[A-Z]{0,3}[0-9]{0,3}$/;
-    const fullRegex = /^[A-Z]{3}[0-9]{3}$/;
-
-    if (!hmsRegex.test(this.hmsId)) {
-      this.hmsIdError = 'Format must be 3 letters followed by 3 numbers (e.g. ABH976)';
-    } else if (this.hmsId.length === 6 && !fullRegex.test(this.hmsId)) {
-      this.hmsIdError = 'Format must be 3 letters followed by 3 numbers (e.g. ABH976)';
-    } else {
-      this.hmsIdError = '';
-    }
+    this.roll_numberError = '';
   }
 
   onPrevious(): void {
@@ -81,6 +69,6 @@ export class SubscriberCardModalComponent implements OnChanges, OnDestroy {
 
   onSave(): void {
     this.unlockScroll();
-    this.save.emit({ ...this.subscriber, hmsId: this.hmsId });
+    this.save.emit({ ...this.subscriber, roll_number: this.roll_number });
   }
 }
