@@ -22,7 +22,7 @@ export const environment = {
 
 
 
-    baseUrl: 'https://literary-fri-lawrence-limits.trycloudflare.com/kjusys-api/mess-management',
+    baseUrl: 'https://localhost:8080/kjusys-api/mess-management',
 
 
 

@@ -11,7 +11,7 @@ export interface BackendStudent {
   name: string;
   phone: string;
   email: string;
-  hmsId: string;
+  roll_number: string;
   subscription: {
     meals: string[];
     start_Date: number;
@@ -67,7 +67,7 @@ export class SubscriberService {
       id: student._id.$oid,
       name: student.name,
       email: student.email,
-      hmsId: student.hmsId || 'N/A',
+      hmsId: student.roll_number || 'N/A',
       mealPlan: mealPlanStr || 'None',
       status: status,
       joinedDate: dateString
@@ -125,7 +125,7 @@ export class SubscriberService {
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
       phone: formData.phone,
-      hmsId: formData.hmsId || undefined,
+      roll_number: formData.roll_number || undefined,
       meals: meals,
       start_Date: parseDate(formData.mealSlot.startDate),
       end_Date: parseDate(formData.mealSlot.endDate)
@@ -134,9 +134,9 @@ export class SubscriberService {
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
   }
 
-  assignHmsId(uid: string, studentId: string): Observable<any> {
+  assignHmsId(roll_number: string, studentId: string): Observable<any> {
     const payload = { studentId: studentId };
-    return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.RFID_REASSIGN(uid)}`, payload);
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.RFID_REASSIGN(roll_number)}`, payload);
   }
 
   updateSubscriber(id: string | number, formData: any): Observable<any> {
@@ -156,7 +156,7 @@ export class SubscriberService {
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
       phone: formData.phone,
-      hmsId: formData.hmsId || undefined,
+      roll_number: formData.roll_number || undefined,
       meals: meals,
       start_Date: parseDate(formData.mealSlot.startDate),
       end_Date: parseDate(formData.mealSlot.endDate)

@@ -28,6 +28,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 export class DashboardComponent implements OnInit, OnDestroy {
   private uptimeInterval: any;
   private hmsIdLookup = new Map<string, string>();
+  private activeByMealPlan: { [key: string]: number } = {};
   private subscriptions = new Subscription();
 
   stats: DashboardStat[] = [
@@ -74,61 +75,69 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private async loadDataProgressively() {
     this.isLoading = true;
     try {
-      // 1. Load subscribers first
-      const subscribers = await firstValueFrom(this.subscriberService.getSubscribers());
+      // Initiate all network requests concurrently
+      const subscribersPromise = firstValueFrom(this.subscriberService.getSubscribers());
+      const schedulesPromise = firstValueFrom(this.dashboardService.getSchedules());
+      const tapsPromise = firstValueFrom(this.dashboardService.getTaps());
+
+      // 1. Wait for subscribers and process it first (required for other processing)
+      const subscribers = await subscribersPromise;
       this.processSubscribers(subscribers);
 
-      // 2. Load schedules next
-      const schedules = await firstValueFrom(this.dashboardService.getSchedules());
-      this.processSchedules(schedules, subscribers);
+      // 2. Wait for schedules and taps concurrently, then process them in parallel
+      const [schedules, taps] = await Promise.all([
+        schedulesPromise,
+        tapsPromise
+      ]);
 
-      // 3. Load taps last
-      const taps = await firstValueFrom(this.dashboardService.getTaps());
+      // Process schedules and taps concurrently (they don't depend on each other)
+      this.processSchedules(schedules);
+      this.processTaps(taps);
 
-      // We can use setTimeout to avoid blocking the main thread during heavy tap processing
-      setTimeout(() => {
-        this.processTaps(taps);
-        this.isLoading = false;
-        this.initWebSocket();
-      }, 0);
+      // Mark loading as complete and initialize WebSocket
+      this.isLoading = false;
+      this.initWebSocket();
+      this.cdr.detectChanges();
 
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
       this.errorMessage = 'Failed to load dashboard data. Please try again later.';
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
-    this.cdr.detectChanges();
   }
 
   private processSubscribers(subscribers: Subscriber[]): void {
     const total = subscribers.length;
     let active = 0;
+    const activeByMealPlan: { [key: string]: number } = {};
 
-    // Build HMS ID lookup map while counting active users to reduce loops
+    // Build roll number lookup map while counting active users and active by meal plan
     this.hmsIdLookup.clear();
     for (const s of subscribers) {
       this.hmsIdLookup.set(s.name, s.hmsId);
       if (s.status === 'Active') {
         active++;
+        // Count active subscribers for each meal plan character (skip 'None')
+        if (s.mealPlan !== 'None') {
+          const mealChars = s.mealPlan.split('+');
+          for (const char of mealChars) {
+            activeByMealPlan[char] = (activeByMealPlan[char] || 0) + 1;
+          }
+        }
       }
     }
 
     this.stats[0].value = total;
     this.stats[1].value = active;
-    this.cdr.detectChanges();
+    this.activeByMealPlan = activeByMealPlan;
   }
 
-  private processSchedules(schedules: MealSlot[], subscribers: Subscriber[]): void {
+  private processSchedules(schedules: MealSlot[]): void {
     if (schedules && schedules.length > 0) {
       this.mealSlots = schedules.map((slot: MealSlot) => {
         const mealChar = slot.name.charAt(0).toUpperCase();
-        let eligibleSubs = 0;
-
-        for (const s of subscribers) {
-          if (s.status === 'Active' && s.mealPlan.includes(mealChar)) {
-            eligibleSubs++;
-          }
-        }
+        const eligibleSubs = this.activeByMealPlan?.[mealChar] || 0;
 
         return {
           ...slot,
@@ -139,7 +148,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         };
       });
     }
-    this.cdr.detectChanges();
   }
 
   private processTaps(taps: MealEntry[]): void {
@@ -150,15 +158,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.stats[2].value = mealsServed;
     this.stats[3].value = Math.max(0, active - mealsServed);
 
-    // Enrich taps with HMS ID and set recent entries
+    // Enrich taps with roll number and set recent entries
     if (taps.length > 0) {
-      this.recentEntries = this.enrichTapsWithHmsId(taps);
+      this.recentEntries = this.enrichTapsWithRollNumber(taps);
     }
 
     // Process meal slots with taps data
     if (this.mealSlots && this.mealSlots.length > 0) {
+      // Create a map of mealSlot -> count for O(1) lookups
+      const tapsByMealSlot: { [key: string]: number } = {};
+      for (const tap of allowedTaps) {
+        const mealSlotKey = tap.mealSlot.toLowerCase();
+        tapsByMealSlot[mealSlotKey] = (tapsByMealSlot[mealSlotKey] || 0) + 1;
+      }
+
       this.mealSlots = this.mealSlots.map((slot: MealSlot) => {
-        const tapsForSlot = allowedTaps.filter((t: MealEntry) => t.mealSlot.toLowerCase() === slot.name.toLowerCase()).length;
+        const tapsForSlot = tapsByMealSlot[slot.name.toLowerCase()] || 0;
 
         return {
           ...slot,
@@ -169,10 +184,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  private enrichTapsWithHmsId(taps: MealEntry[]): MealEntry[] {
+  private enrichTapsWithRollNumber(taps: MealEntry[]): MealEntry[] {
     return taps.map(t => ({
       ...t,
-      hmsId: this.hmsIdLookup.get(t.customer) || t.hmsId
+      roll_number: this.hmsIdLookup.get(t.customer) || t.roll_number
     }));
   }
 
@@ -201,7 +216,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Optimistic update: add the new tap to recent entries
     const newEntry = {
       customer: newTapData.name || 'Unknown',
-      hmsId: newTapData.uid || '',
+      roll_number: newTapData.roll_number || '',
       mealSlot: newTapData.meal.charAt(0) + newTapData.meal.slice(1).toLowerCase() as any,
       time: new Date(newTapData.tap_DateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       status: 'Allowed' as 'Allowed' | 'Not Subscribed'
