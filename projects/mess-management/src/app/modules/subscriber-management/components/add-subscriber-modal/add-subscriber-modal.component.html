@@ -46,11 +46,11 @@
                     <p *ngIf="errors.email" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.email }}</p>
                 </div>
                 <div class="flex flex-col">
-                    <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Phone</label>
+                    <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Roll Number</label>
                     <input
                         class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                        style="color:#1D1D1F;" placeholder="e.g. +91 XXXXX XXXXX" [(ngModel)]="form.phone" />
-                    <p *ngIf="errors.phone" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.phone }}</p>
+                        style="color:#1D1D1F;" placeholder="e.g. 25mca001" [(ngModel)]="form.roll_number" />
+                    <p *ngIf="errors.roll_number" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.roll_number }}</p>
                 </div>
             </div>
 
@@ -76,6 +76,19 @@
                         <span class="text-xs" style="color:#101828;">Breakfast</span>
                     </label>
                     <label class="flex items-center gap-[9px] cursor-pointer select-none"
+                        (click)="form.mealSlot.brunch = !form.mealSlot.brunch">
+                        <span *ngIf="form.mealSlot.brunch"
+                            class="w-[18px] h-[18px] rounded bg-blue-600 flex items-center justify-center shrink-0">
+                            <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                                <path d="M1 4.5L4 7.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </span>
+                        <span *ngIf="!form.mealSlot.brunch"
+                            class="w-[18px] h-[18px] border-[1.5px] border-gray-300 rounded inline-block shrink-0 box-border"></span>
+                        <span class="text-xs" style="color:#101828;">Brunch</span>
+                    </label>
+                    <label class="flex items-center gap-[9px] cursor-pointer select-none"
                         (click)="form.mealSlot.lunch = !form.mealSlot.lunch">
                         <span *ngIf="form.mealSlot.lunch"
                             class="w-[18px] h-[18px] rounded bg-blue-600 flex items-center justify-center shrink-0">
@@ -87,6 +100,19 @@
                         <span *ngIf="!form.mealSlot.lunch"
                             class="w-[18px] h-[18px] border-[1.5px] border-gray-300 rounded inline-block shrink-0 box-border"></span>
                         <span class="text-xs" style="color:#101828;">Lunch</span>
+                    </label>
+                    <label class="flex items-center gap-[9px] cursor-pointer select-none"
+                        (click)="form.mealSlot.snacks = !form.mealSlot.snacks">
+                        <span *ngIf="form.mealSlot.snacks"
+                            class="w-[18px] h-[18px] rounded bg-blue-600 flex items-center justify-center shrink-0">
+                            <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                                <path d="M1 4.5L4 7.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </span>
+                        <span *ngIf="!form.mealSlot.snacks"
+                            class="w-[18px] h-[18px] border-[1.5px] border-gray-300 rounded inline-block shrink-0 box-border"></span>
+                        <span class="text-xs" style="color:#101828;">Snacks</span>
                     </label>
                     <label class="flex items-center gap-[9px] cursor-pointer select-none"
                         (click)="form.mealSlot.dinner = !form.mealSlot.dinner">

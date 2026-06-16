@@ -109,7 +109,7 @@ export class SubscriberTableComponent implements OnChanges {
     this.filteredSubscribers = this.subscribers.filter(s => {
       const matchSearch = s.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         s.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        s.hmsId.toLowerCase().includes(this.searchTerm.toLowerCase());
+        s.roll_number.toLowerCase().includes(this.searchTerm.toLowerCase());
       const matchPlan = this.selectedPlan ? s.mealPlan === this.selectedPlan : true;
       const matchStatus = this.selectedStatus ? s.status === this.selectedStatus : true;
       return matchSearch && matchPlan && matchStatus;

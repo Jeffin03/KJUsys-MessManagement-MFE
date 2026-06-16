@@ -133,21 +133,21 @@ export class SubscriberManagementComponent implements OnInit {
   }
 
   saveSubscriberConfiguration(data: any): void {
-    console.log('Final Subscriber Configuration (Assigning HMS ID):', data);
+    console.log('Final Subscriber Configuration (Assigning Roll Number):', data);
 
-    const roll_number = data.hmsId;
+    const roll_number = data.roll_number;
     const customerId = data.backendId;
 
     if (roll_number && customerId && !customerId.startsWith('dummy_id')) {
       this.subscriberService.assignHmsId(roll_number, customerId).subscribe({
         next: (res) => {
-          console.log('Successfully assigned HMS ID to subscriber:', res);
+          console.log('Successfully assigned Roll Number to subscriber:', res);
           this.showCardModal = false;
           this.refreshSubscribers(); // Refresh table
           this.cdr.detectChanges();
         },
         error: (err) => {
-          console.error('Failed to assign HMS ID:', err);
+          console.error('Failed to assign Roll Number:', err);
           this.showCardModal = false;
           this.refreshSubscribers();
           this.cdr.detectChanges();
@@ -243,7 +243,7 @@ export class SubscriberManagementComponent implements OnInit {
         id: i + 1,
         name: 'Jeffin',
         email: 'jeffin@edu.com',
-        hmsId: 'ABH976',
+        roll_number: '25mca001',
         mealPlan: plans[i % plans.length],
         status: statuses[i % statuses.length],
         joinedDate: `${10 + (i % 20)} Jan 26`

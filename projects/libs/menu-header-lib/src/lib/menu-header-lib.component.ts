@@ -54,7 +54,7 @@ showDownloads = false;
   studentProfile = {
     name: '',
     registerNumber: '',
-    rollNumber: '',
+    roll_number: '',
     dateOfBirth: '',
     gender: '',
     course: '',
@@ -421,7 +421,7 @@ openMyProfile(){
       this.studentProfile = {
         name: 'Student',
         registerNumber: '12345',
-        rollNumber: '12345',
+        roll_number: '12345',
         dateOfBirth: '',
         gender: '',
         course: '',

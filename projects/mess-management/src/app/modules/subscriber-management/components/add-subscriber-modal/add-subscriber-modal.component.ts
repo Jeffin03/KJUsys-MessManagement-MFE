@@ -38,7 +38,7 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
     firstName: '',
     lastName: '',
     email: '',
-    phone: ''
+    roll_number: ''
   };
 
   dateError = '';
@@ -61,10 +61,12 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
+    roll_number: '',
     mealSlot: {
       breakfast: false,
+      brunch: false,
       lunch: false,
+      snacks: false,
       dinner: false,
       startDate: '',
       endDate: '',
@@ -113,10 +115,12 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
       firstName: '',
       lastName: '',
       email: '',
-      phone: '',
+      roll_number: '',
       mealSlot: {
         breakfast: false,
+        brunch: false,
         lunch: false,
+        snacks: false,
         dinner: false,
         startDate: '',
         endDate: '',
@@ -127,7 +131,7 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
       firstName: '',
       lastName: '',
       email: '',
-      phone: ''
+      roll_number: ''
     };
     this.dateError = '';
   }
@@ -147,12 +151,11 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
       firstName: '',
       lastName: '',
       email: '',
-      phone: ''
+      roll_number: ''
     };
 
     const nameRegex = /^[A-Za-z ]+$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[6-9]\d{9}$/;
 
     let valid = true;
 
@@ -177,8 +180,8 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
       valid = false;
     }
 
-    if (!phoneRegex.test(this.form.phone)) {
-      this.errors.phone = 'Enter a valid 10 digit mobile number';
+    if (!this.form.roll_number.trim()) {
+      this.errors.roll_number = 'Roll number is required';
       valid = false;
     }
 

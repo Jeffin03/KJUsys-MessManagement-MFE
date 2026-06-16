@@ -9,9 +9,9 @@ import { environment } from '../../../../environments/environment';
 export interface BackendStudent {
   _id: { $oid: string };
   name: string;
-  phone: string;
-  email: string;
   roll_number: string;
+  uid?: string;
+  email: string;
   subscription: {
     meals: string[];
     start_Date: number;
@@ -47,10 +47,12 @@ export class SubscriberService {
     const date = new Date(student.subscription?.start_Date || Date.now());
     const dateString = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
 
-    // Map meals array to 'B+L+D' format
+    // Map meals array to 'B+BR+L+S+D' format
     const mealPlanMap: { [key: string]: string } = {
       'BREAKFAST': 'B',
+      'BRUNCH': 'BR',
       'LUNCH': 'L',
+      'SNACKS': 'S',
       'DINNER': 'D'
     };
     const mealsArray = student.subscription?.meals || [];
@@ -67,7 +69,7 @@ export class SubscriberService {
       id: student._id.$oid,
       name: student.name,
       email: student.email,
-      hmsId: student.roll_number || 'N/A',
+      roll_number: (student as any).roll_number || (student as any).rollNumber || (student as any).hmsId || student.uid || 'N/A',
       mealPlan: mealPlanStr || 'None',
       status: status,
       joinedDate: dateString
@@ -111,7 +113,9 @@ export class SubscriberService {
   createSubscriber(formData: any): Observable<any> {
     const meals = [];
     if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
+    if (formData.mealSlot.brunch) meals.push('BRUNCH');
     if (formData.mealSlot.lunch) meals.push('LUNCH');
+    if (formData.mealSlot.snacks) meals.push('SNACKS');
     if (formData.mealSlot.dinner) meals.push('DINNER');
 
     // Convert 'DD/MM/YY' to timestamp
@@ -121,14 +125,17 @@ export class SubscriberService {
       return new Date(2000 + parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10)).getTime();
     };
 
+    const startDateTs = parseDate(formData.mealSlot.startDate);
+    const endDateTs = parseDate(formData.mealSlot.endDate);
+    const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
+
     const payload = {
+      roll_number: formData.roll_number,
+      uid: formData.roll_number,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
-      phone: formData.phone,
-      roll_number: formData.roll_number || undefined,
       meals: meals,
-      start_Date: parseDate(formData.mealSlot.startDate),
-      end_Date: parseDate(formData.mealSlot.endDate)
+      duration_days: durationDays > 0 ? durationDays : 30
     };
 
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
@@ -142,7 +149,9 @@ export class SubscriberService {
   updateSubscriber(id: string | number, formData: any): Observable<any> {
     const meals = [];
     if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
+    if (formData.mealSlot.brunch) meals.push('BRUNCH');
     if (formData.mealSlot.lunch) meals.push('LUNCH');
+    if (formData.mealSlot.snacks) meals.push('SNACKS');
     if (formData.mealSlot.dinner) meals.push('DINNER');
 
     // Convert 'DD/MM/YY' to timestamp
@@ -152,14 +161,20 @@ export class SubscriberService {
       return new Date(2000 + parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10)).getTime();
     };
 
+    const startDateTs = parseDate(formData.mealSlot.startDate);
+    const endDateTs = parseDate(formData.mealSlot.endDate);
+    const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
+
     const payload = {
+      roll_number: formData.roll_number,
+      uid: formData.roll_number,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
-      phone: formData.phone,
-      roll_number: formData.roll_number || undefined,
-      meals: meals,
-      start_Date: parseDate(formData.mealSlot.startDate),
-      end_Date: parseDate(formData.mealSlot.endDate)
+      "subscription.meals": meals,
+      "subscription.start_Date": startDateTs,
+      "subscription.end_Date": endDateTs,
+      "subscription.active": formData.mealSlot.status !== 'Paused',
+      "subscription.duration_days": durationDays > 0 ? durationDays : 30
     };
 
     return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(id)}`, payload);

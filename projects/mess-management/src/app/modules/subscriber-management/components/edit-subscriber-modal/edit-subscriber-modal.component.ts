@@ -41,7 +41,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     firstName: '',
     lastName: '',
     email: '',
-    phone: ''
+    roll_number: ''
   };
 
   dateError = '';
@@ -64,10 +64,12 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
+    roll_number: '',
     mealSlot: {
       breakfast: false,
+      brunch: false,
       lunch: false,
+      snacks: false,
       dinner: false,
       startDate: '',
       endDate: '',
@@ -119,13 +121,14 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     this.form.lastName = nameParts.slice(1).join(' ') || '';
 
     this.form.email = this.subscriber.email || '';
-    // Mock phone since it's not in the interface
-    this.form.phone = '9876543210'; 
+    this.form.roll_number = this.subscriber.roll_number !== 'N/A' ? this.subscriber.roll_number : '';
 
     // Parse meal plan from subscriber
-    const plan = (this.subscriber.mealPlan || '').toUpperCase();
+    const plan = (this.subscriber.mealPlan || '').toUpperCase().split('+');
     this.form.mealSlot.breakfast = plan.includes('B');
+    this.form.mealSlot.brunch = plan.includes('BR');
     this.form.mealSlot.lunch = plan.includes('L');
+    this.form.mealSlot.snacks = plan.includes('S');
     this.form.mealSlot.dinner = plan.includes('D');
 
     // Status
@@ -172,10 +175,12 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       firstName: '',
       lastName: '',
       email: '',
-      phone: '',
+      roll_number: '',
       mealSlot: {
         breakfast: false,
+        brunch: false,
         lunch: false,
+        snacks: false,
         dinner: false,
         startDate: '',
         endDate: '',
@@ -186,7 +191,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       firstName: '',
       lastName: '',
       email: '',
-      phone: ''
+      roll_number: ''
     };
     this.dateError = '';
   }
@@ -206,12 +211,11 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       firstName: '',
       lastName: '',
       email: '',
-      phone: ''
+      roll_number: ''
     };
 
     const nameRegex = /^[A-Za-z ]+$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[6-9]\d{9}$/;
 
     let valid = true;
 
@@ -236,8 +240,8 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       valid = false;
     }
 
-    if (!phoneRegex.test(this.form.phone)) {
-      this.errors.phone = 'Enter a valid 10 digit mobile number';
+    if (!this.form.roll_number.trim()) {
+      this.errors.roll_number = 'Roll number is required';
       valid = false;
     }
 

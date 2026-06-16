@@ -8,6 +8,6 @@ import { CommonModule } from '@angular/common';
   templateUrl: './subscriber-card-preview.component.html'
 })
 export class SubscriberCardPreviewComponent {
-  @Input() hmsId = '';
+  @Input() roll_number = '';
   @Input() subscriberName = '';
 }
