@@ -11,9 +11,9 @@ export const API_ENDPOINTS = {
 
   // RFID
   RFID: '/rfid',
-  RFID_DEACTIVATE: (uid: string) => `/rfid/${uid}/deactivate`,
-  RFID_REASSIGN: (uid: string) => `/rfid/${uid}/reassign`,
-  RFID_HISTORY: (uid: string) => `/rfid/${uid}/history`,
+  RFID_DEACTIVATE: (roll_number: string) => `/rfid/${roll_number}/deactivate`,
+  RFID_REASSIGN: (roll_number: string) => `/rfid/${roll_number}/reassign`,
+  RFID_HISTORY: (roll_number: string) => `/rfid/${roll_number}/history`,
   RFID_BULK: '/rfid/bulk',
 
   // Schedule

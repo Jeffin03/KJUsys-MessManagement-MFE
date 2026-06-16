@@ -1,6 +1,6 @@
 export interface MealEntry {
   customer: string;
-  hmsId: string;
+  roll_number: string;
   mealSlot: 'Breakfast' | 'Lunch' | 'Dinner';
   time: string;
   status: 'Allowed' | 'Not Subscribed';

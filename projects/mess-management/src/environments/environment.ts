@@ -5,9 +5,9 @@ export const environment = {
         'mess-management': 'http://localhost:4201',
     },
     publicPath: 'http://localhost:4201/',
-    baseUrl: 'https://literary-fri-lawrence-limits.trycloudflare.com/kjusys-api/mess-management',
+    baseUrl: 'https://water-mobiles-customs-benz.trycloudflare.com/kjusys-api/mess-management',
     project: 'mess-management',
     baseRoute: 'kjusys',
     local: false,
-    apirefreshUrl: 'https://waterproof-james-boot-lexington.trycloudflare.com/kjusys-api/authnauthz/refresh-access-token'
+    apirefreshUrl: 'https://water-mobiles-customs-benz.trycloudflare.com/kjusys-api/authnauthz/refresh-access-token'
 };

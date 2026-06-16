@@ -50,7 +50,7 @@ export class SubscriberManagementComponent implements OnInit {
   constructor(
     private subscriberService: SubscriberService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.subscriberService.getSubscribers().subscribe({
@@ -94,18 +94,18 @@ export class SubscriberManagementComponent implements OnInit {
 
   openCardStep(data: any): void {
     console.log('OPEN CARD STEP - CREATING SUBSCRIBER', data);
-    
+
     // Call the API to create the subscriber first
     this.subscriberService.createSubscriber(data).subscribe({
       next: (res) => {
         // Assume backend returns the created customer or _id in responseData
         const newCustomerId = res.responseData?.data?.customer?._id?.$oid || res.responseData?.data?._id?.$oid || res.responseData?.data?.id;
-        
+
         console.log('Subscriber created with ID:', newCustomerId);
-        
+
         // Pass the created ID to the next step
         this.subscriberFormData = { ...data, backendId: newCustomerId };
-        
+
         this.showAddModal = false;
         this.showCardModal = true;
         this.cdr.detectChanges();
@@ -135,11 +135,11 @@ export class SubscriberManagementComponent implements OnInit {
   saveSubscriberConfiguration(data: any): void {
     console.log('Final Subscriber Configuration (Assigning HMS ID):', data);
 
-    const uid = data.hmsId;
+    const roll_number = data.hmsId;
     const customerId = data.backendId;
 
-    if (uid && customerId && !customerId.startsWith('dummy_id')) {
-      this.subscriberService.assignHmsId(uid, customerId).subscribe({
+    if (roll_number && customerId && !customerId.startsWith('dummy_id')) {
+      this.subscriberService.assignHmsId(roll_number, customerId).subscribe({
         next: (res) => {
           console.log('Successfully assigned HMS ID to subscriber:', res);
           this.showCardModal = false;
@@ -154,10 +154,10 @@ export class SubscriberManagementComponent implements OnInit {
         }
       });
     } else {
-       // Just close and refresh if it's a dummy or missing info
-       this.showCardModal = false;
-       this.refreshSubscribers();
-       this.cdr.detectChanges();
+      // Just close and refresh if it's a dummy or missing info
+      this.showCardModal = false;
+      this.refreshSubscribers();
+      this.cdr.detectChanges();
     }
   }
 
