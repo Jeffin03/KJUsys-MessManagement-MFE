@@ -45,10 +45,8 @@ export class SubscriberTableComponent implements OnChanges {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
-    if (!this.elementRef.nativeElement.contains(event.target)) {
-      this.showPlanDropdown = false;
-      this.showStatusDropdown = false;
-    }
+    this.showPlanDropdown = false;
+    this.showStatusDropdown = false;
   }
 
   togglePlanDropdown(event: MouseEvent) {

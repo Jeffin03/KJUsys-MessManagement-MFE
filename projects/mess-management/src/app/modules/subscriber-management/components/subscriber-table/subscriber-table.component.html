@@ -1,7 +1,7 @@
 <div class="flex items-center gap-3 mb-6 flex-wrap">
     <!-- Search -->
     <div
-        class="flex items-center border border-gray-300 rounded-lg px-4 py-2.5 w-56 bg-white gap-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+        class="flex items-center border border-gray-300 rounded-lg px-4 h-[40px] w-[343px] bg-white gap-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
         <img src="assets/search icon.svg" class="w-4 h-4 flex-shrink-0" alt="search" />
         <input type="text"
             class="border-none outline-none text-xs font-normal text-text-main w-full bg-transparent focus:ring-0"
@@ -10,7 +10,7 @@
 
     <!-- Plan Dropdown -->
     <div class="relative">
-        <div class="flex items-center justify-between gap-2.5 border border-gray-300 rounded-lg px-4 py-2.5 text-xs bg-white cursor-pointer min-w-[120px]"
+        <div class="flex items-center justify-between gap-2.5 border border-gray-300 rounded-lg px-4 h-[40px] text-xs font-[400] bg-white cursor-pointer min-w-[120px]"
             (click)="togglePlanDropdown($event)">
             <span class="text-black">{{ selectedPlanLabel }}</span>
             <img src="assets/dropdownarrow.svg" class="w-3 h-2" alt="arrow" />
@@ -28,7 +28,7 @@
 
     <!-- Status Dropdown -->
     <div class="relative">
-        <div class="flex items-center justify-between gap-2.5 border border-gray-300 rounded-lg px-4 py-2.5 text-xs bg-white cursor-pointer min-w-[120px]"
+        <div class="flex items-center justify-between gap-2.5 border border-gray-300 rounded-lg px-4 h-[40px] text-xs font-[400] bg-white cursor-pointer min-w-[120px]"
             (click)="toggleStatusDropdown($event)">
             <span class="text-black">{{ selectedStatusLabel }}</span>
             <img src="assets/dropdownarrow.svg" class="w-3 h-2" alt="arrow" />
