@@ -163,8 +163,8 @@ export class SubscriberManagementComponent implements OnInit {
 
   updateSubscriber(data: any): void {
     console.log('Update subscriber with data:', data);
-    if (this.editSubscriberData && this.editSubscriberData.id) {
-      this.subscriberService.updateSubscriber(this.editSubscriberData.id, data).subscribe({
+    if (this.editSubscriberData && this.editSubscriberData.roll_number) {
+      this.subscriberService.updateSubscriber(this.editSubscriberData.roll_number, data).subscribe({
         next: (res) => {
           console.log('Successfully updated subscriber:', res);
           this.showEditModal = false;
@@ -181,7 +181,7 @@ export class SubscriberManagementComponent implements OnInit {
         }
       });
     } else {
-      console.error('No subscriber ID available for update');
+      console.error('No subscriber roll number available for update');
       this.showEditModal = false;
       this.editSubscriberData = null;
       this.refreshSubscribers();

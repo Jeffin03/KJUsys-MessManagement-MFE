@@ -128,14 +128,21 @@ export class SubscriberService {
     const startDateTs = parseDate(formData.mealSlot.startDate);
     const endDateTs = parseDate(formData.mealSlot.endDate);
     const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
+    const daysRemaining = durationDays > 0 ? durationDays : 30;
 
     const payload = {
       roll_number: formData.roll_number,
       uid: formData.roll_number,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
-      meals: meals,
-      duration_days: durationDays > 0 ? durationDays : 30
+      subscription: {
+        meals: meals,
+        start_Date: startDateTs,
+        end_Date: endDateTs,
+        active: formData.mealSlot.status !== 'Paused',
+        duration_days: durationDays,
+        days_remaining: daysRemaining
+      }
     };
 
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
@@ -146,7 +153,7 @@ export class SubscriberService {
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.RFID_REASSIGN(roll_number)}`, payload);
   }
 
-  updateSubscriber(id: string | number, formData: any): Observable<any> {
+  updateSubscriber(roll_number: string, formData: any): Observable<any> {
     const meals = [];
     if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
     if (formData.mealSlot.brunch) meals.push('BRUNCH');
@@ -163,20 +170,26 @@ export class SubscriberService {
 
     const startDateTs = parseDate(formData.mealSlot.startDate);
     const endDateTs = parseDate(formData.mealSlot.endDate);
-    const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
+    const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 0;
+    const now = Date.now();
+    const daysRemaining = endDateTs > 0 ? Math.max(0, Math.round((endDateTs - now) / (1000 * 60 * 60 * 24))) : 0;
 
     const payload = {
       roll_number: formData.roll_number,
       uid: formData.roll_number,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
-      "subscription.meals": meals,
-      "subscription.start_Date": startDateTs,
-      "subscription.end_Date": endDateTs,
-      "subscription.active": formData.mealSlot.status !== 'Paused',
-      "subscription.duration_days": durationDays > 0 ? durationDays : 30
+      subscription: {
+        meals: meals,
+        start_Date: startDateTs,
+        end_Date: endDateTs,
+        active: formData.mealSlot.status !== 'Paused',
+        duration_days: durationDays,
+        days_remaining: daysRemaining
+      }
     };
 
-    return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(id)}`, payload);
+    // Use roll_number for the endpoint (backend expects roll_number, not MongoDB _id)
+    return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(roll_number)}`, payload);
   }
 }
