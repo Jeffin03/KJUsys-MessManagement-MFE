@@ -1,6 +1,6 @@
-# Mess Management Developer Groll_numbere
+# Mess Management Developer Guide
 
-This groll_numbere provides a comprehensive overview of the architecture, workflow, and best practices for developing within the Mess Management Micro-Frontend (MFE). It is designed to help team members quickly onboard and understand how to navigate the codebase.
+This guide provides a comprehensive overview of the architecture, workflow, and best practices for developing within the Mess Management Micro-Frontend (MFE). It is designed to help team members quickly onboard and understand how to navigate the codebase.
 
 ---
 

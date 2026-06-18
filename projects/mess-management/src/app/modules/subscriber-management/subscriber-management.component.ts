@@ -164,7 +164,7 @@ export class SubscriberManagementComponent implements OnInit {
   updateSubscriber(data: any): void {
     console.log('Update subscriber with data:', data);
     if (this.editSubscriberData && this.editSubscriberData.roll_number) {
-      this.subscriberService.updateSubscriber(this.editSubscriberData.roll_number, data).subscribe({
+      this.subscriberService.updateSubscriber(this.editSubscriberData.roll_number, data, this.editSubscriberData.id).subscribe({
         next: (res) => {
           console.log('Successfully updated subscriber:', res);
           this.showEditModal = false;
@@ -176,6 +176,12 @@ export class SubscriberManagementComponent implements OnInit {
           console.error('Failed to update subscriber:', err);
           alert('Failed to update subscriber. Please check the console for details.');
           // Do NOT close the modal on error so the user is aware of the failure
+          if (err.error) {
+            console.error('Backend error details:', err.error);
+          }
+          this.showEditModal = false;
+          this.editSubscriberData = null;
+          this.refreshSubscribers();
           this.cdr.detectChanges();
         }
       });
