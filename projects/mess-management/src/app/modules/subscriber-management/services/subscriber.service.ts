@@ -60,8 +60,19 @@ export class SubscriberService {
 
     let status: 'Active' | 'Paused' | 'Lapsed' = 'Lapsed';
     if (student.subscription) {
-      if (student.subscription.active) {
+      // Check if subscription has expired based on end date
+      const endDate = new Date(student.subscription.end_Date);
+      const now = new Date();
+
+      if (endDate < now) {
+        // Subscription has expired
+        status = 'Lapsed';
+      } else if (student.subscription.active) {
+        // Subscription is active and not expired
         status = 'Active';
+      } else {
+        // Subscription is explicitly paused (not active but not expired)
+        status = 'Paused';
       }
     }
 
@@ -128,7 +139,6 @@ export class SubscriberService {
     const startDateTs = parseDate(formData.mealSlot.startDate);
     const endDateTs = parseDate(formData.mealSlot.endDate);
     const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
-    const daysRemaining = durationDays > 0 ? durationDays : 30;
 
     const payload = {
       roll_number: formData.roll_number,
@@ -140,8 +150,7 @@ export class SubscriberService {
         start_Date: startDateTs,
         end_Date: endDateTs,
         active: formData.mealSlot.status !== 'Paused',
-        duration_days: durationDays,
-        days_remaining: daysRemaining
+        duration_days: durationDays
       }
     };
 
@@ -153,7 +162,7 @@ export class SubscriberService {
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.RFID_REASSIGN(roll_number)}`, payload);
   }
 
-  updateSubscriber(roll_number: string, formData: any): Observable<any> {
+  updateSubscriber(roll_number: string, formData: any, id: string | number): Observable<any> {
     const meals = [];
     if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
     if (formData.mealSlot.brunch) meals.push('BRUNCH');
@@ -170,11 +179,10 @@ export class SubscriberService {
 
     const startDateTs = parseDate(formData.mealSlot.startDate);
     const endDateTs = parseDate(formData.mealSlot.endDate);
-    const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 0;
-    const now = Date.now();
-    const daysRemaining = endDateTs > 0 ? Math.max(0, Math.round((endDateTs - now) / (1000 * 60 * 60 * 24))) : 0;
+    const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
 
     const payload = {
+      _id: { $oid: id.toString() },
       roll_number: formData.roll_number,
       uid: formData.roll_number,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
@@ -184,8 +192,7 @@ export class SubscriberService {
         start_Date: startDateTs,
         end_Date: endDateTs,
         active: formData.mealSlot.status !== 'Paused',
-        duration_days: durationDays,
-        days_remaining: daysRemaining
+        duration_days: durationDays
       }
     };
 
