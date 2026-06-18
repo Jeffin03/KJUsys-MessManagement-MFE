@@ -78,7 +78,7 @@
         <div (click)="closeAllDropdowns()" class="overflow-y-auto bg-white flex flex-col">
 
             <!-- Header -->
-            <div class="px-7 pt-5 pb-4 bg-[#F5F5F7] border-b border-[#E5E7EB]">
+            <div class="px-7 pt-5 bg-white border-b border-[#E5E7EB]">
                 <div class="flex items-start justify-between">
                     <div>
                         <h2 class="text-sm font-semibold text-[#111827]">Configure Meal Slots</h2>
@@ -89,8 +89,17 @@
                     <button (click)="close()"
                         class="text-[#9CA3AF] text-xl leading-none bg-none border-none cursor-pointer p-1">✕</button>
                 </div>
+                <!-- Tabs -->
+                <div class="mt-5">
+                    <lib-sub-tabs 
+                        [tabs]="subTabs" 
+                        [activeTabId]="activeTab" 
+                        (tabChange)="onTabChange($event)">
+                    </lib-sub-tabs>
+                </div>
             </div>
 
+            <ng-container *ngIf="activeTab === 'mealSlots'">
             <!-- Current Meal Slots -->
             <div class="px-7 py-5 border-b border-[#E5E7EB]">
                 <h3 class="text-sm font-semibold text-[#4A5565] mb-3">Current Meal Slots</h3>
@@ -389,6 +398,117 @@
                     </div>
                 </div>
             </div>
+            </ng-container>
+
+            <ng-container *ngIf="activeTab === 'displayPanel'">
+                <div class="px-7 py-6">
+                    <!-- LCD Panel Preview -->
+                    <div class="flex flex-col items-center mb-8">
+                        <div class="relative w-[340px]">
+                            <img src="assets/LCD Panel.svg" class="w-full" />
+                            <!-- Text overlay -->
+                            <div class="absolute inset-0 flex flex-col justify-center text-white lcd-text-container" style="padding-left: 31px; padding-top: 12px;">
+                                <p>{{ getPreviewLine1() }}</p>
+                                <p>{{ getPreviewLine2() }}</p>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-[#86868B] mt-3">Previewing: {{ previewStateName }} - Line 1 & 2</p>
+                    </div>
+
+                    <!-- Config Cards -->
+                    <div class="flex flex-col gap-5">
+                        <!-- Default Message -->
+                        <div class="rounded-xl border border-[#B4C9FF] overflow-hidden">
+                            <div class="bg-[#EBF1FF] px-4 py-2.5 flex items-center justify-between border-b border-[#B4C9FF]">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-[#155DFC]"></div>
+                                    <span class="text-xs font-bold text-[#155DFC]">Default Message</span>
+                                </div>
+                                <button (click)="previewState = 'defaultMsg'" [class]="previewState === 'defaultMsg' ? 'bg-white text-[#155DFC] font-bold shadow-sm' : 'bg-[#EBF1FF] text-[#155DFC] font-semibold'" class="px-4 py-1 rounded-xl border border-[#B4C9FF] text-[10px] transition-all">Preview</button>
+                            </div>
+                            <div class="p-4 bg-white flex flex-col gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-[#111827] mb-2">Line 1</label>
+                                    <input [(ngModel)]="displayConfig.defaultMsg.line1" (focus)="previewState = 'defaultMsg'" maxlength="16" placeholder="e.g. Mentora Mess" class="w-full px-4 h-10 rounded-lg border border-[#E5E7EB] text-xs text-[#000000] placeholder:text-[#6B7280] outline-none focus:border-blue-500" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-[#111827] mb-2">Line 2</label>
+                                    <input [(ngModel)]="displayConfig.defaultMsg.line2" (focus)="previewState = 'defaultMsg'" maxlength="16" placeholder="e.g. Tap your card..." class="w-full px-4 h-10 rounded-lg border border-[#E5E7EB] text-xs text-[#000000] placeholder:text-[#6B7280] outline-none focus:border-blue-500" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tap Allowed -->
+                        <div class="rounded-xl border border-[#A8DAB5] overflow-hidden">
+                            <div class="bg-[#E6F4EA] px-4 py-2.5 flex items-center justify-between border-b border-[#A8DAB5]">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-[#1D9F00]"></div>
+                                    <span class="text-xs font-bold text-[#1D9F00]">Tap Allowed</span>
+                                </div>
+                                <button (click)="previewState = 'tapAllowed'" [class]="previewState === 'tapAllowed' ? 'bg-white text-[#1D9F00] font-bold shadow-sm' : 'bg-[#E6F4EA] text-[#1D9F00] font-semibold'" class="px-4 py-1 rounded-xl border border-[#A8DAB5] text-[10px] transition-all">Preview</button>
+                            </div>
+                            <div class="p-4 bg-white flex flex-col gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-[#111827] mb-2">Line 1</label>
+                                    <input [(ngModel)]="displayConfig.tapAllowed.line1" (focus)="previewState = 'tapAllowed'" maxlength="16" placeholder='e.g. "name"' class="w-full px-4 h-10 rounded-lg border border-[#E5E7EB] text-xs text-[#000000] placeholder:text-[#6B7280] outline-none focus:border-blue-500" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-[#111827] mb-2">Line 2</label>
+                                    <input [(ngModel)]="displayConfig.tapAllowed.line2" (focus)="previewState = 'tapAllowed'" maxlength="16" placeholder="e.g. Tap Successful." class="w-full px-4 h-10 rounded-lg border border-[#E5E7EB] text-xs text-[#000000] placeholder:text-[#6B7280] outline-none focus:border-blue-500" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Already Tapped -->
+                        <div class="rounded-xl border border-[#FBD0A2] overflow-hidden">
+                            <div class="bg-[#FEF3E6] px-4 py-2.5 flex items-center justify-between border-b border-[#FBD0A2]">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-[#E07A00]"></div>
+                                    <span class="text-xs font-bold text-[#E07A00]">Already Tapped</span>
+                                </div>
+                                <button (click)="previewState = 'alreadyTapped'" [class]="previewState === 'alreadyTapped' ? 'bg-white text-[#E07A00] font-bold shadow-sm' : 'bg-[#FEF3E6] text-[#E07A00] font-semibold'" class="px-4 py-1 rounded-xl border border-[#FBD0A2] text-[10px] transition-all">Preview</button>
+                            </div>
+                            <div class="p-4 bg-white flex flex-col gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-[#111827] mb-2">Line 1</label>
+                                    <input [(ngModel)]="displayConfig.alreadyTapped.line1" (focus)="previewState = 'alreadyTapped'" maxlength="16" placeholder='e.g. "name"' class="w-full px-4 h-10 rounded-lg border border-[#E5E7EB] text-xs text-[#000000] placeholder:text-[#6B7280] outline-none focus:border-blue-500" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-[#111827] mb-2">Line 2</label>
+                                    <input [(ngModel)]="displayConfig.alreadyTapped.line2" (focus)="previewState = 'alreadyTapped'" maxlength="16" placeholder="e.g. Already Tapped." class="w-full px-4 h-10 rounded-lg border border-[#E5E7EB] text-xs text-[#000000] placeholder:text-[#6B7280] outline-none focus:border-blue-500" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Not Subscribed -->
+                        <div class="rounded-xl border border-[#F2B2B2] overflow-hidden">
+                            <div class="bg-[#FCE8E8] px-4 py-2.5 flex items-center justify-between border-b border-[#F2B2B2]">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-[#D92C2B]"></div>
+                                    <span class="text-xs font-bold text-[#D92C2B]">Not Subscribed</span>
+                                </div>
+                                <button (click)="previewState = 'notSubscribed'" [class]="previewState === 'notSubscribed' ? 'bg-white text-[#D92C2B] font-bold shadow-sm' : 'bg-[#FCE8E8] text-[#D92C2B] font-semibold'" class="px-4 py-1 rounded-xl border border-[#F2B2B2] text-[10px] transition-all">Preview</button>
+                            </div>
+                            <div class="p-4 bg-white flex flex-col gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-[#111827] mb-2">Line 1</label>
+                                    <input [(ngModel)]="displayConfig.notSubscribed.line1" (focus)="previewState = 'notSubscribed'" maxlength="16" placeholder='e.g. "name"' class="w-full px-4 h-10 rounded-lg border border-[#E5E7EB] text-xs text-[#000000] placeholder:text-[#6B7280] outline-none focus:border-blue-500" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-[#111827] mb-2">Line 2</label>
+                                    <input [(ngModel)]="displayConfig.notSubscribed.line2" (focus)="previewState = 'notSubscribed'" maxlength="16" placeholder="e.g. Not Subscribed." class="w-full px-4 h-10 rounded-lg border border-[#E5E7EB] text-xs text-[#000000] placeholder:text-[#6B7280] outline-none focus:border-blue-500" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+
+            <ng-container *ngIf="activeTab === 'tokenCustomization'">
+                <div class="px-7 py-6 flex items-center justify-center min-h-[300px]">
+                    <p class="text-sm text-[#6B7280]">Token Customization coming soon...</p>
+                </div>
+            </ng-container>
 
             <!-- Footer -->
             <div class="flex items-center justify-between px-7 py-5 border-t border-[#E5E7EB]">

@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Subscriber } from '../../../../shared/models/subscriber';
+import { DashboardService } from '../../../dashboard/services/dashboard.service';
 
 @Component({
   selector: 'app-edit-subscriber-modal',
@@ -29,6 +30,8 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       this.onClose();
     }
   }
+
+  constructor(private dashboardService: DashboardService) {}
 
   @Input() isOpen = false;
   @Input() subscriber: Subscriber | null = null;
@@ -60,29 +63,29 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
   startViewDate = new Date();
   endViewDate = new Date();
 
+  availableMealSlots: string[] = [];
+
   form = {
     firstName: '',
     lastName: '',
     email: '',
     roll_number: '',
     mealSlot: {
-      breakfast: false,
-      brunch: false,
-      lunch: false,
-      snacks: false,
-      dinner: false,
       startDate: '',
       endDate: '',
       status: ''
-    }
+    } as any
   };
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!changes['isOpen'] && !changes['subscriber']) return;
 
-    // Populate form with subscriber data when it changes
-    if (this.subscriber) {
-      this.populateForm();
+    if (this.isOpen) {
+      this.fetchMealSlots();
+    } else {
+      if (this.subscriber) {
+        this.populateForm();
+      }
     }
 
     const appRoot = document.querySelector('app-root') as HTMLElement;
@@ -96,6 +99,15 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     } else {
       this.unlockScroll();
     }
+  }
+
+  fetchMealSlots() {
+    this.dashboardService.getSchedules().subscribe((slots: any) => {
+      this.availableMealSlots = slots.map((s: any) => s.name);
+      if (this.subscriber) {
+        this.populateForm();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -125,11 +137,19 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
 
     // Parse meal plan from subscriber
     const plan = (this.subscriber.mealPlan || '').toUpperCase().split('+');
-    this.form.mealSlot.breakfast = plan.includes('B');
-    this.form.mealSlot.brunch = plan.includes('BR');
-    this.form.mealSlot.lunch = plan.includes('L');
-    this.form.mealSlot.snacks = plan.includes('S');
-    this.form.mealSlot.dinner = plan.includes('D');
+    
+    this.availableMealSlots.forEach(slot => {
+      const slotUpper = slot.toUpperCase();
+      let matched = false;
+      if (slotUpper === 'BREAKFAST' && plan.includes('B')) matched = true;
+      else if (slotUpper === 'BRUNCH' && plan.includes('BR')) matched = true;
+      else if (slotUpper === 'LUNCH' && plan.includes('L')) matched = true;
+      else if (slotUpper === 'SNACKS' && plan.includes('S')) matched = true;
+      else if (slotUpper === 'DINNER' && plan.includes('D')) matched = true;
+      else if (plan.includes(slotUpper)) matched = true;
+      
+      this.form.mealSlot[slot.toLowerCase()] = matched;
+    });
 
     // Status
     this.form.mealSlot.status = this.subscriber.status || 'Active';
@@ -177,16 +197,15 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       email: '',
       roll_number: '',
       mealSlot: {
-        breakfast: false,
-        brunch: false,
-        lunch: false,
-        snacks: false,
-        dinner: false,
         startDate: '',
         endDate: '',
         status: ''
-      }
+      } as any
     };
+    
+    this.availableMealSlots.forEach(slot => {
+      this.form.mealSlot[slot.toLowerCase()] = false;
+    });
     this.errors = {
       firstName: '',
       lastName: '',

@@ -122,12 +122,12 @@ export class SubscriberService {
   }
 
   createSubscriber(formData: any): Observable<any> {
-    const meals = [];
-    if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
-    if (formData.mealSlot.brunch) meals.push('BRUNCH');
-    if (formData.mealSlot.lunch) meals.push('LUNCH');
-    if (formData.mealSlot.snacks) meals.push('SNACKS');
-    if (formData.mealSlot.dinner) meals.push('DINNER');
+    const meals: string[] = [];
+    Object.keys(formData.mealSlot).forEach(key => {
+      if (!['startDate', 'endDate', 'status'].includes(key) && formData.mealSlot[key]) {
+        meals.push(key.toUpperCase());
+      }
+    });
 
     // Convert 'DD/MM/YY' to timestamp
     const parseDate = (dateStr: string) => {

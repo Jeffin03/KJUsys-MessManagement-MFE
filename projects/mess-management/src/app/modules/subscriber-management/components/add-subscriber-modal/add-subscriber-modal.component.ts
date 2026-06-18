@@ -11,6 +11,7 @@ import {
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DashboardService } from '../../../dashboard/services/dashboard.service';
 
 @Component({
   selector: 'app-add-subscriber-modal',
@@ -27,6 +28,8 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
       this.onClose();
     }
   }
+
+  constructor(private dashboardService: DashboardService) {}
 
   @Input() isOpen = false;
 
@@ -57,21 +60,18 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
   startViewDate = new Date();
   endViewDate = new Date();
 
+  availableMealSlots: string[] = [];
+
   form = {
     firstName: '',
     lastName: '',
     email: '',
     roll_number: '',
     mealSlot: {
-      breakfast: false,
-      brunch: false,
-      lunch: false,
-      snacks: false,
-      dinner: false,
       startDate: '',
       endDate: '',
       status: ''
-    }
+    } as any
   };
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -84,9 +84,23 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
         appRoot.style.height = '100vh';
         appRoot.style.overflow = 'hidden';
       }
+      this.fetchMealSlots();
     } else {
       this.unlockScroll();
     }
+  }
+
+  fetchMealSlots() {
+    this.dashboardService.getSchedules().subscribe((slots: any) => {
+      this.availableMealSlots = slots.map((s: any) => s.name);
+      // Initialize form slots
+      this.availableMealSlots.forEach(slot => {
+        const key = slot.toLowerCase();
+        if (this.form.mealSlot[key] === undefined) {
+          this.form.mealSlot[key] = false;
+        }
+      });
+    });
   }
 
   ngOnDestroy(): void {
@@ -117,16 +131,16 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
       email: '',
       roll_number: '',
       mealSlot: {
-        breakfast: false,
-        brunch: false,
-        lunch: false,
-        snacks: false,
-        dinner: false,
         startDate: '',
         endDate: '',
         status: ''
-      }
+      } as any
     };
+    
+    // Re-initialize dynamic slots based on available slots
+    this.availableMealSlots.forEach(slot => {
+      this.form.mealSlot[slot.toLowerCase()] = false;
+    });
     this.errors = {
       firstName: '',
       lastName: '',
