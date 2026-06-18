@@ -1,11 +1,11 @@
 # Frontend Design Documentation
 
-This directory serves as the central hub for the design standards, groll_numberelines, and reusable UI components that power the platform's user interface.
+This directory serves as the central hub for the design standards, guidelines, and reusable UI components that power the platform's user interface.
 
 ## UI Foundation
 
 For core design principles, typography scales, and input field specifications, please refer to the main standards document:
-- **[Rules and Groll_numberelines](./rules-and-groll_numberelines.md)**
+- **[Rules and Guidelines](./rules-and-groll_numberelines.md)**
 ---
 
 ## Reusable UI Libraries

@@ -59,7 +59,7 @@
     "@tiptap/suggestion": "^3.10.2",
     "@types/exceljs": "^0.5.3",
     "@types/jquery": "^3.5.30",
-    "@types/uroll_number": "^10.0.0",
+    "@types/uuid": "^10.0.0",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "@zxing/ngx-scanner": "^20.0.0",
@@ -116,7 +116,7 @@
     "to-words": "^4.1.0",
     "ts-custom-error": "^3.3.1",
     "tslib": "^2.3.0",
-    "uroll_number": "^10.0.0",
+    "uuid": "^10.0.0",
     "xlsx": "^0.18.5",
     "xlsx-js-style": "^1.2.0",
     "zone.js": "~0.13.0"

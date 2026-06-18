@@ -71,7 +71,16 @@ export class DashboardService {
       .pipe(
         map(res => {
           const taps = res.responseData?.data?.taps || [];
-          return taps.map(t => ({
+
+          // Latest tap first — sort by raw timestamp, not the formatted display
+          // string (formatted "hh:mm AM/PM" strings sort incorrectly across noon)
+          const sortedTaps = [...taps].sort((a, b) => {
+            const aTime = a.tap_DateTime ?? a.tap_Date ?? 0;
+            const bTime = b.tap_DateTime ?? b.tap_Date ?? 0;
+            return bTime - aTime;
+          });
+
+          return sortedTaps.map(t => ({
             customer: t.name,
             roll_number: t.roll_number || t.rollNumber || t.hmsId || t.uid || 'N/A',
             mealSlot: t.meal.charAt(0) + t.meal.slice(1).toLowerCase() as any,
