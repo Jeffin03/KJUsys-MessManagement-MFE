@@ -1,13 +1,13 @@
 
 export const environment = {
-    production: false,
-    mfe: {
-        'mess-management': 'http://localhost:4201',
-    },
-    publicPath: 'http://localhost:4201/',
-    baseUrl: 'https://water-mobiles-customs-benz.trycloudflare.com/kjusys-api/mess-management',
-    project: 'mess-management',
-    baseRoute: 'kjusys',
-    local: false,
-    apirefreshUrl: 'https://water-mobiles-customs-benz.trycloudflare.com/kjusys-api/authnauthz/refresh-access-token'
+  production: false,
+  mfe: {
+    'mess-management': 'http://localhost:4201',
+  },
+  publicPath: 'http://localhost:4201/',
+  baseUrl: 'http://localhost:8080/kjusys-api/mess-management',
+  project: 'mess-management',
+  baseRoute: 'kjusys',
+  local: false,
+  apirefreshUrl: 'http://localhost:8080/kjusys-api/authnauthz/refresh-access-token'
 };
