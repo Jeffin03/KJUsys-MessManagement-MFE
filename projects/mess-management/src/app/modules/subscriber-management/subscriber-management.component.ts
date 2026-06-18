@@ -174,6 +174,8 @@ export class SubscriberManagementComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to update subscriber:', err);
+          alert('Failed to update subscriber. Please check the console for details.');
+          // Do NOT close the modal on error so the user is aware of the failure
           if (err.error) {
             console.error('Backend error details:', err.error);
           }

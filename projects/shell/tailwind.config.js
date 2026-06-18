@@ -20,6 +20,7 @@ module.exports = {
     extend: {
       fontFamily: {
         inter: ["Inter", "sans-serif"],
+        dotMatrix: ["'Enhanced Dot Digital-7'", "'VT323'", "monospace"],
       },
     },
   },

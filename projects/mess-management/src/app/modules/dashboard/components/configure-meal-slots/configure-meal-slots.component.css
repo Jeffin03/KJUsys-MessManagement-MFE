@@ -1,0 +1,25 @@
+.preview-btn {
+  transition: transform 0.2s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.2s ease;
+}
+
+.preview-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(29, 159, 0, 0.25);
+}
+
+.preview-btn:active {
+  transform: scale(1.02);
+}
+
+@keyframes breathe {
+  0%, 100% {
+    background-color: #1D9F00;
+  }
+  50% {
+    background-color: #D5F5D0;
+  }
+}
+
+.live-dot-breathe {
+  animation: breathe 2.5s ease-in-out infinite;
+}

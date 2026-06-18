@@ -5,6 +5,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'Enhanced Dot Digital-7';
+  src: url('/assets/enhanced_dot_digital-7.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
 * {
   font-family: "Inter", sans-serif;
 }

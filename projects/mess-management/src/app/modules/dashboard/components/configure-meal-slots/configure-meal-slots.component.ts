@@ -3,6 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService, ApiResponse, BackendSchedule } from '../../services/dashboard.service';
 import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
+import { SharedToastService } from '@libs/shared-toast';
+
+interface SuggestionItem {
+  label: string;
+  insertText: string;
+  previewValue: string;
+  variable: 'name' | 'rollno' | 'meal';
+  description: string;
+}
 
 interface MealSlotConfig {
   id?: string;
@@ -19,18 +28,7 @@ interface MealSlotConfig {
   standalone: true,
   imports: [CommonModule, FormsModule, SubTabsModule],
   templateUrl: './configure-meal-slots.component.html',
-  styles: [`
-    @import url('https://fonts.cdnfonts.com/css/dot-matrix');
-    .lcd-text-container {
-      font-family: 'Dot Matrix', sans-serif;
-      font-size: 26px;
-      letter-spacing: 2px;
-      line-height: 1.1;
-      white-space: pre;
-      text-transform: uppercase;
-      text-shadow: 0px 0px 2px rgba(255,255,255,0.4);
-    }
-  `]
+  styles: []
 })
 export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
@@ -55,8 +53,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   editIndex: number | null = null;
   isEditing = false;
 
-  activeTab: 'mealSlots' | 'displayPanel' | 'tokenCustomization' = 'displayPanel';
-  
+  activeTab: 'mealSlots' | 'displayPanel' | 'tokenCustomization' = 'mealSlots';
+
   subTabs: SubTabItem[] = [
     { id: 'mealSlots', label: 'Meal slots' },
     { id: 'displayPanel', label: 'Display Panel' },
@@ -66,7 +64,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   onTabChange(tabId: string) {
     this.activeTab = tabId as 'mealSlots' | 'displayPanel' | 'tokenCustomization';
   }
-  
+
   displayConfig = {
     defaultMsg: { line1: '', line2: '' },
     tapAllowed: { line1: '', line2: '' },
@@ -80,23 +78,79 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     alreadyTapped: { line1: '"name"', line2: 'Already Tapped.' },
     notSubscribed: { line1: '"name"', line2: 'Not Subscribed.' }
   };
-  
+
   previewState: 'defaultMsg' | 'tapAllowed' | 'alreadyTapped' | 'notSubscribed' = 'tapAllowed';
 
+  // ── Autocomplete ──────────────────────────────────────────────────────────
+  suggestionState: {
+    show: boolean;
+    field: string | null;
+    items: SuggestionItem[];
+    selectedIndex: number;
+  } = { show: false, field: null, items: [], selectedIndex: -1 };
+
+  suggestionPosition = { top: 0, left: 0, width: 0 };
+
+  previewSubstitutions = {
+    name: 'Alfie',
+    rollno: '22BCS001',
+    meal: ''
+  };
+
+  private activeInputEl: HTMLInputElement | null = null;
+
+  readonly nameSuggestions: SuggestionItem[] = [
+    { label: 'Short name', insertText: '"name"', previewValue: 'Alex',        variable: 'name', description: '4 chars · e.g. Alex' },
+    { label: 'Medium name', insertText: '"name"', previewValue: 'Alfie',       variable: 'name', description: '5 chars · e.g. Alfie' },
+    { label: 'Long name',  insertText: '"name"', previewValue: 'Christopher', variable: 'name', description: '11 chars · e.g. Christopher' },
+  ];
+
+  readonly rollnoSuggestions: SuggestionItem[] = [
+    { label: 'Alphanumeric',    insertText: '"rollno"', previewValue: '22BCS001', variable: 'rollno', description: '8 chars · e.g. 22BCS001' },
+    { label: 'Numeric only',    insertText: '"rollno"', previewValue: '2210001',  variable: 'rollno', description: '7 chars · e.g. 2210001' },
+    { label: 'Slash-separated', insertText: '"rollno"', previewValue: 'CS/22/001', variable: 'rollno', description: '9 chars · e.g. CS/22/001' },
+  ];
+
+  get mealSuggestions(): SuggestionItem[] {
+    return this.slots.map(slot => ({
+      label: slot.name,
+      insertText: '"meal"',
+      previewValue: slot.name,
+      variable: 'meal' as const,
+      description: slot.timeRange
+    }));
+  }
+
+  setPreviewState(state: 'defaultMsg' | 'tapAllowed' | 'alreadyTapped' | 'notSubscribed') {
+    this.previewState = state;
+    const scrollContainer = this.elementRef.nativeElement.querySelector('.overflow-y-auto');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
   getPreviewLine1() {
-    let line1 = this.displayConfig[this.previewState].line1 || this.displayPlaceholders[this.previewState].line1;
-    let text = line1.replace('"name"', 'Alfie');
-    return text.padEnd(16, ' ').substring(0, 16);
+    const line1 = this.displayConfig[this.previewState].line1 || this.displayPlaceholders[this.previewState].line1;
+    return this.substitutePreviewVars(line1);
   }
 
   getPreviewLine2() {
-    let line2 = this.displayConfig[this.previewState].line2 || this.displayPlaceholders[this.previewState].line2;
-    let text = line2.replace('"name"', 'Alfie');
-    return text.padEnd(16, ' ').substring(0, 16);
+    const line2 = this.displayConfig[this.previewState].line2 || this.displayPlaceholders[this.previewState].line2;
+    return this.substitutePreviewVars(line2);
+  }
+
+  private substitutePreviewVars(text: string): string {
+    const mealFallback = this.previewSubstitutions.meal || this.slots[0]?.name || 'Meal';
+    return text
+      .replace(/"name"/g, this.previewSubstitutions.name)
+      .replace(/"rollno"/g, this.previewSubstitutions.rollno)
+      .replace(/"meal"/g, mealFallback)
+      .padEnd(16, ' ')
+      .substring(0, 16);
   }
 
   get previewStateName() {
-    switch(this.previewState) {
+    switch (this.previewState) {
       case 'defaultMsg': return 'Default Message';
       case 'tapAllowed': return 'Tap Allowed';
       case 'alreadyTapped': return 'Already Tapped';
@@ -105,10 +159,144 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     }
   }
 
+  // ── Autocomplete methods ──────────────────────────────────────────────────
+
+  /** Extract the non-whitespace word that contains the cursor position. */
+  private getWordAtCursor(value: string, cursorPos: number): { word: string; start: number; end: number } {
+    let start = cursorPos;
+    while (start > 0 && !/\s/.test(value[start - 1])) start--;
+    let end = cursorPos;
+    while (end < value.length && !/\s/.test(value[end])) end++;
+    return { word: value.substring(start, end), start, end };
+  }
+
+  computeSuggestions(partialWord: string): SuggestionItem[] {
+    const lw = partialWord.toLowerCase();
+    if (!lw) return [...this.nameSuggestions, ...this.rollnoSuggestions, ...this.mealSuggestions];
+    const results: SuggestionItem[] = [];
+    if ('name'.startsWith(lw))   results.push(...this.nameSuggestions);
+    if ('rollno'.startsWith(lw)) results.push(...this.rollnoSuggestions);
+    if ('meal'.startsWith(lw))   results.push(...this.mealSuggestions);
+    return results;
+  }
+
+  onDisplayInput(event: Event, fieldKey: string) {
+    const input = event.target as HTMLInputElement;
+    this.activeInputEl = input;
+
+    // Position the fixed dropdown directly below this input
+    const rect = input.getBoundingClientRect();
+    this.suggestionPosition = { top: rect.bottom + 4, left: rect.left, width: rect.width };
+
+    const cursorPos = input.selectionStart ?? input.value.length;
+    const { word } = this.getWordAtCursor(input.value, cursorPos);
+
+    // Strip surrounding quotes to get the bare keyword being typed
+    let rawWord = word.startsWith('"') ? word.substring(1) : word;
+    if (rawWord.endsWith('"')) rawWord = rawWord.slice(0, -1);
+
+    // Show all variables when user just typed a lone `"`, filter otherwise
+    if (word.startsWith('"') || rawWord.length > 0) {
+      const items = this.computeSuggestions(rawWord);
+      if (items.length > 0) {
+        this.suggestionState = { show: true, field: fieldKey, items, selectedIndex: -1 };
+        return;
+      }
+    }
+    this.hideSuggestions();
+  }
+
+  onDisplayKeydown(event: KeyboardEvent, fieldKey: string) {
+    if (!this.suggestionState.show || this.suggestionState.field !== fieldKey) return;
+    const { items, selectedIndex } = this.suggestionState;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.suggestionState = { ...this.suggestionState, selectedIndex: Math.min(selectedIndex + 1, items.length - 1) };
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.suggestionState = { ...this.suggestionState, selectedIndex: Math.max(selectedIndex - 1, -1) };
+        break;
+      case 'Enter':
+      case 'Tab':
+        if (selectedIndex >= 0) {
+          event.preventDefault();
+          this.insertSuggestion(items[selectedIndex], fieldKey);
+        }
+        break;
+      case 'Escape':
+        event.stopPropagation();
+        this.hideSuggestions();
+        break;
+    }
+  }
+
+  onDisplayBlur() {
+    // Delay so click events on suggestion items fire first
+    setTimeout(() => this.hideSuggestions(), 180);
+  }
+
+  insertSuggestion(item: SuggestionItem, fieldKey: string) {
+    const input = this.activeInputEl;
+    if (!input) return;
+
+    const cursorPos = input.selectionStart ?? input.value.length;
+    const { start, end } = this.getWordAtCursor(input.value, cursorPos);
+
+    const newValue = input.value.substring(0, start) + item.insertText + input.value.substring(end);
+    this.setDisplayConfigValue(fieldKey, newValue);
+
+    // Update which example the LCD preview uses
+    if (item.variable === 'name')   this.previewSubstitutions.name   = item.previewValue;
+    if (item.variable === 'rollno') this.previewSubstitutions.rollno = item.previewValue;
+    if (item.variable === 'meal')   this.previewSubstitutions.meal   = item.previewValue;
+
+    const newCursor = start + item.insertText.length;
+    setTimeout(() => { input.setSelectionRange(newCursor, newCursor); input.focus(); });
+    this.hideSuggestions();
+  }
+
+  hideSuggestions() {
+    this.suggestionState = { show: false, field: null, items: [], selectedIndex: -1 };
+  }
+
+  private getDisplayConfigValue(fieldKey: string): string {
+    const [state, line] = fieldKey.split('.');
+    return (this.displayConfig as any)[state]?.[line] ?? '';
+  }
+
+  setDisplayConfigValue(fieldKey: string, value: string) {
+    const [state, line] = fieldKey.split('.');
+    if ((this.displayConfig as any)[state]) {
+      (this.displayConfig as any)[state][line] = value;
+    }
+  }
+
+  getVariableBadgeClass(variable: 'name' | 'rollno' | 'meal'): string {
+    switch (variable) {
+      case 'name':   return 'bg-[#DBEAFE] text-[#1D4ED8]';
+      case 'rollno': return 'bg-[#FEF3C7] text-[#92400E]';
+      case 'meal':   return 'bg-[#D1FAE5] text-[#065F46]';
+      default:       return '';
+    }
+  }
+
+  getVariableIcon(variable: 'name' | 'rollno' | 'meal'): string {
+    switch (variable) {
+      case 'name':   return '@';
+      case 'rollno': return '#';
+      case 'meal':   return '✦';
+      default:       return '·';
+    }
+  }
+
   constructor(
     private elementRef: ElementRef,
     private dashboardService: DashboardService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastService: SharedToastService
   ) { }
 
   @HostListener('document:click', ['$event'])
@@ -303,24 +491,24 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       else if (field === 'endHour') this.incrementHour('end');
       else if (field === 'startMin') this.incrementMin('start');
       else if (field === 'endMin') this.incrementMin('end');
-      
+
       setTimeout(() => {
-          input.value = this.formatNumber(this.newSlot[field]);
-          input.select();
+        input.value = this.formatNumber(this.newSlot[field]);
+        input.select();
       });
       return;
     }
-    
+
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       if (field === 'startHour') this.decrementHour('start');
       else if (field === 'endHour') this.decrementHour('end');
       else if (field === 'startMin') this.decrementMin('start');
       else if (field === 'endMin') this.decrementMin('end');
-      
+
       setTimeout(() => {
-          input.value = this.formatNumber(this.newSlot[field]);
-          input.select();
+        input.value = this.formatNumber(this.newSlot[field]);
+        input.select();
       });
       return;
     }
@@ -336,20 +524,20 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     if (currentStr.length < 2) currentStr = currentStr.padStart(2, '0');
 
     if (input.selectionStart === 0 && input.selectionEnd === input.value.length) {
-       currentStr = '00';
+      currentStr = '00';
     }
 
     let newStr = currentStr + event.key;
     newStr = newStr.slice(-2);
-    
+
     let num = parseInt(newStr, 10);
     const max = field.includes('Hour') ? 23 : 59;
-    
+
     if (num > max) {
       num = parseInt(event.key, 10);
       newStr = '0' + event.key;
     }
-    
+
     this.newSlot[field] = num;
     input.value = newStr;
     input.setSelectionRange(newStr.length, newStr.length);
@@ -403,9 +591,11 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       this.dashboardService.deleteSchedule(slot.id).subscribe(() => {
         this.slots = this.slots.filter((s: MealSlotConfig) => s.id !== slot.id);
         this.cdr.detectChanges();
+        this.toastService.success('Meal slot deleted.');
       });
     } else {
       this.slots.splice(index, 1);
+      this.toastService.success('Meal slot deleted.');
     }
   }
 
@@ -470,6 +660,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           this.isEditing = false;
           this.editIndex = null;
           this.cdr.detectChanges();
+          this.toastService.success('Meal slot updated.');
         },
         error: (err: any) => {
           console.error('Update failed', err);
@@ -493,6 +684,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           });
           this.resetForm();
           this.cdr.detectChanges();
+          this.toastService.success('Meal slot added.');
         },
         error: (err) => {
           console.error('Failed to create schedule:', err);
@@ -578,6 +770,10 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
               end24
             } as MealSlotConfig;
           }).sort((a: MealSlotConfig, b: MealSlotConfig) => this.toMins(a.start24) - this.toMins(b.start24));
+          // Seed the meal preview substitution from the first slot
+          if (this.slots.length > 0 && !this.previewSubstitutions.meal) {
+            this.previewSubstitutions.meal = this.slots[0].name;
+          }
           this.cdr.detectChanges();
         }
       });
