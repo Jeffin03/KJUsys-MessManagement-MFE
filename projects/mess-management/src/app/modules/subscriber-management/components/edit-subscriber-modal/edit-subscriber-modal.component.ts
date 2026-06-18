@@ -6,7 +6,8 @@ import {
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  HostListener
+  HostListener,
+  ChangeDetectorRef
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -31,7 +32,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     }
   }
 
-  constructor(private dashboardService: DashboardService) {}
+  constructor(private dashboardService: DashboardService, private cdr: ChangeDetectorRef) {}
 
   @Input() isOpen = false;
   @Input() subscriber: Subscriber | null = null;
@@ -102,10 +103,16 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
   }
 
   fetchMealSlots() {
-    this.dashboardService.getSchedules().subscribe((slots: any) => {
-      this.availableMealSlots = slots.map((s: any) => s.name);
-      if (this.subscriber) {
-        this.populateForm();
+    this.dashboardService.getSchedules().subscribe({
+      next: (slots: any) => {
+        this.availableMealSlots = slots.map((s: any) => s.name);
+        if (this.subscriber) {
+          this.populateForm();
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to fetch meal schedules', err);
       }
     });
   }
@@ -137,7 +144,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
 
     // Parse meal plan from subscriber
     const plan = (this.subscriber.mealPlan || '').toUpperCase().split('+');
-    
+
     this.availableMealSlots.forEach(slot => {
       const slotUpper = slot.toUpperCase();
       let matched = false;
@@ -147,7 +154,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       else if (slotUpper === 'SNACKS' && plan.includes('S')) matched = true;
       else if (slotUpper === 'DINNER' && plan.includes('D')) matched = true;
       else if (plan.includes(slotUpper)) matched = true;
-      
+
       this.form.mealSlot[slot.toLowerCase()] = matched;
     });
 
@@ -162,9 +169,9 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
         const d = parts[0].padStart(2, '0');
         const monthIndex = this.months.findIndex(month => month.toLowerCase().startsWith(parts[1].toLowerCase()));
         const m = (monthIndex >= 0 ? monthIndex + 1 : 1).toString().padStart(2, '0');
-        const y = parts[2].slice(-2); 
+        const y = parts[2].slice(-2);
         this.form.mealSlot.startDate = `${d}/${m}/${y}`;
-        
+
         let mNum = parseInt(m, 10);
         let yNum = parseInt(y, 10);
         mNum++;
@@ -181,6 +188,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       this.form.mealSlot.startDate = '';
       this.form.mealSlot.endDate = '';
     }
+    this.cdr.detectChanges();
   }
 
   onClose(): void {
@@ -202,7 +210,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
         status: ''
       } as any
     };
-    
+
     this.availableMealSlots.forEach(slot => {
       this.form.mealSlot[slot.toLowerCase()] = false;
     });
@@ -213,6 +221,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       roll_number: ''
     };
     this.dateError = '';
+    this.cdr.detectChanges();
   }
 
   onUpdate(): void {
@@ -267,6 +276,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     this.validateDates();
     if (this.dateError) valid = false;
 
+    this.cdr.detectChanges();
     return valid;
   }
 
