@@ -160,7 +160,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // Enrich taps with roll number and set recent entries
     if (taps.length > 0) {
-      this.recentEntries = this.enrichTapsWithRollNumber(taps);
+      // Reverse to ensure the initial load shows newest taps at the top (reverse-chronological)
+      this.recentEntries = this.enrichTapsWithRollNumber(taps).reverse();
     }
 
     // Process meal slots with taps data

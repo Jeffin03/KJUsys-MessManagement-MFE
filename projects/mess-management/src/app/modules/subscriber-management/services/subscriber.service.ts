@@ -82,16 +82,14 @@ export class SubscriberService {
         map(res => {
           const students = res.responseData?.data?.students || [];
           return students.map(s => this.mapToSubscriber(s));
-        }),
-        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
+        })
       );
   }
 
   getSubscriberById(id: number | string): Observable<Subscriber> {
     return this.http.get<ApiResponse<{ student: BackendStudent }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(id)}`)
       .pipe(
-        map(res => this.mapToSubscriber(res.responseData.data.student)),
-        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
+        map(res => this.mapToSubscriber(res.responseData.data.student))
       );
   }
 
@@ -105,8 +103,7 @@ export class SubscriberService {
         map(res => {
           const students = res.responseData?.data?.students || [];
           return students.map(s => this.mapToSubscriber(s));
-        }),
-        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
+        })
       );
   }
 
