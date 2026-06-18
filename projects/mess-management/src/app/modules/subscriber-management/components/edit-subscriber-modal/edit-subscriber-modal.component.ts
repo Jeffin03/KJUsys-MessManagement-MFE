@@ -6,7 +6,8 @@ import {
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  HostListener
+  HostListener,
+  ChangeDetectorRef
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -31,7 +32,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     }
   }
 
-  constructor(private dashboardService: DashboardService) {}
+  constructor(private dashboardService: DashboardService, private cdRef: ChangeDetectorRef) {}
 
   @Input() isOpen = false;
   @Input() subscriber: Subscriber | null = null;
@@ -107,6 +108,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       if (this.subscriber) {
         this.populateForm();
       }
+      this.cdRef.detectChanges();
     });
   }
 
