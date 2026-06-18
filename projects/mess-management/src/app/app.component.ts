@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastComponent } from '@libs/shared-auth';
+import { NetworkService } from './shared/services/network.service';
 
 @Component({
   selector: 'app-root',
@@ -11,4 +12,6 @@ import { ToastComponent } from '@libs/shared-auth';
 })
 export class AppComponent {
   title = 'mess-management';
+
+  constructor(private networkService: NetworkService) {}
 }

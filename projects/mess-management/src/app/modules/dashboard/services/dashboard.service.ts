@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, shareReplay, tap } from 'rxjs/operators';
-import { MealSlot, MealEntry } from '../../../shared/models/dashboard.models';
+import { MealSlot, MealEntry, HardwareDevice } from '../../../shared/models/dashboard.models';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
 import { environment } from '../../../../environments/environment';
 
@@ -90,6 +90,30 @@ export class DashboardService {
         }),
         shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
       );
+  }
+
+  getHardwareStatus(bypassCache: boolean = false): Observable<{ hardware: HardwareDevice[], serverUptimeSeconds: number }> {
+    const request = this.http.get<ApiResponse<{ hardware: HardwareDevice[], serverUptimeSeconds: number }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_STATUS}`)
+      .pipe(
+        map(res => {
+          const hardware = res.responseData?.data?.hardware || [];
+          const serverUptimeSeconds = res.responseData?.data?.serverUptimeSeconds || 0;
+          return {
+            hardware: hardware.map(h => ({
+              deviceId: h.deviceId,
+              name: h.name,
+              icon: h.icon,
+              status: h.status as HardwareDevice['status'],
+              lastSeenMs: h.lastSeenMs
+            })),
+            serverUptimeSeconds
+          };
+        })
+      );
+
+    return bypassCache ? request : request.pipe(
+      shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
+    );
   }
 
   createSchedule(payload: any): Observable<ApiResponse<{ schedule: BackendSchedule }>> {

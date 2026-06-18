@@ -5,9 +5,9 @@ export const environment = {
         'mess-management': 'http://localhost:4201',
     },
     publicPath: 'http://localhost:4201/',
-    baseUrl: 'https://silver-losing-publicly-design.trycloudflare.com/kjusys-api/mess-management',
+    baseUrl: 'https://movements-usage-congressional-instantly.trycloudflare.com/kjusys-api/mess-management',
     project: 'mess-management',
     baseRoute: 'kjusys',
     local: false,
-    apirefreshUrl: 'https://congress-trackback-opens-stay.trycloudflare.com/kjusys-api/authnauthz/refresh-access-token'
+    apirefreshUrl: 'https://movements-usage-congressional-instantly.trycloudflare.com/kjusys-api/authnauthz/refresh-access-token'
 };

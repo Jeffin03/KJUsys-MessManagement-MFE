@@ -19,9 +19,11 @@ export interface MealSlot {
 }
 
 export interface HardwareDevice {
+  deviceId: string;
   name: string;
   icon: string;
   status: 'Online' | 'Connected' | 'Low Paper' | 'Offline';
+  lastSeenMs?: number;
 }
 
 export interface DashboardStat {

@@ -10,6 +10,8 @@ import { EditSubscriberModalComponent } from './components/edit-subscriber-modal
 
 import { Subscriber } from './models/subscriber.model';
 import { SubscriberService } from './services/subscriber.service';
+import { NetworkService } from '../../shared/services/network.service';
+import { ConnectionMonitorService } from '../../shared/services/connection-monitor.service';
 
 @Component({
   selector: 'app-subscriber-management',
@@ -49,6 +51,8 @@ export class SubscriberManagementComponent implements OnInit {
 
   constructor(
     private subscriberService: SubscriberService,
+    private networkService: NetworkService,
+    private connectionMonitor: ConnectionMonitorService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -61,9 +65,7 @@ export class SubscriberManagementComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to fetch subscribers', err);
-        // Fallback to mock data if backend isn't running yet just to keep UI working
-        this.subscribers = this.getMockData();
-        this.calculateStats();
+        this.connectionMonitor.setServerDown(true);
         this.cdr.detectChanges();
       }
     });
@@ -98,24 +100,17 @@ export class SubscriberManagementComponent implements OnInit {
     // Call the API to create the subscriber first
     this.subscriberService.createSubscriber(data).subscribe({
       next: (res) => {
-        // Assume backend returns the created customer or _id in responseData
         const newCustomerId = res.responseData?.data?.customer?._id?.$oid || res.responseData?.data?._id?.$oid || res.responseData?.data?.id;
-
         console.log('Subscriber created with ID:', newCustomerId);
-
-        // Pass the created ID to the next step
         this.subscriberFormData = { ...data, backendId: newCustomerId };
-
         this.showAddModal = false;
         this.showCardModal = true;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to create subscriber:', err);
-        // Fallback for development/UI demo
-        this.subscriberFormData = { ...data, backendId: 'dummy_id_' + Date.now() };
         this.showAddModal = false;
-        this.showCardModal = true;
+        this.connectionMonitor.setServerDown(true);
         this.cdr.detectChanges();
       }
     });
@@ -138,7 +133,7 @@ export class SubscriberManagementComponent implements OnInit {
     const roll_number = data.roll_number;
     const customerId = data.backendId;
 
-    if (roll_number && customerId && !customerId.startsWith('dummy_id')) {
+    if (roll_number && customerId) {
       this.subscriberService.assignHmsId(roll_number, customerId).subscribe({
         next: (res) => {
           console.log('Successfully assigned Roll Number to subscriber:', res);
@@ -149,12 +144,13 @@ export class SubscriberManagementComponent implements OnInit {
         error: (err) => {
           console.error('Failed to assign Roll Number:', err);
           this.showCardModal = false;
+          this.connectionMonitor.setServerDown(true);
           this.refreshSubscribers();
           this.cdr.detectChanges();
         }
       });
     } else {
-      // Just close and refresh if it's a dummy or missing info
+      // Just close and refresh if missing info
       this.showCardModal = false;
       this.refreshSubscribers();
       this.cdr.detectChanges();
@@ -174,13 +170,9 @@ export class SubscriberManagementComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to update subscriber:', err);
-          alert('Failed to update subscriber. Please check the console for details.');
-          // Do NOT close the modal on error so the user is aware of the failure
-          if (err.error) {
-            console.error('Backend error details:', err.error);
-          }
           this.showEditModal = false;
           this.editSubscriberData = null;
+          this.connectionMonitor.setServerDown(true);
           this.refreshSubscribers();
           this.cdr.detectChanges();
         }
@@ -203,6 +195,7 @@ export class SubscriberManagementComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to refresh subscribers', err);
+        this.connectionMonitor.setServerDown(true);
         this.cdr.detectChanges();
       }
     });

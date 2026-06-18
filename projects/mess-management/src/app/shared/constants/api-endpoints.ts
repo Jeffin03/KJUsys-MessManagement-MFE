@@ -30,5 +30,8 @@ export const API_ENDPOINTS = {
   REPORTS_RANGE: '/reports/range',
 
   // Settings
-  SETTINGS: '/settings'
+  SETTINGS: '/settings',
+
+  // Hardware
+  HARDWARE_STATUS: '/hardware-status'
 };

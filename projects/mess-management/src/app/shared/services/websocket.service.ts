@@ -11,9 +11,11 @@ export class WebsocketService {
 
   private tapNewSubject = new Subject<any>();
   private tapDuplicateSubject = new Subject<any>();
+  private hardwareStatusSubject = new Subject<any>();
 
   public tapNew$ = this.tapNewSubject.asObservable();
   public tapDuplicate$ = this.tapDuplicateSubject.asObservable();
+  public hardwareStatus$ = this.hardwareStatusSubject.asObservable();
 
   constructor(private ngZone: NgZone) {
     // Derive protocol: wss for https, ws for http
@@ -43,6 +45,8 @@ export class WebsocketService {
             this.tapNewSubject.next(parsed.data);
           } else if (parsed.event === 'tap.duplicate') {
             this.tapDuplicateSubject.next(parsed.data);
+          } else if (parsed.event === 'hardware.status') {
+            this.hardwareStatusSubject.next(parsed.data);
           } else if (parsed.event === 'connected') {
             console.log(parsed.message);
           }
