@@ -32,12 +32,8 @@
 
         <!-- Footer -->
         <div class="flex items-center justify-between border-t border-gray-200 px-8 py-5">
-            <button type="button" (click)="onPrevious()"
-                class="rounded-lg border border-gray-200 bg-white px-5 py-2 text-xs font-medium cursor-pointer hover:bg-gray-50"
-                style="color:#1D1D1F;">Previous</button>
-            <button type="button" (click)="onSave()"
-                class="rounded-lg bg-blue-600 px-6 py-2 text-xs font-semibold text-white cursor-pointer hover:bg-blue-700">
-                Save Configuration</button>
+            <lib-button type="secondary" label="Previous" (onClick)="onPrevious()"></lib-button>
+            <lib-button type="primary" label="Save Configuration" (onClick)="onSave()"></lib-button>
         </div>
 
     </div>

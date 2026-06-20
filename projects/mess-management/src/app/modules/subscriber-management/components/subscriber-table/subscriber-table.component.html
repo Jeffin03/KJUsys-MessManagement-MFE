@@ -45,12 +45,7 @@
     </div>
     <!-- Actions -->
     <div class="ml-auto flex gap-2.5">
-        <button
-            class="flex items-center gap-2 bg-blue-700 text-white border-none rounded-lg px-5 py-2.5 text-xs font-medium cursor-pointer hover:bg-[#005A9A] transition-colors"
-            (click)="onAddSubscriber()">
-            <img src="assets/fi-rr-plus-small.svg" alt="add" class="w-4 h-4 flex-shrink-0" />
-            <span>Add Subscriber</span>
-        </button>
+        <lib-button type="primary" label="Add Subscriber" (onClick)="onAddSubscriber()"></lib-button>
     </div>
 </div>
 
@@ -58,22 +53,22 @@
     <thead>
         <tr class="bg-surface border border-[#F3F4F6]">
             <th
-                class="text-left px-4 py-2.5 text-[12px] font-bold text-text-sub tracking-[0.05em] border-b border-[#F3F4F6]">
+                class="text-left px-4 py-2.5 text-[12px] font-bold text-[#6A7282] tracking-[0.05em] border-b border-[#F3F4F6]">
                 SUBSCRIBER</th>
             <th
-                class="text-left px-4 py-2.5 text-[12px] font-bold text-text-sub tracking-[0.05em] border-b border-[#F3F4F6]">
+                class="text-left px-4 py-2.5 text-[12px] font-bold text-[#6A7282] tracking-[0.05em] border-b border-[#F3F4F6]">
                 ROLL NUMBER</th>
             <th
-                class="text-left px-4 py-2.5 text-[12px] font-bold text-text-sub tracking-[0.05em] border-b border-[#F3F4F6]">
+                class="text-left px-4 py-2.5 text-[12px] font-bold text-[#6A7282] tracking-[0.05em] border-b border-[#F3F4F6]">
                 MEAL PLAN</th>
             <th
-                class="text-left px-4 py-2.5 text-[12px] font-bold text-text-sub tracking-[0.05em] border-b border-[#F3F4F6]">
+                class="text-left px-4 py-2.5 text-[12px] font-bold text-[#6A7282] tracking-[0.05em] border-b border-[#F3F4F6]">
                 STATUS</th>
             <th
-                class="text-left px-4 py-2.5 text-[12px] font-bold text-text-sub tracking-[0.05em] border-b border-[#F3F4F6]">
+                class="text-left px-4 py-2.5 text-[12px] font-bold text-[#6A7282] tracking-[0.05em] border-b border-[#F3F4F6]">
                 JOINED</th>
             <th
-                class="text-left px-4 py-2.5 text-[12px] font-bold text-text-sub tracking-[0.05em] border-b border-[#F3F4F6]">
+                class="text-left px-4 py-2.5 text-[12px] font-bold text-[#6A7282] tracking-[0.05em] border-b border-[#F3F4F6]">
                 ACTIONS</th>
         </tr>
     </thead>
@@ -86,20 +81,26 @@
             <td class="px-4 py-3.5 border-b border-[#F3F4F6] font-medium text-text-sub">{{ sub.roll_number }}</td>
             <td class="px-4 py-3.5 border-b border-[#F3F4F6] font-semibold text-text-main">{{ sub.mealPlan }}</td>
             <td class="px-4 py-3.5 border-b border-[#F3F4F6]">
-                <span class="px-3 py-1 rounded-full text-xs font-normal" [ngClass]="{
-    'bg-[rgba(21,93,252,0.2)] text-primary': sub.status.toLowerCase() === 'active',
-    'bg-[rgba(254,154,0,0.2)] text-warning':  sub.status.toLowerCase() === 'paused',
-    'bg-[#FFF1F2] text-[#C70036]':            sub.status.toLowerCase() === 'lapsed'
+                <span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="{
+    'bg-[#155DFC33] text-[#155DFC]': sub.status.toLowerCase() === 'active',
+    'bg-[#FE9A0033] text-[#FE9A00]': sub.status.toLowerCase() === 'paused',
+    'bg-[#FFF1F2] text-[#C70036]': sub.status.toLowerCase() === 'lapsed'
   }">{{ sub.status }}</span>
             </td>
             <td class="px-4 py-3.5 border-b border-[#F3F4F6] text-text-main">{{ sub.joinedDate }}</td>
             <td class="px-4 py-3.5 border-b border-[#F3F4F6]">
-                <button
-                    class="flex items-center justify-center gap-1.5 w-[81px] h-9 bg-surface border border-border rounded-[10px] shadow-[0_1px_2px_rgba(29,41,61,0.05)] text-text-sub text-xs font-medium cursor-pointer hover:bg-[#f3f4f6]"
-                    (click)="onEdit(sub)">
-                    <img src="assets/edit_button.svg" alt="edit" class="w-[13px] h-[13px] flex-shrink-0" />
-                    Edit
-                </button>
+                <div class="flex items-center gap-2">
+                    <button
+                        class="flex items-center justify-center gap-1.5 w-[81px] h-9 bg-[#FAFAFB] border border-border rounded-[10px] shadow-[0_1px_2px_rgba(29,41,61,0.05)] text-text-sub text-xs font-medium cursor-pointer hover:bg-[#F3F4F6]"
+                        (click)="onEdit(sub)">
+                        <img src="assets/edit_button.svg" alt="edit" class="w-[13px] h-[13px] flex-shrink-0" />
+                        Edit
+                    </button>
+                    <button (click)="onDelete(sub)"
+                        class="flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer">
+                        <img src="assets/trash-2.png" class="w-4 h-4" />
+                    </button>
+                </div>
             </td>
         </tr>
     </tbody>

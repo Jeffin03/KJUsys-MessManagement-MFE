@@ -15,11 +15,12 @@ import { FormsModule } from '@angular/forms';
 
 import { Subscriber } from '../../../../shared/models/subscriber';
 import { DashboardService } from '../../../dashboard/services/dashboard.service';
+import { ButtonComponent } from '@libs/shared-ui';
 
 @Component({
   selector: 'app-edit-subscriber-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonComponent],
   templateUrl: './edit-subscriber-modal.component.html',
   styleUrls: ['./edit-subscriber-modal.component.css']
 })

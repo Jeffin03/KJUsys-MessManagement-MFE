@@ -2,17 +2,19 @@ import { Component, Input, Output, EventEmitter, OnChanges, HostListener, Elemen
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscriber } from '../../../../shared/models/subscriber';
+import { ButtonComponent } from '@libs/shared-ui';
 
 @Component({
   selector: 'app-subscriber-table',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonComponent],
   templateUrl: './subscriber-table.component.html',
 })
 export class SubscriberTableComponent implements OnChanges {
   @Input() subscribers: Subscriber[] = [];
   @Output() addSubscriber = new EventEmitter<void>();
   @Output() editSubscriber = new EventEmitter<Subscriber>();
+  @Output() deleteSubscriber = new EventEmitter<Subscriber>();
 
   constructor(private elementRef: ElementRef) { }
 
@@ -128,4 +130,5 @@ export class SubscriberTableComponent implements OnChanges {
   nextPage(): void { if (this.currentPage < this.totalPages) { this.currentPage++; this.paginate(); } }
   onAddSubscriber(): void { this.addSubscriber.emit(); }
   onEdit(sub: Subscriber): void { this.editSubscriber.emit(sub); }
+  onDelete(sub: Subscriber): void { this.deleteSubscriber.emit(sub); }
 }

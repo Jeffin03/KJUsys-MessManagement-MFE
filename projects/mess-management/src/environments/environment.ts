@@ -5,7 +5,7 @@ export const environment = {
         'mess-management': 'http://localhost:4201',
     },
     publicPath: 'http://localhost:4201/',
-    baseUrl: 'http://localhost:8080/kjusys-api/mess-management',
+    baseUrl: 'https://surfing-reviewer-lancaster-oxygen.trycloudflare.com/kjusys-api/mess-management',
     project: 'mess-management',
     baseRoute: 'kjusys',
     local: false,

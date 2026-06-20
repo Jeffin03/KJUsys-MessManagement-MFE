@@ -12,11 +12,12 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../../dashboard/services/dashboard.service';
+import { ButtonComponent } from '@libs/shared-ui';
 
 @Component({
   selector: 'app-add-subscriber-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonComponent],
   templateUrl: './add-subscriber-modal.component.html',
   styleUrls: ['./add-subscriber-modal.component.css']
 })
@@ -35,7 +36,6 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
 
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
-  @Output() next = new EventEmitter<any>();
 
   errors = {
     firstName: '',
@@ -151,13 +151,8 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
   }
 
   onSave(): void {
-    this.save.emit(this.form);
-  }
-
-  onNext(): void {
     if (!this.validateForm()) return;
-    console.log('Form Valid');
-    this.next.emit(this.form);
+    this.save.emit(this.form);
   }
 
   validateForm(): boolean {

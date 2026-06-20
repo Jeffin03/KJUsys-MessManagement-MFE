@@ -60,7 +60,7 @@ export class DashboardService {
               thirdLabel: status === 'Closed' ? 'Skipped' : 'Pending',
               startTime: m.start
             };
-          });
+          }).sort((a, b) => a.startTime.localeCompare(b.startTime));
         }),
         shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
       );

@@ -10,6 +10,7 @@ import { SubscriberService } from '../subscriber-management/services/subscriber.
 import { Subscriber } from '../../shared/models/subscriber';
 import { DashboardTabsComponent } from './components/dashboard-tabs/dashboard-tabs.component';
 import { WebsocketService } from '../../shared/services/websocket.service';
+import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
 
 import { Router, ActivatedRoute } from '@angular/router';
 
@@ -22,6 +23,7 @@ import { Router, ActivatedRoute } from '@angular/router';
     EntriesTableComponent,
     HardwareStatusComponent,
     DashboardTabsComponent,
+    BreadcrumbsTitleComponent
   ],
   templateUrl: './dashboard.component.html',
 })
@@ -30,6 +32,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private roll_numberLookup = new Map<string, string>();
   private activeByMealPlan: { [key: string]: number } = {};
   private subscriptions = new Subscription();
+
+  breadcrumbs = [
+    { label: 'Hostel' },
+    { label: 'Mess Management' }
+  ];
 
   stats: DashboardStat[] = [
     { label: 'Total Subscribers', value: 0, icon: 'subscribers', color: 'text-blue-400' },

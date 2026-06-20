@@ -2,11 +2,12 @@ import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, SimpleCha
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SubscriberCardPreviewComponent } from '../subscriber-card-preview/subscriber-card-preview.component';
+import { ButtonComponent } from '@libs/shared-ui';
 
 @Component({
   selector: 'app-subscriber-card-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, SubscriberCardPreviewComponent],
+  imports: [CommonModule, FormsModule, SubscriberCardPreviewComponent, ButtonComponent],
   templateUrl: './subscriber-card-modal.component.html',
   styleUrls: ['./subscriber-card-modal.component.css']
 })
