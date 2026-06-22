@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, shareReplay, tap } from 'rxjs/operators';
+import { map, shareReplay, tap, switchMap } from 'rxjs/operators';
 import { Subscriber } from '../../../shared/models/subscriber';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
 import { environment } from '../../../../environments/environment';
@@ -19,6 +19,8 @@ export interface BackendStudent {
     duration_days: number;
     active: boolean;
     days_remaining: number;
+    pauseStart_Date?: number;
+    pauseEnd_Date?: number;
   };
 }
 
@@ -76,6 +78,25 @@ export class SubscriberService {
       }
     }
 
+      // Format end_Date for the form (DD/MM/YY)
+      let endDateString = '';
+      if (student.subscription?.end_Date) {
+        const endDate = new Date(student.subscription.end_Date);
+        const ed = String(endDate.getDate()).padStart(2, '0');
+        const em = String(endDate.getMonth() + 1).padStart(2, '0');
+        const ey = String(endDate.getFullYear()).slice(-2);
+        endDateString = `${ed}/${em}/${ey}`;
+      }
+
+      let pauseEndDateString = undefined;
+      if (student.subscription?.pauseEnd_Date) {
+        const ped = new Date(student.subscription.pauseEnd_Date);
+        const pd = String(ped.getDate()).padStart(2, '0');
+        const pm = String(ped.getMonth() + 1).padStart(2, '0');
+        const py = String(ped.getFullYear()).slice(-2);
+        pauseEndDateString = `${pd}/${pm}/${py}`;
+      }
+
     return {
       id: student._id.$oid,
       name: student.name,
@@ -83,7 +104,10 @@ export class SubscriberService {
       roll_number: (student as any).roll_number || (student as any).rollNumber || (student as any).hmsId || student.uid || 'N/A',
       mealPlan: mealPlanStr || 'None',
       status: status,
-      joinedDate: dateString
+      joinedDate: dateString,
+      startDate: dateString, // For form, start date is same as joinedDate
+      endDate: endDateString,
+      pauseEndDate: pauseEndDateString
     };
   }
 
@@ -102,6 +126,10 @@ export class SubscriberService {
       .pipe(
         map(res => this.mapToSubscriber(res.responseData.data.student))
       );
+  }
+
+  deleteSubscriber(roll_number: string): Observable<any> {
+    return this.http.delete<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(roll_number)}`);
   }
 
   renewSubscriber(id: number | string, duration_days: number = 30): Observable<any> {
@@ -147,7 +175,9 @@ export class SubscriberService {
         start_Date: startDateTs,
         end_Date: endDateTs,
         active: formData.mealSlot.status !== 'Paused',
-        duration_days: durationDays
+        duration_days: durationDays,
+        pauseStart_Date: null,
+        pauseEnd_Date: null
       }
     };
 
@@ -160,40 +190,96 @@ export class SubscriberService {
   }
 
   updateSubscriber(roll_number: string, formData: any, id: string | number): Observable<any> {
-    const meals = [];
-    if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
-    if (formData.mealSlot.brunch) meals.push('BRUNCH');
-    if (formData.mealSlot.lunch) meals.push('LUNCH');
-    if (formData.mealSlot.snacks) meals.push('SNACKS');
-    if (formData.mealSlot.dinner) meals.push('DINNER');
+    // First, fetch the existing student data to preserve pause dates correctly
+    return this.http.get<ApiResponse<{ student: any }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(roll_number)}`).pipe(
+      switchMap((existingRes: ApiResponse<{ student: any }>) => {
+        const existingStudent = existingRes.responseData?.data?.student;
 
-    // Convert 'DD/MM/YY' to timestamp
-    const parseDate = (dateStr: string) => {
-      if (!dateStr) return 0;
-      const [d, m, y] = dateStr.split('/');
-      return new Date(2000 + parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10)).getTime();
-    };
+        const meals = [];
+        if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
+        if (formData.mealSlot.brunch) meals.push('BRUNCH');
+        if (formData.mealSlot.lunch) meals.push('LUNCH');
+        if (formData.mealSlot.snacks) meals.push('SNACKS');
+        if (formData.mealSlot.dinner) meals.push('DINNER');
 
-    const startDateTs = parseDate(formData.mealSlot.startDate);
-    const endDateTs = parseDate(formData.mealSlot.endDate);
-    const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
+        // Convert 'DD/MM/YY' to timestamp
+        const parseDate = (dateStr: string) => {
+          if (!dateStr) return 0;
+          const [d, m, y] = dateStr.split('/');
+          return new Date(2000 + parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10)).getTime();
+        };
+
+        const startDateTs = parseDate(formData.mealSlot.startDate);
+        const endDateTs = parseDate(formData.mealSlot.endDate);
+        const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
+
+        // Prepare subscription object with existing values as defaults
+        const subscription: any = {
+          meals: meals,
+          start_Date: startDateTs,
+          end_Date: endDateTs,
+          active: formData.mealSlot.status !== 'Paused',
+          duration_days: durationDays
+        };
+
+        // Handle pause dates by comparing existing and form data
+        const existingPauseStart = existingStudent?.subscription?.pauseStart_Date;
+        const existingPauseEnd = existingStudent?.subscription?.pauseEnd_Date;
+        const formPauseEndDate = formData.pauseEndDate;
+        const formStatus = formData.mealSlot.status;
+
+        // Parse form pause end date if provided
+        const formPauseEndTimestamp = formPauseEndDate ? parseDate(formPauseEndDate) : null;
+
+        // Determine what to do with pause dates:
+        if (formStatus === 'Paused' && formPauseEndTimestamp !== null) {
+          // User wants to set/update a pause end date
+          // Check if this is a new pause or an extension of an existing pause
+          const isCurrentlyPaused = existingPauseStart !== null && existingPauseEnd !== null &&
+            Date.now() >= existingPauseStart && Date.now() <= existingPauseEnd;
+
+          if (isCurrentlyPaused) {
+            // Extending an existing pause: keep original pause start date, update end date
+            subscription.pauseStart_Date = existingPauseStart;
+            subscription.pauseEnd_Date = formPauseEndTimestamp;
+          } else {
+            // Starting a new pause (either not currently paused or pause has ended)
+            // Set pause start to current time
+            subscription.pauseStart_Date = Date.now();
+            subscription.pauseEnd_Date = formPauseEndTimestamp;
+          }
+        } else if (formStatus !== 'Paused') {
+          // User wants to end any pause (set status to Active/Lapsed)
+          subscription.pauseStart_Date = null;
+          subscription.pauseEnd_Date = null;
+        }
+        // Else: status is Paused but no pause end date provided
+        // Preserve existing pause dates (do nothing)
+
+        const payload = {
+          _id: { $oid: id.toString() },
+          roll_number: formData.roll_number,
+          uid: formData.roll_number,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          email: formData.email,
+          subscription: subscription
+        };
+
+        // Use roll_number for the endpoint (backend expects roll_number, not MongoDB _id)
+        return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(roll_number)}`, payload);
+      })
+    );
+  }
+
+  pauseSubscription(roll_number: string, pauseEndDate: string): Observable<any> {
+    // Convert pauseEndDate to timestamp
+    const pauseEndTimestamp = new Date(pauseEndDate).getTime();
 
     const payload = {
-      _id: { $oid: id.toString() },
-      roll_number: formData.roll_number,
-      uid: formData.roll_number,
-      name: `${formData.firstName} ${formData.lastName}`.trim(),
-      email: formData.email,
-      subscription: {
-        meals: meals,
-        start_Date: startDateTs,
-        end_Date: endDateTs,
-        active: formData.mealSlot.status !== 'Paused',
-        duration_days: durationDays
-      }
+      pauseEndDate: pauseEndTimestamp
     };
 
     // Use roll_number for the endpoint (backend expects roll_number, not MongoDB _id)
-    return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(roll_number)}`, payload);
+    return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_PAUSE(roll_number)}`, payload);
   }
 }

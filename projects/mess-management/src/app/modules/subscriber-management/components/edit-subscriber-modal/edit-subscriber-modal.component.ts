@@ -15,11 +15,13 @@ import { FormsModule } from '@angular/forms';
 
 import { Subscriber } from '../../../../shared/models/subscriber';
 import { DashboardService } from '../../../dashboard/services/dashboard.service';
+import { ButtonComponent } from '@libs/shared-ui';
+import { SubscriberService } from '../../services/subscriber.service';
 
 @Component({
   selector: 'app-edit-subscriber-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonComponent],
   templateUrl: './edit-subscriber-modal.component.html',
   styleUrls: ['./edit-subscriber-modal.component.css']
 })
@@ -32,7 +34,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     }
   }
 
-  constructor(private dashboardService: DashboardService, private cdr: ChangeDetectorRef) {}
+  constructor(private dashboardService: DashboardService, private cdr: ChangeDetectorRef, private subscriberService: SubscriberService) {}
 
   @Input() isOpen = false;
   @Input() subscriber: Subscriber | null = null;
@@ -45,7 +47,8 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     firstName: '',
     lastName: '',
     email: '',
-    roll_number: ''
+    roll_number: '',
+    pauseEndDate: ''
   };
 
   dateError = '';
@@ -53,6 +56,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
   showStartPicker = false;
   showEndPicker = false;
   showStatus = false;
+  showPauseEndPicker = false;
 
   months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -63,6 +67,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
 
   startViewDate = new Date();
   endViewDate = new Date();
+  pauseEndViewDate = new Date();
 
   availableMealSlots: string[] = [];
 
@@ -75,8 +80,9 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       startDate: '',
       endDate: '',
       status: ''
-    } as any
-  };
+    } as any,
+    pauseEndDate: ''
+  } as any;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!changes['isOpen'] && !changes['subscriber']) return;
@@ -161,32 +167,46 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     // Status
     this.form.mealSlot.status = this.subscriber.status || 'Active';
 
-    // Parse joinedDate into startDate and calculate a mock endDate
-    const dateStr = this.subscriber.joinedDate;
-    if (dateStr) {
-      const parts = dateStr.split(' ');
-      if (parts.length >= 3) {
-        const d = parts[0].padStart(2, '0');
-        const monthIndex = this.months.findIndex(month => month.toLowerCase().startsWith(parts[1].toLowerCase()));
-        const m = (monthIndex >= 0 ? monthIndex + 1 : 1).toString().padStart(2, '0');
-        const y = parts[2].slice(-2);
-        this.form.mealSlot.startDate = `${d}/${m}/${y}`;
+    // Pause end date
+    if (this.subscriber.pauseEndDate) {
+      this.form.pauseEndDate = this.subscriber.pauseEndDate;
+    } else {
+      this.form.pauseEndDate = '';
+    }
 
-        let mNum = parseInt(m, 10);
-        let yNum = parseInt(y, 10);
-        mNum++;
-        if (mNum > 12) {
-          mNum = 1;
-          yNum++;
+    // Use startDate and endDate from subscriber if available (formatted as DD/MM/YY)
+    // Otherwise, fallback to calculating from joinedDate (should not happen with updated service)
+    if (this.subscriber.startDate && this.subscriber.endDate) {
+      this.form.mealSlot.startDate = this.subscriber.startDate;
+      this.form.mealSlot.endDate = this.subscriber.endDate;
+    } else {
+      // Fallback: parse joinedDate (this should only happen if data comes from old service)
+      const dateStr = this.subscriber.joinedDate;
+      if (dateStr) {
+        const parts = dateStr.split(' ');
+        if (parts.length >= 3) {
+          const d = parts[0].padStart(2, '0');
+          const monthIndex = this.months.findIndex(month => month.toLowerCase().startsWith(parts[1].toLowerCase()));
+          const m = (monthIndex >= 0 ? monthIndex + 1 : 1).toString().padStart(2, '0');
+          const y = parts[2].slice(-2);
+          this.form.mealSlot.startDate = `${d}/${m}/${y}`;
+
+          let mNum = parseInt(m, 10);
+          let yNum = parseInt(y, 10);
+          mNum++;
+          if (mNum > 12) {
+            mNum = 1;
+            yNum++;
+          }
+          this.form.mealSlot.endDate = `${d}/${mNum.toString().padStart(2, '0')}/${yNum.toString().padStart(2, '0')}`;
+        } else {
+          this.form.mealSlot.startDate = '';
+          this.form.mealSlot.endDate = '';
         }
-        this.form.mealSlot.endDate = `${d}/${mNum.toString().padStart(2, '0')}/${yNum.toString().padStart(2, '0')}`;
       } else {
         this.form.mealSlot.startDate = '';
         this.form.mealSlot.endDate = '';
       }
-    } else {
-      this.form.mealSlot.startDate = '';
-      this.form.mealSlot.endDate = '';
     }
     this.cdr.detectChanges();
   }
@@ -208,7 +228,8 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
         startDate: '',
         endDate: '',
         status: ''
-      } as any
+      } as any,
+      pauseEndDate: ''
     };
 
     this.availableMealSlots.forEach(slot => {
@@ -218,7 +239,8 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       firstName: '',
       lastName: '',
       email: '',
-      roll_number: ''
+      roll_number: '',
+      pauseEndDate: ''
     };
     this.dateError = '';
     this.cdr.detectChanges();
@@ -239,7 +261,8 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
       firstName: '',
       lastName: '',
       email: '',
-      roll_number: ''
+      roll_number: '',
+      pauseEndDate: ''
     };
 
     const nameRegex = /^[A-Za-z ]+$/;
@@ -276,6 +299,15 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     this.validateDates();
     if (this.dateError) valid = false;
 
+    // Validate pause end date when status is Paused
+    if (this.form.mealSlot.status === 'Paused') {
+      const pauseEndDate = (this.form as any).pauseEndDate;
+      if (!pauseEndDate || !pauseEndDate.trim()) {
+        this.errors.pauseEndDate = 'Pause end date is required when status is Paused';
+        valid = false;
+      }
+    }
+
     this.cdr.detectChanges();
     return valid;
   }
@@ -308,16 +340,23 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     this.showStartPicker = false;
     this.showEndPicker = false;
     this.showStatus = false;
+    this.showPauseEndPicker = false;
   }
 
-  togglePicker(type: 'start' | 'end', e: Event): void {
+  togglePicker(type: 'start' | 'end' | 'pauseEnd', e: Event): void {
     e.stopPropagation();
     if (type === 'start') {
       this.showStartPicker = !this.showStartPicker;
       this.showEndPicker = false;
-    } else {
+      this.showPauseEndPicker = false;
+    } else if (type === 'end') {
       this.showEndPicker = !this.showEndPicker;
       this.showStartPicker = false;
+      this.showPauseEndPicker = false;
+    } else {
+      this.showPauseEndPicker = !this.showPauseEndPicker;
+      this.showStartPicker = false;
+      this.showEndPicker = false;
     }
     this.showStatus = false;
   }
@@ -329,18 +368,20 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     this.showEndPicker = false;
   }
 
-  prevMonth(type: 'start' | 'end'): void {
-    const d = type === 'start' ? this.startViewDate : this.endViewDate;
+  prevMonth(type: 'start' | 'end' | 'pauseEnd'): void {
+    const d = type === 'start' ? this.startViewDate : (type === 'end' ? this.endViewDate : this.pauseEndViewDate);
     const nd = new Date(d.getFullYear(), d.getMonth() - 1, 1);
     if (type === 'start') this.startViewDate = nd;
-    else this.endViewDate = nd;
+    else if (type === 'end') this.endViewDate = nd;
+    else this.pauseEndViewDate = nd;
   }
 
-  nextMonth(type: 'start' | 'end'): void {
-    const d = type === 'start' ? this.startViewDate : this.endViewDate;
+  nextMonth(type: 'start' | 'end' | 'pauseEnd'): void {
+    const d = type === 'start' ? this.startViewDate : (type === 'end' ? this.endViewDate : this.pauseEndViewDate);
     const nd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
     if (type === 'start') this.startViewDate = nd;
-    else this.endViewDate = nd;
+    else if (type === 'end') this.endViewDate = nd;
+    else this.pauseEndViewDate = nd;
   }
 
   getCalendarDays(viewDate: Date): (Date | null)[] {
@@ -385,6 +426,26 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
     if (type === 'start') this.showStartPicker = false;
     else this.showEndPicker = false;
     this.validateDates();
+  }
+
+  isSelectedPauseEnd(day: Date | null): boolean {
+    if (!day) return false;
+    return this.form.pauseEndDate === this.formatDate(day);
+  }
+
+  clearPauseEndDate(): void {
+    this.form.pauseEndDate = '';
+    this.showPauseEndPicker = false;
+  }
+
+  confirmPauseEndDate(): void {
+    this.showPauseEndPicker = false;
+  }
+
+  selectPauseEndDay(day: Date | null): void {
+    if (!day) return;
+    this.form.pauseEndDate = this.formatDate(day);
+    this.showPauseEndPicker = false;
   }
 
   private formatDate(d: Date): string {

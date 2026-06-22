@@ -2,11 +2,12 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MealSlot } from '../../../../shared/models/dashboard.models';
 import { ConfigureMealSlotsComponent } from '../configure-meal-slots/configure-meal-slots.component';
+import { ButtonComponent } from '@libs/shared-ui';
 
 @Component({
   selector: 'app-meal-slots',
   standalone: true,
-  imports: [CommonModule, ConfigureMealSlotsComponent],
+  imports: [CommonModule, ConfigureMealSlotsComponent, ButtonComponent],
   templateUrl: './meal-slots.component.html',
   styleUrls: ['./meal-slots.component.css'],
 })

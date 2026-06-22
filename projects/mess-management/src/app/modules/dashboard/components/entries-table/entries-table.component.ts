@@ -1,10 +1,12 @@
 import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MealEntry } from '../../../../shared/models/dashboard.models';
+import { EmptyStateComponent } from '@libs/shared-ui';
+
 @Component({
   selector: 'app-entries-table',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, EmptyStateComponent],
   templateUrl: './entries-table.component.html',
 })
 export class EntriesTableComponent implements OnChanges {

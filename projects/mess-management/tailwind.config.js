@@ -18,6 +18,7 @@ module.exports = {
       fontFamily: {
         inter: ["Inter", "sans-serif"],
         dotMatrix: ["'Enhanced Dot Digital-7'", "'VT323'", "monospace"],
+        ubuntu: ["Ubuntu", "sans-serif"],
       },
     },
   },

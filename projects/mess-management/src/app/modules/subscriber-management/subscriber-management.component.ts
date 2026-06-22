@@ -5,13 +5,14 @@ import { SubscriberStatsComponent } from './components/subscriber-stats/subscrib
 import { SubscriberTableComponent } from './components/subscriber-table/subscriber-table.component';
 import { DashboardTabsComponent } from '../dashboard/components/dashboard-tabs/dashboard-tabs.component';
 import { AddSubscriberModalComponent } from './components/add-subscriber-modal/add-subscriber-modal.component';
-import { SubscriberCardModalComponent } from './components/subscriber-card-modal/subscriber-card-modal.component';
 import { EditSubscriberModalComponent } from './components/edit-subscriber-modal/edit-subscriber-modal.component';
 
 import { Subscriber } from './models/subscriber.model';
 import { SubscriberService } from './services/subscriber.service';
 import { NetworkService } from '../../shared/services/network.service';
 import { ConnectionMonitorService } from '../../shared/services/connection-monitor.service';
+import { SharedToastService } from '@libs/shared-toast';
+import { BreadcrumbsTitleComponent, ButtonComponent } from '@libs/shared-ui';
 
 @Component({
   selector: 'app-subscriber-management',
@@ -22,13 +23,19 @@ import { ConnectionMonitorService } from '../../shared/services/connection-monit
     SubscriberTableComponent,
     DashboardTabsComponent,
     AddSubscriberModalComponent,
-    SubscriberCardModalComponent,
-    EditSubscriberModalComponent
+    EditSubscriberModalComponent,
+    BreadcrumbsTitleComponent,
+    ButtonComponent
   ],
   templateUrl: './subscriber-management.component.html',
   styleUrls: ['./subscriber-management.component.css']
 })
 export class SubscriberManagementComponent implements OnInit {
+
+  breadcrumbs = [
+    { label: 'Hostel' },
+    { label: 'Mess Management' }
+  ];
 
   subscribers: Subscriber[] = [];
 
@@ -40,7 +47,6 @@ export class SubscriberManagementComponent implements OnInit {
   };
 
   showAddModal = false;
-
   showCardModal = false;
 
   showEditModal = false;
@@ -49,11 +55,15 @@ export class SubscriberManagementComponent implements OnInit {
 
   editSubscriberData: any = null;
 
+  showDeleteConfirmPopup = false;
+  pendingDeleteSubscriber: Subscriber | null = null;
+
   constructor(
     private subscriberService: SubscriberService,
     private networkService: NetworkService,
     private connectionMonitor: ConnectionMonitorService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastService: SharedToastService
   ) { }
 
   ngOnInit(): void {
@@ -94,23 +104,26 @@ export class SubscriberManagementComponent implements OnInit {
     this.showAddModal = false;
   }
 
-  openCardStep(data: any): void {
-    console.log('OPEN CARD STEP - CREATING SUBSCRIBER', data);
-
-    // Call the API to create the subscriber first
+  onSubscriberSave(data: any): void {
+    console.log('Creating new subscriber:', data);
+    
     this.subscriberService.createSubscriber(data).subscribe({
       next: (res) => {
         const newCustomerId = res.responseData?.data?.customer?._id?.$oid || res.responseData?.data?._id?.$oid || res.responseData?.data?.id;
         console.log('Subscriber created with ID:', newCustomerId);
         this.subscriberFormData = { ...data, backendId: newCustomerId };
+        this.toastService.success('Subscriber created successfully.');
         this.showAddModal = false;
-        this.showCardModal = true;
+        this.refreshSubscribers();
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to create subscriber:', err);
         this.showAddModal = false;
         this.connectionMonitor.setServerDown(true);
+        this.toastService.error('Failed to create subscriber.');
+        this.showAddModal = false;
+        this.refreshSubscribers();
         this.cdr.detectChanges();
       }
     });
@@ -201,11 +214,7 @@ export class SubscriberManagementComponent implements OnInit {
     });
   }
 
-  onSubscriberSave(data: any): void {
-    console.log('New subscriber:', data);
 
-    this.showAddModal = false;
-  }
 
   openEditModal(sub: Subscriber): void {
     this.editSubscriberData = { ...sub };
@@ -215,6 +224,36 @@ export class SubscriberManagementComponent implements OnInit {
   closeEditModal(): void {
     this.showEditModal = false;
     this.editSubscriberData = null;
+  }
+
+  requestDeleteSubscriber(subscriber: Subscriber): void {
+    this.pendingDeleteSubscriber = subscriber;
+    this.showDeleteConfirmPopup = true;
+  }
+
+  cancelDeleteSubscriber(): void {
+    this.showDeleteConfirmPopup = false;
+    this.pendingDeleteSubscriber = null;
+  }
+
+  confirmDeleteSubscriber(): void {
+    if (this.pendingDeleteSubscriber && this.pendingDeleteSubscriber.roll_number) {
+      this.subscriberService.deleteSubscriber(this.pendingDeleteSubscriber.roll_number).subscribe({
+        next: (res) => {
+          this.toastService.success('Subscriber deleted successfully.');
+          this.showDeleteConfirmPopup = false;
+          this.pendingDeleteSubscriber = null;
+          this.refreshSubscribers();
+        },
+        error: (err) => {
+          console.error('Failed to delete subscriber:', err);
+          this.toastService.error('Failed to delete subscriber.');
+          this.showDeleteConfirmPopup = false;
+          this.pendingDeleteSubscriber = null;
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 
   getMockData(): Subscriber[] {

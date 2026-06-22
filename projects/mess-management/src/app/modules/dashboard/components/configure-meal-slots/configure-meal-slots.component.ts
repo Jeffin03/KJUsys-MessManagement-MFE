@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DashboardService, ApiResponse, BackendSchedule } from '../../services/dashboard.service';
 import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
 import { SharedToastService } from '@libs/shared-toast';
+import { ButtonComponent } from '@libs/shared-ui';
 
 interface SuggestionItem {
   label: string;
@@ -26,9 +27,9 @@ interface MealSlotConfig {
 @Component({
   selector: 'app-configure-meal-slots',
   standalone: true,
-  imports: [CommonModule, FormsModule, SubTabsModule],
+  imports: [CommonModule, FormsModule, SubTabsModule, ButtonComponent],
   templateUrl: './configure-meal-slots.component.html',
-  styles: []
+  styleUrls: ['./configure-meal-slots.component.css']
 })
 export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
@@ -79,7 +80,13 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     notSubscribed: { line1: '"name"', line2: 'Not Subscribed.' }
   };
 
-  previewState: 'defaultMsg' | 'tapAllowed' | 'alreadyTapped' | 'notSubscribed' = 'tapAllowed';
+  previewState: 'defaultMsg' | 'tapAllowed' | 'alreadyTapped' | 'notSubscribed' = 'defaultMsg';
+
+  tokenConfig = {
+    section1: '',
+    section2: '',
+    section3: ''
+  };
 
   // ── Autocomplete ──────────────────────────────────────────────────────────
   suggestionState: {
@@ -147,6 +154,15 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       .replace(/"meal"/g, mealFallback)
       .padEnd(16, ' ')
       .substring(0, 16);
+  }
+
+  substituteTokenVars(text: string, defaultText: string): string {
+    if (!text) return defaultText;
+    const mealFallback = this.previewSubstitutions.meal || this.slots[0]?.name || 'Meal';
+    return text
+      .replace(/"name"/g, this.previewSubstitutions.name)
+      .replace(/"rollno"/g, this.previewSubstitutions.rollno)
+      .replace(/"meal"/g, mealFallback);
   }
 
   get previewStateName() {
@@ -264,12 +280,17 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   private getDisplayConfigValue(fieldKey: string): string {
     const [state, line] = fieldKey.split('.');
+    if (state === 'tokenConfig') {
+      return (this.tokenConfig as any)[line] ?? '';
+    }
     return (this.displayConfig as any)[state]?.[line] ?? '';
   }
 
   setDisplayConfigValue(fieldKey: string, value: string) {
     const [state, line] = fieldKey.split('.');
-    if ((this.displayConfig as any)[state]) {
+    if (state === 'tokenConfig') {
+      (this.tokenConfig as any)[line] = value;
+    } else if ((this.displayConfig as any)[state]) {
       (this.displayConfig as any)[state][line] = value;
     }
   }

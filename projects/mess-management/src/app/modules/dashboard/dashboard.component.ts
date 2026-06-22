@@ -12,6 +12,7 @@ import { DashboardTabsComponent } from './components/dashboard-tabs/dashboard-ta
 import { WebsocketService } from '../../shared/services/websocket.service';
 import { NetworkService } from '../../shared/services/network.service';
 import { ConnectionMonitorService } from '../../shared/services/connection-monitor.service';
+import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
 
 
 @Component({
@@ -23,6 +24,7 @@ import { ConnectionMonitorService } from '../../shared/services/connection-monit
     EntriesTableComponent,
     HardwareStatusComponent,
     DashboardTabsComponent,
+    BreadcrumbsTitleComponent
   ],
   templateUrl: './dashboard.component.html',
 })
@@ -31,6 +33,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private roll_numberLookup = new Map<string, string>();
   private activeByMealPlan: { [key: string]: number } = {};
   private subscriptions = new Subscription();
+
+  breadcrumbs = [
+    { label: 'Hostel' },
+    { label: 'Mess Management' }
+  ];
 
   stats: DashboardStat[] = [
     { label: 'Total Subscribers', value: 0, icon: 'subscribers', color: 'text-blue-400' },
