@@ -13,13 +13,14 @@
 
 @keyframes breathe {
   0%, 100% {
-    background-color: #1D9F00;
+    opacity: 1;
   }
   50% {
-    background-color: #D5F5D0;
+    opacity: 0.3;
   }
 }
 
 .live-dot-breathe {
-  animation: breathe 2.5s ease-in-out infinite;
+  background-color: #1D9F00;
+  animation: breathe 2s ease-in-out infinite;
 }

@@ -4,18 +4,16 @@
 
     <!-- Breadcrumb -->
     <div class="mb-3">
-      <p class="text-[10px] mb-0.5 text-[#747474]">
-        Hostel / <span class="text-black">Mess Management</span>
-      </p>
-      <h1 class="text-sm font-semibold text-black">Mess Management</h1>
+      <lib-breadcrumbs-title title="Mess Management" [breadcrumbs]="breadcrumbs"></lib-breadcrumbs-title>
     </div>
 
     <!-- Tab Bar -->
     <div class="mb-5 w-full">
       <app-dashboard-tabs></app-dashboard-tabs>
+    </div>
 
-      <!-- Stats Cards -->
-      <div class="grid grid-cols-4 gap-4 mb-5">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-4 gap-4 mb-5">
 
         <!-- Total Subscribers -->
         <div
@@ -70,7 +68,6 @@
       <div class="flex gap-4">
         <app-entries-table class="flex-1 min-w-0" [entries]="recentEntries"></app-entries-table>
         <app-hardware-status [hardware]="hardware" [uptimeSeconds]="uptimeSeconds"></app-hardware-status>
-      </div>
     </div>
   </div>
 </div>

@@ -6,7 +6,7 @@
         <div class="flex items-start justify-between px-7 pt-6 pb-[18px] border-b border-gray-200">
             <div>
                 <h2 class="text-sm font-bold m-0 mb-1 leading-tight" style="color:#1D1D1F;">Add Subscriber</h2>
-                <p class="text-xs m-0" style="color:#86868B;">Add subscriber details, meal plans and card details</p>
+                <p class="text-xs m-0" style="color:#86868B;">Add subscriber details and meal plans</p>
             </div>
             <button class="bg-transparent border-none text-base cursor-pointer px-1.5 py-0.5 leading-none mt-0.5"
                 style="color:#86868B;" (click)="onClose()">&#x2715;</button>
@@ -95,13 +95,13 @@
                             class="absolute top-[calc(100%+8px)] left-0 z-[9999] bg-white rounded-[18px] p-4 w-[300px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-gray-200"
                             (click)="$event.stopPropagation()">
                             <div class="flex items-center justify-between mb-4">
-                                <button class="border-none bg-transparent cursor-pointer p-0"
+                                <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
                                     (click)="prevMonth('start')">
                                     <img src="assets/icons/arrow-left.svg" class="w-10 h-10" alt="prev" />
                                 </button>
                                 <span class="text-sm font-bold" style="color:#1D1D1F;">{{
                                     months[startViewDate.getMonth()] }} {{ startViewDate.getFullYear() }}</span>
-                                <button class="border-none bg-transparent cursor-pointer p-0"
+                                <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
                                     (click)="nextMonth('start')">
                                     <img src="assets/icons/arrow-right.svg" class="w-10 h-10" alt="next" />
                                 </button>
@@ -145,13 +145,13 @@
                             class="absolute top-[calc(100%+8px)] left-0 z-[9999] bg-white rounded-[18px] p-4 w-[300px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-gray-200"
                             (click)="$event.stopPropagation()">
                             <div class="flex items-center justify-between mb-4">
-                                <button class="border-none bg-transparent cursor-pointer p-0"
+                                <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
                                     (click)="prevMonth('end')">
                                     <img src="assets/icons/arrow-left.svg" class="w-10 h-10" alt="prev" />
                                 </button>
                                 <span class="text-sm font-bold" style="color:#1D1D1F;">{{ months[endViewDate.getMonth()]
                                     }} {{ endViewDate.getFullYear() }}</span>
-                                <button class="border-none bg-transparent cursor-pointer p-0"
+                                <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
                                     (click)="nextMonth('end')">
                                     <img src="assets/icons/arrow-right.svg" class="w-10 h-10" alt="next" />
                                 </button>
@@ -211,12 +211,8 @@
 
         <!-- Footer -->
         <div class="flex items-center justify-between px-7 py-4 border-t border-gray-200">
-            <button
-                class="text-xs px-5 py-[9px] rounded-lg border border-gray-200 bg-white font-medium cursor-pointer hover:bg-gray-50"
-                style="color:#1D1D1F;" (click)="onClose()">Cancel</button>
-            <button
-                class="text-xs px-7 py-[9px] rounded-lg border-none bg-blue-600 text-white font-semibold cursor-pointer hover:bg-blue-700"
-                (click)="onNext()">Next</button>
+            <lib-button type="secondary" label="Cancel" (onClick)="onClose()"></lib-button>
+            <lib-button type="primary" label="Save" (onClick)="onSave()"></lib-button>
         </div>
 
     </div>

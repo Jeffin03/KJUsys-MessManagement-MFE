@@ -104,6 +104,10 @@ export class SubscriberService {
       );
   }
 
+  deleteSubscriber(roll_number: string): Observable<any> {
+    return this.http.delete<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(roll_number)}`);
+  }
+
   renewSubscriber(id: number | string, duration_days: number = 30): Observable<any> {
     return this.http.put(`${this.baseUrl}${API_ENDPOINTS.STUDENT_RENEW(id)}`, { duration_days });
   }

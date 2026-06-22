@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
+import { TabsModule } from '@libs/tabs';
 
 @Component({
   selector: 'app-dashboard-tabs',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TabsModule],
   templateUrl: './dashboard-tabs.component.html',
   styleUrls: ['./dashboard-tabs.component.css']
 })
@@ -13,9 +14,9 @@ export class DashboardTabsComponent implements OnInit {
   activeTab = 'subscriber'; // default
   
   tabs = [
-    { id: 'dashboard', label: 'Dashboard', sub: 'Overview' },
-    { id: 'subscriber', label: 'Subscriber Management', sub: 'Manage Subscribers' },
-    { id: 'reports', label: 'Reports', sub: 'View Reports' }
+    { id: 'dashboard', label: 'Dashboard', subtitle: 'Overview' },
+    { id: 'subscriber', label: 'Subscriber Management', subtitle: 'Manage Subscribers' },
+    { id: 'reports', label: 'Reports', subtitle: 'View Reports' }
   ];
 
   constructor(private router: Router, private route: ActivatedRoute) {}
@@ -28,13 +29,13 @@ export class DashboardTabsComponent implements OnInit {
     else this.activeTab = 'subscriber';
   }
 
-  setActive(tab: any) {
-    this.activeTab = tab.id;
-    if (tab.id === 'dashboard') {
+  setActive(tabId: string) {
+    this.activeTab = tabId;
+    if (tabId === 'dashboard') {
       this.router.navigate(['../dashboard'], { relativeTo: this.route });
-    } else if (tab.id === 'subscriber') {
+    } else if (tabId === 'subscriber') {
       this.router.navigate(['../subscriber-management'], { relativeTo: this.route });
-    } else if (tab.id === 'reports') {
+    } else if (tabId === 'reports') {
       // this.router.navigate(['../reports'], { relativeTo: this.route });
     }
   }

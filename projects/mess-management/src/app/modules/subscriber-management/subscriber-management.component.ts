@@ -5,11 +5,12 @@ import { SubscriberStatsComponent } from './components/subscriber-stats/subscrib
 import { SubscriberTableComponent } from './components/subscriber-table/subscriber-table.component';
 import { DashboardTabsComponent } from '../dashboard/components/dashboard-tabs/dashboard-tabs.component';
 import { AddSubscriberModalComponent } from './components/add-subscriber-modal/add-subscriber-modal.component';
-import { SubscriberCardModalComponent } from './components/subscriber-card-modal/subscriber-card-modal.component';
 import { EditSubscriberModalComponent } from './components/edit-subscriber-modal/edit-subscriber-modal.component';
 
 import { Subscriber } from './models/subscriber.model';
 import { SubscriberService } from './services/subscriber.service';
+import { SharedToastService } from '@libs/shared-toast';
+import { BreadcrumbsTitleComponent, ButtonComponent } from '@libs/shared-ui';
 
 @Component({
   selector: 'app-subscriber-management',
@@ -20,13 +21,19 @@ import { SubscriberService } from './services/subscriber.service';
     SubscriberTableComponent,
     DashboardTabsComponent,
     AddSubscriberModalComponent,
-    SubscriberCardModalComponent,
-    EditSubscriberModalComponent
+    EditSubscriberModalComponent,
+    BreadcrumbsTitleComponent,
+    ButtonComponent
   ],
   templateUrl: './subscriber-management.component.html',
   styleUrls: ['./subscriber-management.component.css']
 })
 export class SubscriberManagementComponent implements OnInit {
+
+  breadcrumbs = [
+    { label: 'Hostel' },
+    { label: 'Mess Management' }
+  ];
 
   subscribers: Subscriber[] = [];
 
@@ -39,17 +46,19 @@ export class SubscriberManagementComponent implements OnInit {
 
   showAddModal = false;
 
-  showCardModal = false;
-
   showEditModal = false;
 
   subscriberFormData: any = null;
 
   editSubscriberData: any = null;
 
+  showDeleteConfirmPopup = false;
+  pendingDeleteSubscriber: Subscriber | null = null;
+
   constructor(
     private subscriberService: SubscriberService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastService: SharedToastService
   ) { }
 
   ngOnInit(): void {
@@ -92,73 +101,24 @@ export class SubscriberManagementComponent implements OnInit {
     this.showAddModal = false;
   }
 
-  openCardStep(data: any): void {
-    console.log('OPEN CARD STEP - CREATING SUBSCRIBER', data);
-
-    // Call the API to create the subscriber first
+  onSubscriberSave(data: any): void {
+    console.log('Creating new subscriber:', data);
+    
     this.subscriberService.createSubscriber(data).subscribe({
       next: (res) => {
-        // Assume backend returns the created customer or _id in responseData
-        const newCustomerId = res.responseData?.data?.customer?._id?.$oid || res.responseData?.data?._id?.$oid || res.responseData?.data?.id;
-
-        console.log('Subscriber created with ID:', newCustomerId);
-
-        // Pass the created ID to the next step
-        this.subscriberFormData = { ...data, backendId: newCustomerId };
-
+        this.toastService.success('Subscriber created successfully.');
         this.showAddModal = false;
-        this.showCardModal = true;
+        this.refreshSubscribers();
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to create subscriber:', err);
-        // Fallback for development/UI demo
-        this.subscriberFormData = { ...data, backendId: 'dummy_id_' + Date.now() };
+        this.toastService.error('Failed to create subscriber.');
         this.showAddModal = false;
-        this.showCardModal = true;
+        this.refreshSubscribers();
         this.cdr.detectChanges();
       }
     });
-  }
-
-  closeCardModal(): void {
-    this.showCardModal = false;
-  }
-
-  backToAddModal(): void {
-    // Note: If they go back, they might create a duplicate if they click Next again without handling edit mode.
-    // Assuming standard flow for now.
-    this.showCardModal = false;
-    this.showAddModal = true;
-  }
-
-  saveSubscriberConfiguration(data: any): void {
-    console.log('Final Subscriber Configuration (Assigning Roll Number):', data);
-
-    const roll_number = data.roll_number;
-    const customerId = data.backendId;
-
-    if (roll_number && customerId && !customerId.startsWith('dummy_id')) {
-      this.subscriberService.assignHmsId(roll_number, customerId).subscribe({
-        next: (res) => {
-          console.log('Successfully assigned Roll Number to subscriber:', res);
-          this.showCardModal = false;
-          this.refreshSubscribers(); // Refresh table
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          console.error('Failed to assign Roll Number:', err);
-          this.showCardModal = false;
-          this.refreshSubscribers();
-          this.cdr.detectChanges();
-        }
-      });
-    } else {
-      // Just close and refresh if it's a dummy or missing info
-      this.showCardModal = false;
-      this.refreshSubscribers();
-      this.cdr.detectChanges();
-    }
   }
 
   updateSubscriber(data: any): void {
@@ -208,11 +168,7 @@ export class SubscriberManagementComponent implements OnInit {
     });
   }
 
-  onSubscriberSave(data: any): void {
-    console.log('New subscriber:', data);
 
-    this.showAddModal = false;
-  }
 
   openEditModal(sub: Subscriber): void {
     this.editSubscriberData = { ...sub };
@@ -222,6 +178,36 @@ export class SubscriberManagementComponent implements OnInit {
   closeEditModal(): void {
     this.showEditModal = false;
     this.editSubscriberData = null;
+  }
+
+  requestDeleteSubscriber(subscriber: Subscriber): void {
+    this.pendingDeleteSubscriber = subscriber;
+    this.showDeleteConfirmPopup = true;
+  }
+
+  cancelDeleteSubscriber(): void {
+    this.showDeleteConfirmPopup = false;
+    this.pendingDeleteSubscriber = null;
+  }
+
+  confirmDeleteSubscriber(): void {
+    if (this.pendingDeleteSubscriber && this.pendingDeleteSubscriber.roll_number) {
+      this.subscriberService.deleteSubscriber(this.pendingDeleteSubscriber.roll_number).subscribe({
+        next: (res) => {
+          this.toastService.success('Subscriber deleted successfully.');
+          this.showDeleteConfirmPopup = false;
+          this.pendingDeleteSubscriber = null;
+          this.refreshSubscribers();
+        },
+        error: (err) => {
+          console.error('Failed to delete subscriber:', err);
+          this.toastService.error('Failed to delete subscriber.');
+          this.showDeleteConfirmPopup = false;
+          this.pendingDeleteSubscriber = null;
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 
   getMockData(): Subscriber[] {
