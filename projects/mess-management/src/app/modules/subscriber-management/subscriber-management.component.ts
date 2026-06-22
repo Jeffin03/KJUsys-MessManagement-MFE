@@ -256,35 +256,4 @@ export class SubscriberManagementComponent implements OnInit {
     }
   }
 
-  getMockData(): Subscriber[] {
-
-    const plans = [
-      'B+L+D',
-      'B+L',
-      'L+D',
-      'B+D'
-    ];
-
-    const statuses:
-      ('Active' | 'Paused' | 'Lapsed')[] = [
-        'Active',
-        'Active',
-        'Active',
-        'Paused',
-        'Lapsed'
-      ];
-
-    return Array.from(
-      { length: 248 },
-      (_, i) => ({
-        id: i + 1,
-        name: 'Jeffin',
-        email: 'jeffin@edu.com',
-        roll_number: '25mca001',
-        mealPlan: plans[i % plans.length],
-        status: statuses[i % statuses.length],
-        joinedDate: `${10 + (i % 20)} Jan 26`
-      })
-    );
-  }
 }
