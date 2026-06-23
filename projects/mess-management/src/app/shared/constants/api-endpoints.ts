@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   STUDENTS: '/students',
   STUDENT_BY_ID: (id: string | number) => `/students/${id}`,
   STUDENT_RENEW: (id: string | number) => `/students/${id}/renew`,
+  STUDENT_PAUSE: (id: string | number) => `/students/${id}/pause`,
   STUDENTS_EXPIRING: '/students/expiring',
 
   // RFID
@@ -30,5 +31,8 @@ export const API_ENDPOINTS = {
   REPORTS_RANGE: '/reports/range',
 
   // Settings
-  SETTINGS: '/settings'
+  SETTINGS: '/settings',
+
+  // Hardware
+  HARDWARE_STATUS: '/hardware-status'
 };

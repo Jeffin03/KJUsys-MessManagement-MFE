@@ -1,13 +1,18 @@
 
+import { configLoader } from './config-loader.service';
+
 export const environment = {
     production: false,
     mfe: {
         'mess-management': 'http://localhost:4201',
     },
     publicPath: 'http://localhost:4201/',
-    baseUrl: 'https://surfing-reviewer-lancaster-oxygen.trycloudflare.com/kjusys-api/mess-management',
+    baseUrl: 'http://localhost:8080/kjusys-api/mess-management',
     project: 'mess-management',
     baseRoute: 'kjusys',
     local: false,
-    apirefreshUrl: 'https://congress-trackback-opens-stay.trycloudflare.com/kjusys-api/authnauthz/refresh-access-token'
+    apirefreshUrl: 'http://localhost:8080/kjusys-api/authnauthz/refresh-access-token'
 };
+
+// Load configuration from config loader service (updates baseUrl if needed)
+configLoader.load(environment);

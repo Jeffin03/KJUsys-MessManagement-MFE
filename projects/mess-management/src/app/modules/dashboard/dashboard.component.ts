@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription, firstValueFrom } from 'rxjs';
+import { Subscription, firstValueFrom, Observable, of, BehaviorSubject } from 'rxjs';
 import { MealSlotsComponent } from './components/meal-slots/meal-slots.component';
 import { EntriesTableComponent } from './components/entries-table/entries-table.component';
 import { HardwareStatusComponent } from './components/hardware-status/hardware-status.component';
@@ -10,9 +10,10 @@ import { SubscriberService } from '../subscriber-management/services/subscriber.
 import { Subscriber } from '../../shared/models/subscriber';
 import { DashboardTabsComponent } from './components/dashboard-tabs/dashboard-tabs.component';
 import { WebsocketService } from '../../shared/services/websocket.service';
+import { NetworkService } from '../../shared/services/network.service';
+import { ConnectionMonitorService } from '../../shared/services/connection-monitor.service';
 import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
 
-import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
@@ -50,22 +51,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
   recentEntries: MealEntry[] = [];
 
   hardware: HardwareDevice[] = [
-    { name: 'ESP32 Unit 1', icon: 'chip', status: 'Online' },
-    { name: 'ESP32 Unit 2', icon: 'chip', status: 'Online' },
-    { name: 'WiFi Router', icon: 'wifi', status: 'Connected' },
-    { name: 'POS Printer', icon: 'printer', status: 'Low Paper' },
+    {
+      name: 'ESP32 Unit 1', icon: 'chip', status: 'Offline',
+      deviceId: ''
+    },
+    {
+      name: 'ESP32 Unit 2', icon: 'chip', status: 'Offline',
+      deviceId: ''
+    },
+    {
+      name: 'WiFi Router', icon: 'wifi', status: 'Offline',
+      deviceId: ''
+    },
+    {
+      name: 'POS Printer', icon: 'printer', status: 'Offline',
+      deviceId: ''
+    },
   ];
 
-  uptimeSeconds = 6 * 3600 + 42 * 60;
+  uptimeSeconds = 0;
   isLoading = true;
+  isHardwareRefreshing = false;
   errorMessage = '';
 
   constructor(
     private dashboardService: DashboardService,
     private subscriberService: SubscriberService,
     private websocketService: WebsocketService,
-    private router: Router,
-    private route: ActivatedRoute,
+    private networkService: NetworkService,
+    private connectionMonitor: ConnectionMonitorService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
   ) { }
@@ -73,6 +87,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.uptimeInterval = setInterval(() => this.uptimeSeconds++, 1000);
     console.log('test up');
+
+    // Subscribe to network status to update Wi-Fi router status in the hardware array using NetworkService
+    this.subscriptions.add(
+      this.networkService.isOnline$.subscribe(isOnline => {
+        this.updateWifiStatus(isOnline);
+      })
+    );
+
+    // Automatically refresh dashboard data when connection is restored
+    this.subscriptions.add(
+      this.connectionMonitor.connectionRestored$.subscribe(() => {
+        this.loadDataProgressively();
+      })
+    );
 
     this.loadDataProgressively();
 
@@ -86,20 +114,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const subscribersPromise = firstValueFrom(this.subscriberService.getSubscribers());
       const schedulesPromise = firstValueFrom(this.dashboardService.getSchedules());
       const tapsPromise = firstValueFrom(this.dashboardService.getTaps());
+      const hardwarePromise = firstValueFrom(this.dashboardService.getHardwareStatus());
 
       // 1. Wait for subscribers and process it first (required for other processing)
       const subscribers = await subscribersPromise;
       this.processSubscribers(subscribers);
 
-      // 2. Wait for schedules and taps concurrently, then process them in parallel
-      const [schedules, taps] = await Promise.all([
+      // 2. Wait for schedules, taps, and hardware concurrently, then process them in parallel
+      const [schedules, taps, hardwareResponse] = await Promise.all([
         schedulesPromise,
-        tapsPromise
+        tapsPromise,
+        hardwarePromise
       ]);
 
       // Process schedules and taps concurrently (they don't depend on each other)
       this.processSchedules(schedules);
       this.processTaps(taps);
+      // Process hardware
+      this.hardware = hardwareResponse.hardware;
+      this.uptimeSeconds = hardwareResponse.serverUptimeSeconds;
+
+      // Update Wi-Fi router status based on browser online status
+      this.updateWifiStatus();
 
       // Mark loading as complete and initialize WebSocket
       this.isLoading = false;
@@ -110,7 +146,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
       console.error('Failed to load dashboard data:', err);
       this.errorMessage = 'Failed to load dashboard data. Please try again later.';
       this.isLoading = false;
+      if (this.hardware) {
+        this.hardware.forEach(device => {
+          if (device.icon !== 'wifi') {
+            device.status = 'Offline';
+          }
+        });
+      }
+      this.updateWifiStatus();
+      this.connectionMonitor.setServerDown(true);
       this.cdr.detectChanges();
+    }
+  }
+
+  /** Update Wi-Fi router status in hardware array based on browser's online status */
+  private updateWifiStatus(isOnline: boolean = navigator.onLine): void {
+    if (!this.hardware) {
+      return;
+    }
+    const wifiDevice = this.hardware.find(device => device.icon === 'wifi');
+    if (wifiDevice) {
+      wifiDevice.status = isOnline ? 'Connected' : 'Offline';
     }
   }
 
@@ -218,6 +274,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
       })
     );
+
+    // Listen for hardware status updates
+    this.subscriptions.add(
+      this.websocketService.hardwareStatus$.subscribe(data => {
+        this.ngZone.run(() => {
+          this.updateHardwareStatus(data);
+        });
+      })
+    );
   }
 
   private updateTapData(newTapData: any): void {
@@ -269,9 +334,39 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  private updateHardwareStatus(hardwareData: any): void {
+    this.hardware = hardwareData.hardware.map((device: any) => ({
+      deviceId: device.deviceId,
+      name: device.name,
+      icon: device.icon,
+      status: device.status as HardwareDevice['status'],
+      lastSeenMs: device.lastSeenMs
+    }));
+    this.uptimeSeconds = hardwareData.serverUptimeSeconds;
+    this.cdr.detectChanges();
+  }
+
   ngOnDestroy() {
     if (this.uptimeInterval) clearInterval(this.uptimeInterval);
     this.subscriptions.unsubscribe();
     this.websocketService.disconnect();
+  }
+
+  onHardwareRefreshRequested(): void {
+    this.isHardwareRefreshing = true;
+    this.dashboardService.getHardwareStatus(true).subscribe({
+      next: (response) => {
+        this.hardware = response.hardware;
+        this.uptimeSeconds = response.serverUptimeSeconds;
+        this.isHardwareRefreshing = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to refresh hardware status', err);
+        this.isHardwareRefreshing = false;
+        this.connectionMonitor.setServerDown(true);
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

@@ -203,6 +203,57 @@
                                 {{ s }}
                             </div>
                         </div>
+
+                        <!-- Pause End Date (shown when status is Paused) -->
+                        <div *ngIf="form.mealSlot.status === 'Paused'">
+                            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Pause End Date</label>
+                            <div class="h-10 border border-gray-200 rounded-lg px-3 text-xs bg-white cursor-pointer flex items-center justify-between hover:border-gray-300"
+                                (click)="togglePicker('pauseEnd', $event)"
+                                [style.backgroundColor]="!form.pauseEndDate ? '#f8f9fa' : 'white'">
+                                <span [style.color]="!form.pauseEndDate ? '#86868B' : '#1D1D1F'">{{
+                                    form.pauseEndDate || 'dd/mm/yy' }}</span>
+                                <img src="assets/icons/calendar.svg" class="w-[18px] h-[18px] shrink-0" alt="calendar" />
+                            </div>
+                            <div *ngIf="showPauseEndPicker"
+                                class="absolute top-[calc(100%+8px)] left-0 z-[9999] bg-white rounded-[18px] p-4 w-[300px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-gray-200"
+                                (click)="$event.stopPropagation()">
+                                <div class="flex items-center justify-between mb-4">
+                                    <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
+                                        (click)="prevMonth('pauseEnd')">
+                                        <img src="assets/icons/arrow-left.svg" class="w-10 h-10" alt="prev" />
+                                    </button>
+                                    <span class="text-sm font-bold" style="color:#1D1D1F;">{{
+                                        pauseEndViewDate.getMonth() + 1 }} {{ pauseEndViewDate.getFullYear() }}</span>
+                                    <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
+                                        (click)="nextMonth('pauseEnd')">
+                                        <img src="assets/icons/arrow-right.svg" class="w-10 h-10" alt="next" />
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-7 mb-2">
+                                    <span *ngFor="let d of weekDays" class="text-center text-[10px] font-semibold"
+                                        style="color:#86868B;">{{ d }}</span>
+                                </div>
+                                <div class="grid grid-cols-7">
+                                    <div *ngFor="let day of getCalendarDays(pauseEndViewDate)"
+                                        class="h-8 flex items-center justify-center" (click)="selectPauseEndDay(day)">
+                                        <div class="w-8 h-8 text-xs font-medium flex items-center justify-center rounded-lg cursor-pointer"
+                                            [class.bg-blue-600]="isSelectedPauseEnd(day)"
+                                            [class.text-white]="isSelectedPauseEnd(day)" [class.cursor-default]="!day"
+                                            [style.color]="isSelectedPauseEnd(day) ? '#fff' : day && isCurrentMonth(day, pauseEndViewDate) ? '#1D1D1F' : '#86868B'">
+                                            {{ day ? day.getDate() : '' }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 mt-4">
+                                    <button
+                                        class="flex-1 h-10 rounded-xl border border-gray-200 bg-white text-xs font-medium cursor-pointer hover:bg-gray-50"
+                                        style="color:#1D1D1F;" (click)="clearPauseEndDate()">Clear</button>
+                                    <button
+                                        class="flex-1 h-10 rounded-xl border-none bg-blue-600 text-white text-xs font-semibold cursor-pointer hover:bg-blue-700"
+                                        (click)="confirmPauseEndDate()">Confirm</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>

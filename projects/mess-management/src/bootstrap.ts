@@ -9,6 +9,7 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { CookieService } from 'ngx-cookie-service';
 import { AuthGuard, AuthService, SharedAuthModule, SharedToastService } from '@libs/shared-auth';
 import { CommonHttpInterceptor, HttpCommonModule } from '@libs/http-common';
+import { NetworkInterceptor } from './app/shared/services/network-interceptor.service';
 
 import { AppComponent } from './app/app.component';
 import { APP_ROUTES } from './app/app.routes';
@@ -40,6 +41,11 @@ bootstrapApplication(AppComponent, {
     {
       provide: HTTP_INTERCEPTORS,
       useClass: CommonHttpInterceptor,
+      multi: true,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: NetworkInterceptor,
       multi: true,
     },
     AuthService,

@@ -14,7 +14,7 @@ export const environment = {
     gymnasium: 'https://kjusys-gymnasium.kristujayanti.edu.in/',
   },
   publicPath: 'https://kjusys.kristujayanti.edu.in/',
-  baseUrl: 'https://waterproof-james-boot-lexington.trycloudflare.com/kjusys-api/mess-management',
+  baseUrl: 'https://kjusys.kristujayanti.edu.in/kjusys-api',
   portalLambdaBaseUrl: 'https://zb8ve5evcg.execute-api.ap-south-1.amazonaws.com/prod', 
   project: 'shell',
   baseRoute: 'kjusys',
