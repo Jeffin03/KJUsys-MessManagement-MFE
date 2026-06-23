@@ -5,6 +5,8 @@ const share = mf.share;
 const CompressionPlugin = require('compression-webpack-plugin');
 const REMOTE_ENTRY_VERSION = Date.now();
 
+const CACHE_DIR = path.resolve(__dirname, '.webpack-cache');
+
 const sharedMappings = new mf.SharedMappings();
 sharedMappings.register(path.join(__dirname, "../../tsconfig.json"), [
   "@libs/left-menu-lib",
@@ -14,7 +16,11 @@ sharedMappings.register(path.join(__dirname, "../../tsconfig.json"), [
 ]);
 
 module.exports = {
-  cache: { maxAge: 7 * 24 * 60 * 60 * 1000 },
+  cache: {
+    type: 'filesystem',
+    cacheDirectory: CACHE_DIR,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  },
   output: {
     uniqueName: "shell",
     publicPath: "https://kjusys.kristujayanti.edu.in/",

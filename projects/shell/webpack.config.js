@@ -3,6 +3,8 @@ const mf = require("@angular-architects/module-federation/webpack");
 const path = require("path");
 const share = mf.share;
 
+const CACHE_DIR = path.resolve(__dirname, '.webpack-cache');
+
 const sharedMappings = new mf.SharedMappings();
 sharedMappings.register(path.join(__dirname, "../../tsconfig.json"), [
   "@libs/left-menu-lib",
@@ -13,7 +15,11 @@ sharedMappings.register(path.join(__dirname, "../../tsconfig.json"), [
 ]);
 
 module.exports = {
-  cache: { maxAge: 7 * 24 * 60 * 60 * 1000 },
+  cache: {
+    type: 'filesystem',
+    cacheDirectory: path.resolve(__dirname, '.webpack-cache'),
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  },
   output: {
     uniqueName: "shell",
     publicPath: "http://localhost:4200/",
