@@ -91,7 +91,7 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
   }
 
   fetchMealSlots() {
-    this.dashboardService.getSchedules().subscribe((slots: any) => {
+    this.dashboardService.getSchedules(true).subscribe((slots: any) => {
       this.availableMealSlots = slots.map((s: any) => s.name);
       // Initialize form slots
       this.availableMealSlots.forEach(slot => {

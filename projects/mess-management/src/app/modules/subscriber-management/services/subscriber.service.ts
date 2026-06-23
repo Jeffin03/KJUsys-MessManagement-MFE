@@ -44,21 +44,61 @@ export class SubscriberService {
 
   constructor(private http: HttpClient) { }
 
+  /**
+   * Generate dynamic short codes for meal slots.
+   * Examples:
+   *   "Breakfast" → "B"
+   *   "Brunch" → "BR"
+   *   "Late Night" → "LN"
+   *   "Midnight Snack" → "MS"
+   *   "Early Breakfast" → "EB" (conflicts with "Breakfast" → "B")
+   */
+  private generateMealSlotCodes(mealNames: string[]): { [key: string]: string } {
+    const codes: { [key: string]: string } = {};
+    const usedCodes = new Set<string>();
+
+    // Sort by length (shorter first) to give priority to simpler names
+    const sortedNames = [...mealNames].sort((a, b) => a.length - b.length);
+
+    for (const name of sortedNames) {
+      const words = name.trim().split(/\s+/).filter(w => w.length > 0);
+      if (words.length === 0) continue;
+
+      let code = '';
+      // Try first letter of each word progressively
+      for (let i = 0; i < words.length; i++) {
+        code += words[i].charAt(0).toUpperCase();
+        if (!usedCodes.has(code)) {
+          usedCodes.add(code);
+          codes[name.toUpperCase()] = code;
+          break;
+        }
+      }
+      // Fallback: if all combinations taken, append number
+      if (!codes[name.toUpperCase()]) {
+        let suffix = 2;
+        let fallbackCode = code + suffix;
+        while (usedCodes.has(fallbackCode)) {
+          suffix++;
+          fallbackCode = code + suffix;
+        }
+        usedCodes.add(fallbackCode);
+        codes[name.toUpperCase()] = fallbackCode;
+      }
+    }
+
+    return codes;
+  }
+
   private mapToSubscriber(student: BackendStudent): Subscriber {
     // Convert timestamp to date string (e.g., '10 Jan 26')
     const date = new Date(student.subscription?.start_Date || Date.now());
     const dateString = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
 
-    // Map meals array to 'B+BR+L+S+D' format
-    const mealPlanMap: { [key: string]: string } = {
-      'BREAKFAST': 'B',
-      'BRUNCH': 'BR',
-      'LUNCH': 'L',
-      'SNACKS': 'S',
-      'DINNER': 'D'
-    };
+    // Dynamic meal slot codes - handles any meal name including new ones
     const mealsArray = student.subscription?.meals || [];
-    const mealPlanStr = mealsArray.map((m: string) => mealPlanMap[m] || m).join('+');
+    const dynamicCodes = this.generateMealSlotCodes(mealsArray);
+    const mealPlanStr = mealsArray.map((m: string) => dynamicCodes[m.toUpperCase()] || m).join('+');
 
     let status: 'Active' | 'Paused' | 'Lapsed' = 'Lapsed';
     if (student.subscription) {
@@ -195,12 +235,13 @@ export class SubscriberService {
       switchMap((existingRes: ApiResponse<{ student: any }>) => {
         const existingStudent = existingRes.responseData?.data?.student;
 
-        const meals = [];
-        if (formData.mealSlot.breakfast) meals.push('BREAKFAST');
-        if (formData.mealSlot.brunch) meals.push('BRUNCH');
-        if (formData.mealSlot.lunch) meals.push('LUNCH');
-        if (formData.mealSlot.snacks) meals.push('SNACKS');
-        if (formData.mealSlot.dinner) meals.push('DINNER');
+        // Dynamic meal slots - same logic as createSubscriber
+        const meals: string[] = [];
+        Object.keys(formData.mealSlot).forEach(key => {
+          if (!['startDate', 'endDate', 'status'].includes(key) && formData.mealSlot[key]) {
+            meals.push(key.toUpperCase());
+          }
+        });
 
         // Convert 'DD/MM/YY' to timestamp
         const parseDate = (dateStr: string) => {

@@ -37,6 +37,22 @@ export class HardwareStatusComponent implements OnChanges {
     }
   }
 
+  getLastSeenText(device: HardwareDevice): string {
+    if (!device.lastSeenMs) return 'Never';
+    const diffMs = Date.now() - device.lastSeenMs;
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return `${diffSec}s ago`;
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHour = Math.floor(diffMin / 60);
+    return `${diffHour}h ago`;
+  }
+
+  isStale(device: HardwareDevice): boolean {
+    if (!device.lastSeenMs) return true;
+    return (Date.now() - device.lastSeenMs) > 60000; // > 60s = stale
+  }
+
   ngOnChanges(): void {
     // Update last status update time when new hardware data arrives
     if (this.hardware && this.hardware.length > 0) {

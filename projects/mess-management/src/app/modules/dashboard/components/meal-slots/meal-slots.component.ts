@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MealSlot } from '../../../../shared/models/dashboard.models';
 import { ConfigureMealSlotsComponent } from '../configure-meal-slots/configure-meal-slots.component';
@@ -11,10 +11,12 @@ import { ButtonComponent } from '@libs/shared-ui';
   templateUrl: './meal-slots.component.html',
   styleUrls: ['./meal-slots.component.css'],
 })
-export class MealSlotsComponent {
+export class MealSlotsComponent implements OnChanges {
   @Input() mealSlots: MealSlot[] = [];
+  @Output() configurationSaved = new EventEmitter<void>();
   isConfigureOpen = false;
   hovering = false;
+  private prevHadMeal = new Map<string, number>();
 
   openConfigure() { this.isConfigureOpen = true; }
   closeConfigure() { this.isConfigureOpen = false; }
@@ -25,6 +27,27 @@ export class MealSlotsComponent {
       case 'Live': return 'bg-[#DCFCE7] text-[#1D9F00] border border-[#BBF7D0]';
       case 'Upcoming': return 'bg-[#FEF3C7] text-[#BB4D00] border border-[#FDE68A]';
       default: return '';
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['mealSlots'] && this.mealSlots) {
+      this.mealSlots.forEach(slot => {
+        const prev = this.prevHadMeal.get(slot.name) ?? 0;
+        const curr = slot.hadMeal ?? 0;
+        if (curr > prev) {
+          this.triggerAnimation(slot.name);
+        }
+        this.prevHadMeal.set(slot.name, curr);
+      });
+    }
+  }
+
+  private triggerAnimation(slotName: string): void {
+    const card = document.querySelector(`[data-meal-slot="${slotName}"]`);
+    if (card) {
+      card.classList.add('live-update-pulse');
+      setTimeout(() => card.classList.remove('live-update-pulse'), 600);
     }
   }
 }

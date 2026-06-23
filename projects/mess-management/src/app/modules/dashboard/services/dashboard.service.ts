@@ -37,8 +37,8 @@ export class DashboardService {
 
   constructor(private http: HttpClient) { }
 
-  getSchedules(): Observable<MealSlot[]> {
-    return this.http.get<ApiResponse<{ date: string, day_type: string, meals: any[] }>>(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_TODAY}`)
+  getSchedules(bypassCache: boolean = false): Observable<MealSlot[]> {
+    const request = this.http.get<ApiResponse<{ date: string, day_type: string, meals: any[] }>>(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_TODAY}`)
       .pipe(
         map(res => {
           const meals = res.responseData?.data?.meals || [];
@@ -61,9 +61,12 @@ export class DashboardService {
               startTime: m.start
             };
           }).sort((a, b) => a.startTime.localeCompare(b.startTime));
-        }),
-        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
+        })
       );
+
+    return bypassCache ? request : request.pipe(
+      shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
+    );
   }
 
   getTaps(): Observable<MealEntry[]> {
