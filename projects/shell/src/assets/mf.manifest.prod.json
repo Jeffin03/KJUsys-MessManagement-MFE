@@ -1,6 +1,6 @@
 {
   "mess-management": {
-    "remoteEntry": "http://localhost:4201/remoteEntry.js",
+    "remoteEntry": "https://kj-usys-mess-management.vercel.app/remoteEntry.js",
     "displayName": "MessManagement",
     "routePath": "mess-management",
     "subModule": [
