@@ -134,6 +134,28 @@
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
+            },
+            "vercel": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "600kb",
+                  "maximumError": "2mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "20kb",
+                  "maximumError": "100kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/shell/src/environments/environment.ts",
+                  "with": "projects/shell/src/environments/environment.vercel.ts"
+                }
+              ],
+              "outputHashing": "all",
+              "extraWebpackConfig": "projects/shell/webpack.vercel.config.js"
             }
           },
           "defaultConfiguration": "production"
@@ -150,6 +172,9 @@
             },
             "local": {
               "browserTarget": "shell:build:local"
+            },
+            "vercel": {
+              "browserTarget": "shell:build:vercel"
             }
           },
           "defaultConfiguration": "local",
@@ -775,6 +800,28 @@
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
+            },
+            "vercel": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "600kb",
+                  "maximumError": "2mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "20kb",
+                  "maximumError": "100kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/mess-management/src/environments/environment.ts",
+                  "with": "projects/mess-management/src/environments/environment.vercel.ts"
+                }
+              ],
+              "outputHashing": "all",
+              "extraWebpackConfig": "projects/mess-management/webpack.vercel.config.js"
             }
           },
           "defaultConfiguration": "production"
@@ -791,6 +838,9 @@
             },
             "local": {
               "browserTarget": "mess-management:build:local"
+            },
+            "vercel": {
+              "browserTarget": "mess-management:build:vercel"
             }
           },
           "defaultConfiguration": "local",
