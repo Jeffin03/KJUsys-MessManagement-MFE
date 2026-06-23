@@ -35,6 +35,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   @Input() isOpen = false;
   @Output() closed = new EventEmitter<void>();
+  @Output() configurationSaved = new EventEmitter<void>();
 
   showConflictPopup = false;
   conflictMessage = '';
@@ -682,6 +683,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           this.editIndex = null;
           this.cdr.detectChanges();
           this.toastService.success('Meal slot updated.');
+          this.configurationSaved.emit();
         },
         error: (err: any) => {
           console.error('Update failed', err);
@@ -706,6 +708,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           this.resetForm();
           this.cdr.detectChanges();
           this.toastService.success('Meal slot added.');
+          this.configurationSaved.emit();
         },
         error: (err) => {
           console.error('Failed to create schedule:', err);
@@ -767,9 +770,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   saveConfiguration() {
     this.close();
-    // Optionally emit event instead of reload
-    // this.configurationSaved.emit();
-    window.location.reload();
+    this.configurationSaved.emit();
   }
 
   ngOnChanges(changes: SimpleChanges) {

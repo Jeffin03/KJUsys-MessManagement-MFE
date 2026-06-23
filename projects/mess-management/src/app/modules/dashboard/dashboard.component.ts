@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription, firstValueFrom, Observable, of, BehaviorSubject } from 'rxjs';
+import { Subscription, firstValueFrom, Observable, of, BehaviorSubject, filter, take, switchMap } from 'rxjs';
 import { MealSlotsComponent } from './components/meal-slots/meal-slots.component';
 import { EntriesTableComponent } from './components/entries-table/entries-table.component';
 import { HardwareStatusComponent } from './components/hardware-status/hardware-status.component';
@@ -30,6 +30,7 @@ import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private uptimeInterval: any;
+  private hardwarePollingInterval: any;
   private roll_numberLookup = new Map<string, string>();
   private activeByMealPlan: { [key: string]: number } = {};
   private subscriptions = new Subscription();
@@ -95,9 +96,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Automatically refresh dashboard data when connection is restored
+    // Automatically refresh dashboard data when connection is restored AND WebSocket is open
     this.subscriptions.add(
-      this.connectionMonitor.connectionRestored$.subscribe(() => {
+      this.connectionMonitor.connectionRestored$.pipe(
+        switchMap(() => this.websocketService.connectionState$.pipe(
+          filter(state => state === 'open'),
+          take(1)
+        ))
+      ).subscribe(() => {
         this.loadDataProgressively();
       })
     );
@@ -139,7 +145,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
       // Mark loading as complete and initialize WebSocket
       this.isLoading = false;
+      console.log('[DEBUG] Calling initWebSocket()');
       this.initWebSocket();
+
+      // Poll hardware status every 30s as fallback for live updates
+      this.hardwarePollingInterval = setInterval(() => {
+        this.dashboardService.getHardwareStatus(true).subscribe({
+          next: (res) => {
+            this.hardware = res.hardware;
+            this.uptimeSeconds = res.serverUptimeSeconds;
+            this.cdr.detectChanges();
+          },
+          error: () => { /* silent fail - WebSocket will handle */ }
+        });
+      }, 30000);
+
       this.cdr.detectChanges();
 
     } catch (err) {
@@ -155,6 +175,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
       this.updateWifiStatus();
       this.connectionMonitor.setServerDown(true);
+      // Initialize WebSocket anyway to receive live tap events
+      this.initWebSocket();
       this.cdr.detectChanges();
     }
   }
@@ -256,11 +278,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   initWebSocket() {
+    console.log('[DEBUG] initWebSocket called');
     this.websocketService.connect();
 
     // Listen for new taps and update only the taps data dynamically
     this.subscriptions.add(
       this.websocketService.tapNew$.subscribe(data => {
+        console.log('[DEBUG] tapNew$ emitted:', data);
         this.ngZone.run(() => {
           this.updateTapData(data);
         });
@@ -269,6 +293,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.websocketService.tapDuplicate$.subscribe(data => {
+        console.log('[DEBUG] tapDuplicate$ emitted:', data);
         this.ngZone.run(() => {
           this.updateTapData(data);
         });
@@ -278,6 +303,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Listen for hardware status updates
     this.subscriptions.add(
       this.websocketService.hardwareStatus$.subscribe(data => {
+        console.log('[DEBUG] hardwareStatus$ emitted:', data);
         this.ngZone.run(() => {
           this.updateHardwareStatus(data);
         });
@@ -286,6 +312,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private updateTapData(newTapData: any): void {
+    console.log('[DEBUG] WebSocket tap.new received:', newTapData);
     // Optimistic update: add the new tap to recent entries
     const newEntry = {
       customer: newTapData.name || 'Unknown',
@@ -303,12 +330,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.recentEntries = this.recentEntries.slice(0, 50);
     }
 
-    // Update statistics
-    if (newTapData.status === 'Allowed' || newTapData.status === 'allowed') {
-      const currentMealsServed = this.stats[2].value;
-      this.stats[2].value = currentMealsServed + 1;
-      this.stats[3].value = Math.max(0, this.stats[1].value - this.stats[2].value);
-    }
+    // WebSocket tap.new is only broadcast on SUCCESS, so always increment stats
+    const currentMealsServed = this.stats[2].value;
+    this.stats[2].value = currentMealsServed + 1;
+    this.stats[3].value = Math.max(0, this.stats[1].value - this.stats[2].value);
 
     // Update meal slot stats if needed
     this.updateMealSlotStats(newTapData);
@@ -316,22 +341,49 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private updateMealSlotStats(tapData: any): void {
-    const mealSlotChar = tapData.meal.charAt(0) + tapData.meal.slice(1).toLowerCase();
+    const tapMeal = (tapData.meal || '').toLowerCase();
+    console.log('[DEBUG] updateMealSlotStats called with:', { tapMeal, mealSlots: this.mealSlots.map(s => ({ name: s.name, hadMeal: s.hadMeal, total: s.total })) });
 
     this.mealSlots = this.mealSlots.map(slot => {
-      if (slot.name.toLowerCase() === mealSlotChar.toLowerCase()) {
-        // Increment hadMeal count if this is an allowed tap
-        if (tapData.status === 'Allowed' || tapData.status === 'allowed') {
-          return {
-            ...slot,
-            hadMeal: (slot.hadMeal || 0) + 1,
-            thirdStat: Math.max(0, (slot.total || 0) - ((slot.hadMeal || 0) + 1)),
-            thirdLabel: slot.status === 'Closed' ? 'Skipped' : 'Pending'
-          };
-        }
+      const slotMeal = (slot.name || '').toLowerCase();
+
+      // Match by exact name, first letter, or dynamic first-letter codes (B, BR, L, S, D, LN, MS, etc.)
+      // Also handle UPPERCASE from backend (BREAKFAST, LUNCH, etc.) vs capitalized slot names
+      const slotCode = this.getMealCode(slotMeal);
+      const tapCode = this.getMealCode(tapMeal);
+
+      const isMatch =
+        slotMeal === tapMeal ||
+        slotCode === tapCode ||
+        slotMeal.startsWith(tapMeal[0]) ||
+        tapMeal.startsWith(slotMeal[0]) ||
+        (slotMeal === 'brunch' && tapMeal === 'breakfast') ||
+        (slotMeal === 'breakfast' && tapMeal === 'brunch');
+
+      console.log('[DEBUG] Matching:', { slotMeal, tapMeal, slotCode, tapCode, isMatch });
+
+      if (isMatch) {
+        // WebSocket tap.new is only broadcast on SUCCESS, so always increment
+        console.log('[DEBUG] Incrementing hadMeal for:', slot.name);
+        return {
+          ...slot,
+          hadMeal: (slot.hadMeal || 0) + 1,
+          thirdStat: Math.max(0, (slot.total || 0) - ((slot.hadMeal || 0) + 1)),
+          thirdLabel: slot.status === 'Closed' ? 'Skipped' : 'Pending'
+        };
       }
       return slot;
     });
+  }
+
+  private getMealCode(meal: string): string {
+    const words = meal.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) return meal;
+    let code = '';
+    for (const word of words) {
+      code += word.charAt(0).toUpperCase();
+    }
+    return code;
   }
 
   private updateHardwareStatus(hardwareData: any): void {
@@ -348,6 +400,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.uptimeInterval) clearInterval(this.uptimeInterval);
+    if (this.hardwarePollingInterval) clearInterval(this.hardwarePollingInterval);
     this.subscriptions.unsubscribe();
     this.websocketService.disconnect();
   }
@@ -366,6 +419,37 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isHardwareRefreshing = false;
         this.connectionMonitor.setServerDown(true);
         this.cdr.detectChanges();
+      }
+    });
+  }
+
+  refreshMealSlots(): void {
+    // Full refresh: fetch schedules, subscribers, and taps to recompute derived values
+    this.dashboardService.getSchedules(true).subscribe({
+      next: (schedules) => {
+        this.subscriberService.getSubscribers().subscribe({
+          next: (subscribers) => {
+            this.processSubscribers(subscribers);
+            this.processSchedules(schedules);
+            this.dashboardService.getTaps().subscribe({
+              next: (taps) => {
+                this.processTaps(taps);
+                this.cdr.detectChanges();
+              },
+              error: (err) => {
+                console.error('Failed to fetch taps for meal slots refresh', err);
+                this.cdr.detectChanges();
+              }
+            });
+          },
+          error: (err) => {
+            console.error('Failed to fetch subscribers for meal slots refresh', err);
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Failed to refresh meal slots', err);
       }
     });
   }

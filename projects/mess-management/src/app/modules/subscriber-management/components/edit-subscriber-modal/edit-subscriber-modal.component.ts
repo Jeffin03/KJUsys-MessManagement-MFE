@@ -109,7 +109,7 @@ export class EditSubscriberModalComponent implements OnChanges, OnDestroy {
   }
 
   fetchMealSlots() {
-    this.dashboardService.getSchedules().subscribe({
+    this.dashboardService.getSchedules(true).subscribe({
       next: (slots: any) => {
         this.availableMealSlots = slots.map((s: any) => s.name);
         if (this.subscriber) {

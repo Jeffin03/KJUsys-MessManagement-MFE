@@ -100,6 +100,9 @@
               [ngStyle]="{'background-color': getDotColor(device.status)}"></span>
         <span class="text-xs font-normal"
               [ngStyle]="{'color': getDotColor(device.status)}">{{ device.status }}</span>
+        <span *ngIf="device.lastSeenMs" class="text-xs text-[#86868B]" [class.text-[#D92C2B]]="isStale(device)">
+          {{ getLastSeenText(device) }}
+        </span>
     </div>
 </div>
 
