@@ -177,19 +177,19 @@ export class SubscriberService {
     return request;
   }
 
-  getSubscriberById(id: number | string): Observable<Subscriber> {
-    return this.http.get<ApiResponse<{ student: BackendStudent }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(id)}`)
+  getSubscriberById(roll_number: string): Observable<Subscriber> {
+    return this.http.get<ApiResponse<{ student: BackendStudent }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`)
       .pipe(
         map(res => this.mapToSubscriber(res.responseData.data.student))
       );
   }
 
   deleteSubscriber(roll_number: string): Observable<any> {
-    return this.http.delete<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(roll_number)}`);
+    return this.http.delete<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`);
   }
 
-  renewSubscriber(id: number | string, duration_days: number = 30): Observable<any> {
-    return this.http.put(`${this.baseUrl}${API_ENDPOINTS.STUDENT_RENEW(id)}`, { duration_days });
+  renewSubscriber(roll_number: string, duration_days: number = 30): Observable<any> {
+    return this.http.put(`${this.baseUrl}${API_ENDPOINTS.STUDENT_RENEW(roll_number)}`, { duration_days });
   }
 
   getExpiringSubscribers(): Observable<Subscriber[]> {
@@ -239,9 +239,9 @@ export class SubscriberService {
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
   }
 
-  updateSubscriber(roll_number: string, formData: any, id: string | number): Observable<any> {
+  updateSubscriber(roll_number: string, formData: any): Observable<any> {
     // First, fetch the existing student data to preserve pause dates correctly
-    return this.http.get<ApiResponse<{ student: any }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(roll_number)}`).pipe(
+    return this.http.get<ApiResponse<{ student: any }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`).pipe(
       switchMap((existingRes: ApiResponse<{ student: any }>) => {
         const existingStudent = existingRes.responseData?.data?.student;
 
@@ -308,7 +308,6 @@ export class SubscriberService {
         // Preserve existing pause dates (do nothing)
 
         const payload = {
-          _id: { $oid: id.toString() },
           roll_number: formData.roll_number,
           name: `${formData.firstName} ${formData.lastName}`.trim(),
           email: formData.email,
@@ -316,7 +315,7 @@ export class SubscriberService {
         };
 
         // Use roll_number for the endpoint (backend expects roll_number, not MongoDB _id)
-        return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ID(roll_number)}`, payload);
+        return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`, payload);
       })
     );
   }
