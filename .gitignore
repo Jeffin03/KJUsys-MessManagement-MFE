@@ -5,6 +5,8 @@
 /tmp
 /out-tsc
 /bazel-out
+/projects/shell/.webpack-cache
+
 
 # Node
 /node_modules

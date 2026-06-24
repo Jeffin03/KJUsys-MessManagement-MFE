@@ -26,6 +26,20 @@ export interface ApiResponse<T> {
   };
 }
 
+export interface DisplayConfig {
+  meal: string;
+  lcd_line1?: string;
+  lcd_line2?: string;
+  defaultMsg: { line1: string; line2: string };
+  tapAllowed: { line1: string; line2: string };
+  alreadyTapped: { line1: string; line2: string };
+  notSubscribed: { line1: string; line2: string };
+}
+
+export interface DisplayConfigResponse {
+  configs: DisplayConfig[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -133,5 +147,23 @@ export class DashboardService {
 
   updateSchedule(id: string, payload: any): Observable<ApiResponse<{ schedule: BackendSchedule }>> {
     return this.http.put<ApiResponse<{ schedule: BackendSchedule }>>(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_BY_ID(id)}`, payload);
+  }
+
+  getDisplayConfigs(): Observable<DisplayConfig[]> {
+    return this.http.get<ApiResponse<{ configs: DisplayConfig[] }>>(`${this.baseUrl}${API_ENDPOINTS.DISPLAY_CONFIG}`)
+      .pipe(
+        map(res => res.responseData?.data?.configs || [])
+      );
+  }
+
+  getDisplayConfigByMeal(meal: string): Observable<DisplayConfig> {
+    return this.http.get<ApiResponse<DisplayConfig>>(`${this.baseUrl}${API_ENDPOINTS.DISPLAY_CONFIG_BY_MEAL(meal)}`)
+      .pipe(
+        map(res => res.responseData?.data)
+      );
+  }
+
+  updateDisplayConfig(config: DisplayConfig): Observable<ApiResponse<any>> {
+    return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.DISPLAY_CONFIG}`, config);
   }
 }

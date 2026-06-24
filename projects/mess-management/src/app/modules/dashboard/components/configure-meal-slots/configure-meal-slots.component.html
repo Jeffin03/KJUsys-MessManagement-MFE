@@ -394,7 +394,6 @@
                         <p class="text-[10px] text-[#86868B] mt-3">Previewing: {{ previewStateName }} - Line 1 & 2</p>
                     </div>
 
-
                     <!-- Config Cards -->
                     <div class="flex flex-col gap-5">
                         <!-- Default Message -->
@@ -413,7 +412,8 @@
                                 <div>
                                     <label class="block text-xs font-semibold text-[#111827] mb-2">Line 1</label>
                                     <div class="relative">
-                                        <input [(ngModel)]="displayConfig.defaultMsg.line1"
+                                        <input [ngModel]="getDisplayConfigValue('defaultMsg.line1')"
+                                            (ngModelChange)="setDisplayConfigValue('defaultMsg.line1', $event)"
                                             (focus)="previewState = 'defaultMsg'"
                                             (input)="onDisplayInput($event, 'defaultMsg.line1')"
                                             (keydown)="onDisplayKeydown($event, 'defaultMsg.line1')"
@@ -424,7 +424,8 @@
                                 <div>
                                     <label class="block text-xs font-semibold text-[#111827] mb-2">Line 2</label>
                                     <div class="relative">
-                                        <input [(ngModel)]="displayConfig.defaultMsg.line2"
+                                        <input [ngModel]="getDisplayConfigValue('defaultMsg.line2')"
+                                            (ngModelChange)="setDisplayConfigValue('defaultMsg.line2', $event)"
                                             (focus)="previewState = 'defaultMsg'"
                                             (input)="onDisplayInput($event, 'defaultMsg.line2')"
                                             (keydown)="onDisplayKeydown($event, 'defaultMsg.line2')"
@@ -451,7 +452,8 @@
                                 <div>
                                     <label class="block text-xs font-semibold text-[#111827] mb-2">Line 1</label>
                                     <div class="relative">
-                                        <input [(ngModel)]="displayConfig.tapAllowed.line1"
+                                        <input [ngModel]="getDisplayConfigValue('tapAllowed.line1')"
+                                            (ngModelChange)="setDisplayConfigValue('tapAllowed.line1', $event)"
                                             (focus)="previewState = 'tapAllowed'"
                                             (input)="onDisplayInput($event, 'tapAllowed.line1')"
                                             (keydown)="onDisplayKeydown($event, 'tapAllowed.line1')"
@@ -462,7 +464,8 @@
                                 <div>
                                     <label class="block text-xs font-semibold text-[#111827] mb-2">Line 2</label>
                                     <div class="relative">
-                                        <input [(ngModel)]="displayConfig.tapAllowed.line2"
+                                        <input [ngModel]="getDisplayConfigValue('tapAllowed.line2')"
+                                            (ngModelChange)="setDisplayConfigValue('tapAllowed.line2', $event)"
                                             (focus)="previewState = 'tapAllowed'"
                                             (input)="onDisplayInput($event, 'tapAllowed.line2')"
                                             (keydown)="onDisplayKeydown($event, 'tapAllowed.line2')"
@@ -489,7 +492,8 @@
                                 <div>
                                     <label class="block text-xs font-semibold text-[#111827] mb-2">Line 1</label>
                                     <div class="relative">
-                                        <input [(ngModel)]="displayConfig.alreadyTapped.line1"
+                                        <input [ngModel]="getDisplayConfigValue('alreadyTapped.line1')"
+                                            (ngModelChange)="setDisplayConfigValue('alreadyTapped.line1', $event)"
                                             (focus)="previewState = 'alreadyTapped'"
                                             (input)="onDisplayInput($event, 'alreadyTapped.line1')"
                                             (keydown)="onDisplayKeydown($event, 'alreadyTapped.line1')"
@@ -500,7 +504,8 @@
                                 <div>
                                     <label class="block text-xs font-semibold text-[#111827] mb-2">Line 2</label>
                                     <div class="relative">
-                                        <input [(ngModel)]="displayConfig.alreadyTapped.line2"
+                                        <input [ngModel]="getDisplayConfigValue('alreadyTapped.line2')"
+                                            (ngModelChange)="setDisplayConfigValue('alreadyTapped.line2', $event)"
                                             (focus)="previewState = 'alreadyTapped'"
                                             (input)="onDisplayInput($event, 'alreadyTapped.line2')"
                                             (keydown)="onDisplayKeydown($event, 'alreadyTapped.line2')"
@@ -527,7 +532,8 @@
                                 <div>
                                     <label class="block text-xs font-semibold text-[#111827] mb-2">Line 1</label>
                                     <div class="relative">
-                                        <input [(ngModel)]="displayConfig.notSubscribed.line1"
+                                        <input [ngModel]="getDisplayConfigValue('notSubscribed.line1')"
+                                            (ngModelChange)="setDisplayConfigValue('notSubscribed.line1', $event)"
                                             (focus)="previewState = 'notSubscribed'"
                                             (input)="onDisplayInput($event, 'notSubscribed.line1')"
                                             (keydown)="onDisplayKeydown($event, 'notSubscribed.line1')"
@@ -538,7 +544,8 @@
                                 <div>
                                     <label class="block text-xs font-semibold text-[#111827] mb-2">Line 2</label>
                                     <div class="relative">
-                                        <input [(ngModel)]="displayConfig.notSubscribed.line2"
+                                        <input [ngModel]="getDisplayConfigValue('notSubscribed.line2')"
+                                            (ngModelChange)="setDisplayConfigValue('notSubscribed.line2', $event)"
                                             (focus)="previewState = 'notSubscribed'"
                                             (input)="onDisplayInput($event, 'notSubscribed.line2')"
                                             (keydown)="onDisplayKeydown($event, 'notSubscribed.line2')"

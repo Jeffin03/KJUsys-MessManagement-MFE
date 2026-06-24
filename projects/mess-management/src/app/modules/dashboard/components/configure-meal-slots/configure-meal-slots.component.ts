@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, HostListener, ElementRef, OnChanges, OnDestroy, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService, ApiResponse, BackendSchedule } from '../../services/dashboard.service';
+import { DashboardService, ApiResponse, BackendSchedule, DisplayConfig } from '../../services/dashboard.service';
 import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
 import { SharedToastService } from '@libs/shared-toast';
 import { ButtonComponent } from '@libs/shared-ui';
@@ -76,12 +76,12 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   displayPlaceholders = {
     defaultMsg: { line1: 'Mentora Mess', line2: 'Tap your card...' },
-    tapAllowed: { line1: '"name"', line2: 'Tap Successful.' },
-    alreadyTapped: { line1: '"name"', line2: 'Already Tapped.' },
-    notSubscribed: { line1: '"name"', line2: 'Not Subscribed.' }
+    tapAllowed: { line1: '"name"', line2: '"status"' },
+    alreadyTapped: { line1: '"name"', line2: '"status"' },
+    notSubscribed: { line1: '"name"', line2: '"status"' }
   };
 
-  previewState: 'defaultMsg' | 'tapAllowed' | 'alreadyTapped' | 'notSubscribed' = 'defaultMsg';
+  previewState: 'defaultMsg' | 'tapAllowed' | 'alreadyTapped' | 'notSubscribed' = 'tapAllowed';
 
   tokenConfig = {
     section1: '',
@@ -138,12 +138,12 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   }
 
   getPreviewLine1() {
-    const line1 = this.displayConfig[this.previewState].line1 || this.displayPlaceholders[this.previewState].line1;
+    const line1 = this.displayConfig[this.previewState]?.line1 || this.displayPlaceholders[this.previewState].line1;
     return this.substitutePreviewVars(line1);
   }
 
   getPreviewLine2() {
-    const line2 = this.displayConfig[this.previewState].line2 || this.displayPlaceholders[this.previewState].line2;
+    const line2 = this.displayConfig[this.previewState]?.line2 || this.displayPlaceholders[this.previewState].line2;
     return this.substitutePreviewVars(line2);
   }
 
@@ -153,6 +153,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       .replace(/"name"/g, this.previewSubstitutions.name)
       .replace(/"rollno"/g, this.previewSubstitutions.rollno)
       .replace(/"meal"/g, mealFallback)
+      .replace(/"status"/g, this.previewStateName)
       .padEnd(16, ' ')
       .substring(0, 16);
   }
@@ -279,7 +280,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     this.suggestionState = { show: false, field: null, items: [], selectedIndex: -1 };
   }
 
-  private getDisplayConfigValue(fieldKey: string): string {
+  getDisplayConfigValue(fieldKey: string): string {
     const [state, line] = fieldKey.split('.');
     if (state === 'tokenConfig') {
       return (this.tokenConfig as any)[line] ?? '';
@@ -287,7 +288,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     return (this.displayConfig as any)[state]?.[line] ?? '';
   }
 
-  setDisplayConfigValue(fieldKey: string, value: string) {
+  setDisplayConfigValue(fieldKey: string, value: string): void {
     const [state, line] = fieldKey.split('.');
     if (state === 'tokenConfig') {
       (this.tokenConfig as any)[line] = value;
@@ -320,6 +321,62 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     private cdr: ChangeDetectorRef,
     private toastService: SharedToastService
   ) { }
+
+  private loadDisplayConfigs(): void {
+    this.dashboardService.getDisplayConfigs().subscribe({
+      next: (configs: DisplayConfig[]) => {
+        const defaultConfig = configs.find(c => c.meal === 'DEFAULT');
+        if (defaultConfig) {
+          // Load each card independently from saved data, or leave empty to use placeholders
+          this.displayConfig = {
+            defaultMsg: { 
+              line1: defaultConfig.defaultMsg?.line1 || '', 
+              line2: defaultConfig.defaultMsg?.line2 || '' 
+            },
+            tapAllowed: { 
+              line1: defaultConfig.tapAllowed?.line1 || '', 
+              line2: defaultConfig.tapAllowed?.line2 || '' 
+            },
+            alreadyTapped: { 
+              line1: defaultConfig.alreadyTapped?.line1 || '', 
+              line2: defaultConfig.alreadyTapped?.line2 || '' 
+            },
+            notSubscribed: { 
+              line1: defaultConfig.notSubscribed?.line1 || '', 
+              line2: defaultConfig.notSubscribed?.line2 || '' 
+            }
+          };
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load display configs:', err);
+      }
+    });
+  }
+
+  private saveDisplayConfigs(): void {
+    // Build config from all 4 cards - only non-empty fields will be saved
+    const defaultConfig: DisplayConfig = {
+      meal: 'DEFAULT',
+      lcd_line1: this.displayConfig.tapAllowed.line1 || '"name"',
+      lcd_line2: this.displayConfig.tapAllowed.line2 || '"status"',
+      defaultMsg: this.displayConfig.defaultMsg,
+      tapAllowed: this.displayConfig.tapAllowed,
+      alreadyTapped: this.displayConfig.alreadyTapped,
+      notSubscribed: this.displayConfig.notSubscribed
+    };
+
+    this.dashboardService.updateDisplayConfig(defaultConfig).subscribe({
+      next: () => {
+        this.toastService.success('Display configuration saved');
+      },
+      error: (err) => {
+        console.error('Failed to save display config:', err);
+        this.toastService.error('Failed to save display configuration');
+      }
+    });
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
@@ -769,6 +826,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   }
 
   saveConfiguration() {
+    this.saveDisplayConfigs();
     this.close();
     this.configurationSaved.emit();
   }
@@ -796,6 +854,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           if (this.slots.length > 0 && !this.previewSubstitutions.meal) {
             this.previewSubstitutions.meal = this.slots[0].name;
           }
+          // Load display configs after slots are loaded
+          this.loadDisplayConfigs();
           this.cdr.detectChanges();
         }
       });
