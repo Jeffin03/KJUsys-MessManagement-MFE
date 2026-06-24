@@ -1,6 +1,6 @@
 {
   "mess-management": {
-    "remoteEntry": "https://kj-usys-mess-management.vercel.app/remoteEntry.js",
+    "remoteEntry": "https://kjusys-mess-management.kristujayanti.edu.in/remoteEntry.js",
     "displayName": "MessManagement",
     "routePath": "mess-management",
     "subModule": [
