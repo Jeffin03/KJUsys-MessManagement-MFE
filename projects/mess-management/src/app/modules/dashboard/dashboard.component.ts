@@ -316,7 +316,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Optimistic update: add the new tap to recent entries
     const newEntry = {
       customer: newTapData.name || 'Unknown',
-      roll_number: newTapData.roll_number || newTapData.rollNumber || newTapData.hmsId || newTapData.uid || '',
+      roll_number: newTapData.roll_number || '',
       mealSlot: newTapData.meal.charAt(0) + newTapData.meal.slice(1).toLowerCase() as any,
       time: new Date(newTapData.tap_DateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       status: 'Allowed' as 'Allowed' | 'Not Subscribed'

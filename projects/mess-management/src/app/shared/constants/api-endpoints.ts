@@ -10,13 +10,6 @@ export const API_ENDPOINTS = {
   STUDENT_PAUSE: (id: string | number) => `/students/${id}/pause`,
   STUDENTS_EXPIRING: '/students/expiring',
 
-  // RFID
-  RFID: '/rfid',
-  RFID_DEACTIVATE: (roll_number: string) => `/rfid/${roll_number}/deactivate`,
-  RFID_REASSIGN: (roll_number: string) => `/rfid/${roll_number}/reassign`,
-  RFID_HISTORY: (roll_number: string) => `/rfid/${roll_number}/history`,
-  RFID_BULK: '/rfid/bulk',
-
   // Schedule
   SCHEDULE: '/schedule',
   SCHEDULE_TODAY: '/schedule/today',

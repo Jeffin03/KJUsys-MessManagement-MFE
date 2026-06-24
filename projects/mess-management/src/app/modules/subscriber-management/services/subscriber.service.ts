@@ -141,7 +141,7 @@ export class SubscriberService {
       id: student._id.$oid,
       name: student.name,
       email: student.email,
-      roll_number: (student as any).roll_number || (student as any).rollNumber || (student as any).hmsId || student.uid || 'N/A',
+      roll_number: student.roll_number || 'N/A',
       mealPlan: mealPlanStr || 'None',
       status: status,
       joinedDate: dateString,
@@ -207,7 +207,6 @@ export class SubscriberService {
 
     const payload = {
       roll_number: formData.roll_number,
-      uid: formData.roll_number,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
       subscription: {
@@ -222,11 +221,6 @@ export class SubscriberService {
     };
 
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
-  }
-
-  assignHmsId(roll_number: string, studentId: string): Observable<any> {
-    const payload = { studentId: studentId };
-    return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.RFID_REASSIGN(roll_number)}`, payload);
   }
 
   updateSubscriber(roll_number: string, formData: any, id: string | number): Observable<any> {
@@ -300,7 +294,6 @@ export class SubscriberService {
         const payload = {
           _id: { $oid: id.toString() },
           roll_number: formData.roll_number,
-          uid: formData.roll_number,
           name: `${formData.firstName} ${formData.lastName}`.trim(),
           email: formData.email,
           subscription: subscription

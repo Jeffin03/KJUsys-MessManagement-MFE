@@ -141,33 +141,12 @@ export class SubscriberManagementComponent implements OnInit {
   }
 
   saveSubscriberConfiguration(data: any): void {
-    console.log('Final Subscriber Configuration (Assigning Roll Number):', data);
+    console.log('Final Subscriber Configuration:', data);
 
-    const roll_number = data.roll_number;
-    const customerId = data.backendId;
-
-    if (roll_number && customerId) {
-      this.subscriberService.assignHmsId(roll_number, customerId).subscribe({
-        next: (res) => {
-          console.log('Successfully assigned Roll Number to subscriber:', res);
-          this.showCardModal = false;
-          this.refreshSubscribers(); // Refresh table
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          console.error('Failed to assign Roll Number:', err);
-          this.showCardModal = false;
-          this.connectionMonitor.setServerDown(true);
-          this.refreshSubscribers();
-          this.cdr.detectChanges();
-        }
-      });
-    } else {
-      // Just close and refresh if missing info
-      this.showCardModal = false;
-      this.refreshSubscribers();
-      this.cdr.detectChanges();
-    }
+    // Subscriber created successfully, just close modal and refresh
+    this.showCardModal = false;
+    this.refreshSubscribers();
+    this.cdr.detectChanges();
   }
 
   updateSubscriber(data: any): void {
