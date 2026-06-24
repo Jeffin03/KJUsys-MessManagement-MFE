@@ -5,9 +5,12 @@ export const API_ENDPOINTS = {
 
   // Students
   STUDENTS: '/students',
-  STUDENT_BY_ID: (id: string | number) => `/students/${id}`,
-  STUDENT_RENEW: (id: string | number) => `/students/${id}/renew`,
-  STUDENT_PAUSE: (id: string | number) => `/students/${id}/pause`,
+  STUDENT_BY_ROLL_NUMBER: (rollNumber: string) => `/students/${rollNumber}`,
+  STUDENT_LOOKUP: (rollNumber: string) => `/students/lookup/${rollNumber}`,
+  STUDENT_RENEW: (rollNumber: string) => `/students/${rollNumber}/renew`,
+  STUDENT_PAUSE: (rollNumber: string) => `/students/${rollNumber}/pause`,
+  STUDENT_BLOCK: (rollNumber: string) => `/students/${rollNumber}/block`,
+  STUDENT_UNBLOCK: (rollNumber: string) => `/students/${rollNumber}/unblock`,
   STUDENTS_EXPIRING: '/students/expiring',
 
   // Schedule

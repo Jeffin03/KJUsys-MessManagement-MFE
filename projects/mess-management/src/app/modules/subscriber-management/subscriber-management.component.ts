@@ -159,7 +159,7 @@ export class SubscriberManagementComponent implements OnInit {
   updateSubscriber(data: any): void {
     console.log('Update subscriber with data:', data);
     if (this.editSubscriberData && this.editSubscriberData.roll_number) {
-      this.subscriberService.updateSubscriber(this.editSubscriberData.roll_number, data, this.editSubscriberData.id).subscribe({
+      this.subscriberService.updateSubscriber(this.editSubscriberData.roll_number, data).subscribe({
         next: (res) => {
           console.log('Successfully updated subscriber:', res);
           this.showEditModal = false;
