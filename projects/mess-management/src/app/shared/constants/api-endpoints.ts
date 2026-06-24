@@ -34,5 +34,9 @@ export const API_ENDPOINTS = {
   SETTINGS: '/settings',
 
   // Hardware
-  HARDWARE_STATUS: '/hardware-status'
+  HARDWARE_STATUS: '/hardware-status',
+
+  // Display Config
+  DISPLAY_CONFIG: '/display-config',
+  DISPLAY_CONFIG_BY_MEAL: (meal: string) => `/display-config/${meal}`
 };
