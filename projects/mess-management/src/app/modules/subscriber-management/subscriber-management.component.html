@@ -11,8 +11,14 @@
     <!-- Stats -->
     <app-subscriber-stats [stats]="stats"></app-subscriber-stats>
     <!-- Table -->
-    <app-subscriber-table [subscribers]="subscribers" (addSubscriber)="openAddModal()"
-      (editSubscriber)="openEditModal($event)" (deleteSubscriber)="requestDeleteSubscriber($event)"></app-subscriber-table>
+    <app-subscriber-table [subscribers]="subscribers" [totalCount]="totalCount" [currentPage]="currentPage" [pageSize]="pageSize" [isLoading]="isLoading"
+      [searchTerm]="searchTerm" [selectedPlan]="selectedPlan" [selectedStatus]="selectedStatus"
+      (addSubscriber)="openAddModal()"
+      (editSubscriber)="openEditModal($event)"
+      (deleteSubscriber)="requestDeleteSubscriber($event)"
+      (searchChange)="onSearchChange($event)"
+      (filterChange)="onFilterChange($event)"
+      (pageChange)="onPageChange($event)"></app-subscriber-table>
   </div>
   <!-- Footer -->
   <footer class="py-2 px-6 text-center bg-[#434B57] border-t border-[#E5E7EB]">

@@ -38,6 +38,14 @@ export class SubscriberManagementComponent implements OnInit {
   ];
 
   subscribers: Subscriber[] = [];
+  totalCount = 0;
+  currentPage = 1;
+  pageSize = 14;
+  isLoading = false;
+
+  searchTerm = '';
+  selectedPlan = '';
+  selectedStatus = '';
 
   stats = {
     total: 0,
@@ -67,32 +75,35 @@ export class SubscriberManagementComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.subscriberService.getSubscribers().subscribe({
+    this.loadSubscribers();
+  }
+
+  loadSubscribers(): void {
+    this.isLoading = true;
+    this.subscriberService.getSubscribers(this.searchTerm, this.currentPage - 1, this.pageSize, this.selectedPlan, this.selectedStatus).subscribe({
       next: (data) => {
         this.subscribers = data;
+        this.isLoading = false;
         this.calculateStats();
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to fetch subscribers', err);
         this.connectionMonitor.setServerDown(true);
+        this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
   }
 
   calculateStats(): void {
+    // Stats are based on full dataset - we'd need a separate endpoint for accurate stats
+    // For now, use current page data as approximation
     this.stats = {
-      total: this.subscribers.length,
-      active: this.subscribers.filter(
-        s => s.status === 'Active'
-      ).length,
-      paused: this.subscribers.filter(
-        s => s.status === 'Paused'
-      ).length,
-      lapsed: this.subscribers.filter(
-        s => s.status === 'Lapsed'
-      ).length
+      total: this.totalCount || this.subscribers.length,
+      active: this.subscribers.filter(s => s.status === 'Active').length,
+      paused: this.subscribers.filter(s => s.status === 'Paused').length,
+      lapsed: this.subscribers.filter(s => s.status === 'Lapsed').length
     };
   }
 
@@ -114,7 +125,7 @@ export class SubscriberManagementComponent implements OnInit {
         this.subscriberFormData = { ...data, backendId: newCustomerId };
         this.toastService.success('Subscriber created successfully.');
         this.showAddModal = false;
-        this.refreshSubscribers();
+        this.loadSubscribers();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -122,8 +133,7 @@ export class SubscriberManagementComponent implements OnInit {
         this.showAddModal = false;
         this.connectionMonitor.setServerDown(true);
         this.toastService.error('Failed to create subscriber.');
-        this.showAddModal = false;
-        this.refreshSubscribers();
+        this.loadSubscribers();
         this.cdr.detectChanges();
       }
     });
@@ -134,8 +144,6 @@ export class SubscriberManagementComponent implements OnInit {
   }
 
   backToAddModal(): void {
-    // Note: If they go back, they might create a duplicate if they click Next again without handling edit mode.
-    // Assuming standard flow for now.
     this.showCardModal = false;
     this.showAddModal = true;
   }
@@ -143,9 +151,8 @@ export class SubscriberManagementComponent implements OnInit {
   saveSubscriberConfiguration(data: any): void {
     console.log('Final Subscriber Configuration:', data);
 
-    // Subscriber created successfully, just close modal and refresh
     this.showCardModal = false;
-    this.refreshSubscribers();
+    this.loadSubscribers();
     this.cdr.detectChanges();
   }
 
@@ -157,7 +164,7 @@ export class SubscriberManagementComponent implements OnInit {
           console.log('Successfully updated subscriber:', res);
           this.showEditModal = false;
           this.editSubscriberData = null;
-          this.refreshSubscribers(); // Refresh table
+          this.loadSubscribers();
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -165,7 +172,7 @@ export class SubscriberManagementComponent implements OnInit {
           this.showEditModal = false;
           this.editSubscriberData = null;
           this.connectionMonitor.setServerDown(true);
-          this.refreshSubscribers();
+          this.loadSubscribers();
           this.cdr.detectChanges();
         }
       });
@@ -173,27 +180,28 @@ export class SubscriberManagementComponent implements OnInit {
       console.error('No subscriber roll number available for update');
       this.showEditModal = false;
       this.editSubscriberData = null;
-      this.refreshSubscribers();
+      this.loadSubscribers();
       this.cdr.detectChanges();
     }
   }
 
-  refreshSubscribers(): void {
-    this.subscriberService.getSubscribers().subscribe({
-      next: (data) => {
-        this.subscribers = data;
-        this.calculateStats();
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to refresh subscribers', err);
-        this.connectionMonitor.setServerDown(true);
-        this.cdr.detectChanges();
-      }
-    });
+  onSearchChange(term: string): void {
+    this.searchTerm = term;
+    this.currentPage = 1;
+    this.loadSubscribers();
   }
 
+  onFilterChange(filters: { plan: string; status: string }): void {
+    this.selectedPlan = filters.plan;
+    this.selectedStatus = filters.status;
+    this.currentPage = 1;
+    this.loadSubscribers();
+  }
 
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadSubscribers();
+  }
 
   openEditModal(sub: Subscriber): void {
     this.editSubscriberData = { ...sub };
@@ -222,7 +230,7 @@ export class SubscriberManagementComponent implements OnInit {
           this.toastService.success('Subscriber deleted successfully.');
           this.showDeleteConfirmPopup = false;
           this.pendingDeleteSubscriber = null;
-          this.refreshSubscribers();
+          this.loadSubscribers();
         },
         error: (err) => {
           console.error('Failed to delete subscriber:', err);

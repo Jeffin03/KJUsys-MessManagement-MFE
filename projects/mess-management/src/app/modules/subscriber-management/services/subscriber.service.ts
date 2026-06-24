@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, shareReplay, tap, switchMap } from 'rxjs/operators';
 import { Subscriber } from '../../../shared/models/subscriber';
@@ -151,14 +151,30 @@ export class SubscriberService {
     };
   }
 
-  getSubscribers(): Observable<Subscriber[]> {
-    return this.http.get<ApiResponse<{ students: BackendStudent[] }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`)
-      .pipe(
-        map(res => {
-          const students = res.responseData?.data?.students || [];
-          return students.map(s => this.mapToSubscriber(s));
-        })
+  getSubscribers(search = '', page = 0, size = 50, plan = '', status = ''): Observable<Subscriber[]> {
+    let params = new HttpParams()
+      .set('search', search)
+      .set('page', page)
+      .set('size', size);
+    
+    if (plan) params = params.set('plan', plan);
+    if (status) params = params.set('status', status);
+
+    const request = this.http.get<ApiResponse<{ students: BackendStudent[] }>>(
+      `${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, { params }
+    ).pipe(
+      map(res => {
+        const students = res.responseData?.data?.students || [];
+        return students.map(s => this.mapToSubscriber(s));
+      })
+    );
+
+    if (!search && !plan && !status && page === 0) {
+      return request.pipe(
+        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
       );
+    }
+    return request;
   }
 
   getSubscriberById(id: number | string): Observable<Subscriber> {
