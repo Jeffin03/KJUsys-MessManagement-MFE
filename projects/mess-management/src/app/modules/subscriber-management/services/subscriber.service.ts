@@ -165,7 +165,7 @@ export class SubscriberService {
     };
   }
 
-  getSubscribers(search = '', page = 0, size = 50, plan = '', status = ''): Observable<Subscriber[]> {
+  getSubscribers(search = '', page = 0, size = 50, plan = '', status = ''): Observable<{ subscribers: Subscriber[], total: number }> {
     let params = new HttpParams()
       .set('search', search)
       .set('page', page)
@@ -178,8 +178,13 @@ export class SubscriberService {
       `${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, { params }
     ).pipe(
       map(res => {
-        const students = res.responseData?.data?.students || [];
-        return students.map(s => this.mapToSubscriber(s));
+        const responseData = res.responseData?.data as any;
+        const students = responseData?.students || [];
+        const total = responseData?.total ?? responseData?.totalCount ?? responseData?.count ?? students.length;
+        return {
+          subscribers: students.map((s: BackendStudent) => this.mapToSubscriber(s)),
+          total
+        };
       })
     );
 

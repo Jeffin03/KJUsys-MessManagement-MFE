@@ -1,68 +1,99 @@
-import { Component, Input, Output, EventEmitter, OnChanges, HostListener, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
-import { Subscriber } from '../../../../shared/models/subscriber';
+import { TableModule, TableColumn, PaginationConfig, PrimaryAction } from '@libs/table';
 import { ButtonComponent } from '@libs/shared-ui';
+import { DropdownLibModule } from '@libs/dropdown-lib';
+import { Subscriber } from '../../../../shared/models/subscriber';
 
 @Component({
   selector: 'app-subscriber-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, TableModule, ButtonComponent, DropdownLibModule],
   templateUrl: './subscriber-table.component.html',
+  styleUrls: ['./subscriber-table.component.css'],
 })
-export class SubscriberTableComponent implements OnInit, OnChanges, OnDestroy {
+export class SubscriberTableComponent implements OnInit, OnDestroy {
   @Input() subscribers: Subscriber[] = [];
-  @Input() totalCount = 0;
-  @Input() currentPage = 1;
-  @Input() pageSize = 14;
   @Input() isLoading = false;
-  @Input() searchTerm = '';
-  @Input() selectedPlan = '';
-  @Input() selectedStatus = '';
+  @Input() mealSlotList: any[] = [];
+  @Input() totalItems = 0;
+  @Input() currentPage = 1;
+  @Input() pageSize = 10;
+  @Input() clientPaginationMode = false;
+  @Input() selectedMealSlots: any[] = [];
+  @Input() selectedStatuses: any[] = [];
 
   @Output() addSubscriber = new EventEmitter<void>();
   @Output() editSubscriber = new EventEmitter<Subscriber>();
   @Output() deleteSubscriber = new EventEmitter<Subscriber>();
-  @Output() searchChange = new EventEmitter<string>();
-  @Output() filterChange = new EventEmitter<{ plan: string; status: string }>();
   @Output() pageChange = new EventEmitter<number>();
+  @Output() sizeChange = new EventEmitter<number>();
+  @Output() searchChange = new EventEmitter<string>();
+  @Output() mealSlotChange = new EventEmitter<any[]>();
+  @Output() statusChange = new EventEmitter<any[]>();
+  @Output() exportRequest = new EventEmitter<void>();
+  @Output() clearFilters = new EventEmitter<void>();
 
-  constructor(private elementRef: ElementRef) { }
+  columns: TableColumn[] = [
+    {
+      key: 'name',
+      label: 'SUBSCRIBER',
+      type: 'stacked',
+      minWidth: '200px',
+      subFields: [{ key: 'email', type: 'text' }],
+    },
+    { key: 'roll_number', label: 'ROLL NUMBER', minWidth: '130px' },
+    { key: 'mealPlan', label: 'MEAL PLAN', minWidth: '110px' },
+    {
+      key: 'status',
+      label: 'STATUS',
+      type: 'badge',
+      minWidth: '100px',
+      colorMap: {
+        'Active': { bg: '#155DFC33', text: '#155DFC' },
+        'Paused': { bg: '#FE9A0033', text: '#FE9A00' },
+        'Lapsed': { bg: '#FFF1F2', text: '#C70036' },
+      },
+    },
+    { key: 'joinedDate', label: 'JOINED', type: 'date', minWidth: '100px' },
+  ];
 
-  showPlanDropdown = false;
-  showStatusDropdown = false;
+  primaryActions: PrimaryAction[] = [
+    { type: 'edit', theme: 'secondary', label: 'Edit' },
+    { type: 'delete', theme: 'alert', label: 'Delete' },
+  ];
+
+  get paginationConfig(): PaginationConfig {
+    return {
+      currentPage: this.currentPage,
+      totalPages: Math.ceil(this.totalItems / this.pageSize) || 1,
+      itemsPerPage: this.pageSize,
+      totalItems: this.totalItems,
+    };
+  }
+
+  dropdownIdField = 'name';
+  dropdownTextField = 'name';
+
+  statusData = [
+    { name: 'Active' },
+    { name: 'Paused' },
+    { name: 'Lapsed' },
+  ];
+
+  searchText = '';
 
   private searchSubject = new Subject<string>();
-  private searchSubscription: Subscription = new Subscription();
-
-  planOptions = [
-    { value: 'B+L+D', label: 'B+L+D' },
-    { value: 'B+L', label: 'B+L' },
-    { value: 'B+D', label: 'B+D' },
-    { value: 'L+D', label: 'L+D' },
-    { value: 'B', label: 'B' },
-    { value: 'L', label: 'L' },
-    { value: 'D', label: 'D' },
-  ];
-
-  statusOptions = [
-    { value: 'Active', label: 'Active' },
-    { value: 'Paused', label: 'Paused' },
-    { value: 'Lapsed', label: 'Lapsed' },
-  ];
-
-  get totalPages(): number { return Math.ceil(this.totalCount / this.pageSize); }
-  get totalPagesArray(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
-  get pageStart(): number { return (this.currentPage - 1) * this.pageSize + 1; }
-  get pageEnd(): number { return Math.min(this.currentPage * this.pageSize, this.totalCount); }
+  private searchSubscription: Subscription | null = null;
 
   ngOnInit(): void {
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(500),
       distinctUntilChanged()
-    ).subscribe(term => {
-      this.searchChange.emit(term);
+    ).subscribe(search => {
+      this.searchChange.emit(search);
     });
   }
 
@@ -70,87 +101,58 @@ export class SubscriberTableComponent implements OnInit, OnChanges, OnDestroy {
     this.searchSubscription?.unsubscribe();
   }
 
-  ngOnChanges(): void {}
-
-  onSearchInput(): void {
-    this.searchSubject.next(this.searchTerm);
+  onSearchInput(value: string): void {
+    const trimmed = String(value || '').trim();
+    this.searchText = value;
+    this.searchSubject.next(trimmed);
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent) {
-    this.showPlanDropdown = false;
-    this.showStatusDropdown = false;
+  clearSearch(inputEl: HTMLInputElement): void {
+    this.searchText = '';
+    inputEl.value = '';
+    this.searchSubject.next('');
+    this.searchChange.emit('');
   }
 
-  togglePlanDropdown(event: MouseEvent) {
-    event.stopPropagation();
-    const wasOpen = this.showPlanDropdown;
-    this.showPlanDropdown = false;
-    this.showStatusDropdown = false;
-    this.showPlanDropdown = !wasOpen;
+  onMealSlotChange(selected: any[]): void {
+    this.mealSlotChange.emit(selected);
   }
 
-  toggleStatusDropdown(event: MouseEvent) {
-    event.stopPropagation();
-    const wasOpen = this.showStatusDropdown;
-    this.showPlanDropdown = false;
-    this.showStatusDropdown = false;
-    this.showStatusDropdown = !wasOpen;
+  onStatusChange(selected: any[]): void {
+    this.statusChange.emit(selected);
   }
 
-  selectPlan(value: string, event: MouseEvent) {
-    event.stopPropagation();
-    this.selectedPlan = value;
-    this.showPlanDropdown = false;
-    this.emitFilters();
+  onPageChange(page: number): void {
+    this.pageChange.emit(page);
   }
 
-  selectStatus(value: string, event: MouseEvent) {
-    event.stopPropagation();
-    this.selectedStatus = value;
-    this.showStatusDropdown = false;
-    this.emitFilters();
+  onSizeChange(size: number): void {
+    this.sizeChange.emit(size);
   }
 
-  get selectedPlanLabel(): string {
-    return this.planOptions.find(p => p.value === this.selectedPlan)?.label || 'All Plans';
+  onEdit(row: Subscriber): void {
+    this.editSubscriber.emit(row);
   }
 
-  get selectedStatusLabel(): string {
-    return this.statusOptions.find(s => s.value === this.selectedStatus)?.label || 'All Status';
+  onDelete(row: Subscriber): void {
+    this.deleteSubscriber.emit(row);
   }
 
-  onSearch(): void {
-    this.searchChange.emit(this.searchTerm);
+  onPrimaryAction(event: { actionKey: string; row: any }): void {
+    if (event.actionKey === 'edit') this.onEdit(event.row);
+    else if (event.actionKey === 'delete') this.onDelete(event.row);
   }
 
-  onFilter(): void {
-    this.emitFilters();
+  onAddSubscriber(): void {
+    this.addSubscriber.emit();
   }
 
-  private emitFilters(): void {
-    this.filterChange.emit({ plan: this.selectedPlan, status: this.selectedStatus });
+  onClearFilters(): void {
+    this.searchText = '';
+    this.clearFilters.emit();
   }
 
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'Active': return 'bg-[#F0FDF4] text-[#007A55]';
-      case 'Paused': return 'bg-[#FEF3C7] text-[#BB4D00]';
-      case 'Lapsed': return 'bg-[#FFF1F2] text-[#C70036]';
-      default: return '';
-    }
+  exportCSV(): void {
+    this.exportRequest.emit();
   }
-
-  goToPage(p: number): void {
-    if (p >= 1 && p <= this.totalPages) {
-      this.pageChange.emit(p);
-    }
-  }
-
-  prevPage(): void { if (this.currentPage > 1) this.pageChange.emit(this.currentPage - 1); }
-  nextPage(): void { if (this.currentPage < this.totalPages) this.pageChange.emit(this.currentPage + 1); }
-
-  onAddSubscriber(): void { this.addSubscriber.emit(); }
-  onEdit(sub: Subscriber): void { this.editSubscriber.emit(sub); }
-  onDelete(sub: Subscriber): void { this.deleteSubscriber.emit(sub); }
 }

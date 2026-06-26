@@ -145,7 +145,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const hardwarePromise = firstValueFrom(this.dashboardService.getHardwareStatus());
 
       // 1. Wait for subscribers and process it first (required for other processing)
-      const subscribers = await subscribersPromise;
+      const { subscribers } = await subscribersPromise;
       this.processSubscribers(subscribers);
 
       // 2. Wait for schedules, taps, and hardware concurrently, then process them in parallel
@@ -450,7 +450,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dashboardService.getSchedules(true).subscribe({
       next: (schedules) => {
         this.subscriberService.getSubscribers().subscribe({
-          next: (subscribers) => {
+          next: ({ subscribers }) => {
             this.processSubscribers(subscribers);
             this.processSchedules(schedules);
             this.dashboardService.getTaps().subscribe({

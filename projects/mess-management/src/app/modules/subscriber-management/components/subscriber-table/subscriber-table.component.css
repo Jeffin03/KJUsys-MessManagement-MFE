@@ -1,0 +1,228 @@
+/* ── Table header row (original: bg-surface border border-[#F3F4F6]) ── */
+:host .kjt-table thead tr {
+  background: #F9FAFB !important;
+  border: 1px solid #F3F4F6 !important;
+}
+
+:host .kjt-th {
+  background: #F9FAFB !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #6A7282 !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 1px solid #F3F4F6 !important;
+  padding: 10px 16px !important;
+}
+
+:host .kjt-th-inner {
+  font-weight: 700 !important;
+}
+
+/* ── Table body cells ── */
+:host .kjt-td {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #1D2939 !important;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid #F3F4F6 !important;
+  vertical-align: middle !important;
+}
+
+/* Name: font-semibold text-text-main */
+:host .kjt-stacked-main {
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  color: #1D2939 !important;
+}
+
+/* Email: text-xs text-text-muted */
+:host .kjt-sub-text {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #6B7280 !important;
+}
+
+/* Roll Number: font-medium text-text-sub */
+:host .kjt-td:nth-child(2) {
+  font-weight: 500 !important;
+  color: #475467 !important;
+}
+
+/* Meal Plan: font-semibold text-text-main */
+:host .kjt-td:nth-child(3) {
+  font-weight: 600 !important;
+  color: #1D2939 !important;
+}
+
+/* Status: text-xs font-medium */
+:host .kjt-badge {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 4px 12px !important;
+  border-radius: 9999px !important;
+}
+
+:host .kjt-badge[data-status="active"] {
+  background: #155DFC33 !important;
+  color: #155DFC !important;
+}
+:host .kjt-badge[data-status="paused"] {
+  background: #FE9A0033 !important;
+  color: #FE9A00 !important;
+}
+:host .kjt-badge[data-status="lapsed"] {
+  background: #FFF1F2 !important;
+  color: #C70036 !important;
+}
+
+/* Joined: text-text-main */
+:host .kjt-td:nth-child(5) {
+  color: #1D2939 !important;
+}
+
+/* ── Actions column cell ── */
+:host .kjt-td-actions {
+  border-bottom: 1px solid #F3F4F6 !important;
+  padding: 14px 16px !important;
+  vertical-align: middle !important;
+}
+
+:host .kjt-actions-wrap {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* ── Clear Filters button ── */
+:host .clear-filters-btn {
+  height: 40px !important;
+  background: #F3F4F6 !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #86868B !important;
+}
+
+:host .clear-filters-btn svg {
+  color: #86868B !important;
+}
+
+:host .clear-filters-btn:hover {
+  background: #E5E7EB !important;
+  color: #4B5563 !important;
+}
+
+:host .clear-filters-btn:hover svg {
+  color: #4B5563 !important;
+}
+
+:host .clear-filters-btn svg {
+  color: #6B7280 !important;
+}
+
+:host .clear-filters-btn:hover {
+  border-color: #9CA3AF !important;
+  color: #374151 !important;
+}
+
+:host .clear-filters-btn:hover svg {
+  color: #374151 !important;
+}
+
+/* ── Table body rows ── */
+:host .kjt-tr {
+  background: #fff !important;
+  border-bottom: 1px solid #F3F4F6 !important;
+}
+
+:host .kjt-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+:host .kjt-table-scroll {
+  border: 1px solid #F3F4F6 !important;
+  border-radius: 0 !important;
+}
+
+:host .kjt-wrapper {
+  border: 1px solid #E5E7EB !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ── Pagination footer ── */
+:host .kjt-footer {
+  border-top: 1px solid #F3F4F6 !important;
+  font-size: 13px !important;
+  color: #475467 !important;
+}
+
+:host .kjt-page-btn {
+  width: 32px !important;
+  height: 32px !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  color: #1D2939 !important;
+  background: #fff !important;
+}
+
+:host .kjt-page-btn.active {
+  background: #155DFC !important;
+  border-color: #155DFC !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+:host .kjt-page-btn:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+:host .kjt-range {
+  font-size: 13px !important;
+  color: #475467 !important;
+  margin-right: 12px !important;
+}
+
+/* ── Dropdown trigger matching search bar height & style ── */
+:host ::ng-deep .toolbar-dd .flex.items-center.justify-between.border.rounded-lg {
+  border: 1px solid #D1D5DB !important;
+  padding-left: 16px !important;
+  padding-right: 12px !important;
+  background: #fff !important;
+}
+
+:host ::ng-deep .toolbar-dd .flex.items-center.justify-between.border.rounded-lg:hover {
+  border-color: #9CA3AF !important;
+}
+
+:host ::ng-deep .toolbar-dd .text-gray-500 {
+  color: #6B7280 !important;
+  font-weight: 400 !important;
+  font-size: 12px !important;
+}
+
+:host ::ng-deep .toolbar-dd .text-gray-900 {
+  font-weight: 400 !important;
+  font-size: 12px !important;
+}
+
+/* ── Export button matching toolbar style ── */
+.export-btn {
+  height: 40px !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  background: #fff !important;
+  color: #4B5563 !important;
+}
+
+.export-btn:hover {
+  background: #F9FAFB !important;
+  border-color: #9CA3AF !important;
+}

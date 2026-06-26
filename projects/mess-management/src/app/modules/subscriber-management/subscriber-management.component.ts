@@ -1,6 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
+import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { SubscriberStatsComponent } from './components/subscriber-stats/subscriber-stats.component';
 import { SubscriberTableComponent } from './components/subscriber-table/subscriber-table.component';
@@ -14,6 +15,7 @@ import { ConnectionMonitorService } from '../../shared/services/connection-monit
 import { SharedToastService } from '@libs/shared-toast';
 import { BreadcrumbsTitleComponent, ButtonComponent } from '@libs/shared-ui';
 import { TabItem, TabsModule } from '@libs/tabs';
+import { MealSlotService, MealSlotWithCode } from '../../shared/services/meal-slot.service';
 
 @Component({
   selector: 'app-subscriber-management',
@@ -31,7 +33,7 @@ import { TabItem, TabsModule } from '@libs/tabs';
   templateUrl: './subscriber-management.component.html',
   styleUrls: ['./subscriber-management.component.css']
 })
-export class SubscriberManagementComponent implements OnInit {
+export class SubscriberManagementComponent implements OnInit, OnDestroy {
 
   tabs: TabItem[] = [
     { id: 'dashboard', label: 'Dashboard', subtitle: 'Overview' },
@@ -57,15 +59,17 @@ export class SubscriberManagementComponent implements OnInit {
   ];
 
   subscribers: Subscriber[] = [];
-  totalCount = 0;
-  currentPage = 1;
-  pageSize = 14;
   isLoading = false;
+  totalItems = 0;
+  currentPage = 1;
+  pageSize = 10;
 
-  searchTerm = '';
-  selectedPlan = '';
-  selectedStatus = '';
+  searchQuery = '';
+  selectedMealSlots: any[] = [];
+  selectedStatuses: any[] = [];
+  clientPaginationMode = false;
 
+  allSubscribers: Subscriber[] = [];
   stats = {
     total: 0,
     active: 0,
@@ -73,17 +77,20 @@ export class SubscriberManagementComponent implements OnInit {
     lapsed: 0
   };
 
+  mealSlotList: any[] = [];
+
   showAddModal = false;
   showCardModal = false;
-
   showEditModal = false;
 
   subscriberFormData: any = null;
-
   editSubscriberData: any = null;
 
   showDeleteConfirmPopup = false;
   pendingDeleteSubscriber: Subscriber | null = null;
+
+  private searchSubject = new Subject<string>();
+  private searchSubscription: Subscription | null = null;
 
   constructor(
     private subscriberService: SubscriberService,
@@ -92,24 +99,53 @@ export class SubscriberManagementComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private toastService: SharedToastService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private mealSlotService: MealSlotService,
   ) { }
 
   ngOnInit(): void {
-    this.loadSubscribers();
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    ).subscribe(search => {
+      this.searchQuery = search;
+      this.currentPage = 1;
+      this.fetchSubscribers();
+    });
+
+    this.fetchMealSlots();
+    this.fetchInitialData();
   }
 
-  loadSubscribers(): void {
+  ngOnDestroy(): void {
+    this.searchSubscription?.unsubscribe();
+  }
+
+  private fetchMealSlots(): void {
+    this.mealSlotService.getMealSlots(true).subscribe((slots: MealSlotWithCode[]) => {
+      this.mealSlotList = slots.map(s => ({ name: s.name }));
+    });
+  }
+
+  fetchInitialData(): void {
     this.isLoading = true;
-    this.subscriberService.getSubscribers(this.searchTerm, this.currentPage - 1, this.pageSize, this.selectedPlan, this.selectedStatus).subscribe({
-      next: (data) => {
-        this.subscribers = data;
-        this.isLoading = false;
+    this.searchQuery = '';
+    this.selectedMealSlots = [];
+    this.selectedStatuses = [];
+    this.clientPaginationMode = false;
+    this.currentPage = 1;
+    // Fetch all subscribers for stats, then show first page in table
+    this.subscriberService.getSubscribers('', 0, 10000, '', '').subscribe({
+      next: ({ subscribers, total }) => {
+        this.allSubscribers = subscribers;
         this.calculateStats();
+        this.totalItems = total;
+        this.subscribers = subscribers.slice(0, this.pageSize);
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Failed to fetch subscribers', err);
+        console.error('Failed to fetch initial subscribers', err);
         this.connectionMonitor.setServerDown(true);
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -117,15 +153,136 @@ export class SubscriberManagementComponent implements OnInit {
     });
   }
 
+  private filterByMealSlots(data: Subscriber[]): Subscriber[] {
+    const selected = this.selectedMealSlots.map(s => String(s.name || '').toLowerCase()).filter(Boolean);
+    if (selected.length === 0) return data;
+    return data.filter(sub => {
+      const subMeals = (sub.mealNames || []).map(m => m.toLowerCase());
+      return selected.every(s => subMeals.includes(s));
+    });
+  }
+
+  private fetchSubscribers(): void {
+    this.isLoading = true;
+
+    const statusStr = this.selectedStatuses.map(s => s.name || '').filter(Boolean).join(',');
+
+    if (this.clientPaginationMode) {
+      this.subscriberService.getSubscribers(this.searchQuery, 0, 10000, '', statusStr).subscribe({
+        next: ({ subscribers }) => {
+          const filtered = this.filterByMealSlots(subscribers);
+          this.subscribers = filtered;
+          this.totalItems = filtered.length;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to fetch subscribers', err);
+          this.connectionMonitor.setServerDown(true);
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }
+      });
+    } else {
+      const apiPage = this.currentPage - 1;
+      this.subscriberService.getSubscribers(this.searchQuery, apiPage, this.pageSize, '', statusStr).subscribe({
+        next: ({ subscribers, total }) => {
+          this.subscribers = subscribers;
+          this.totalItems = total;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Failed to fetch subscribers', err);
+          this.connectionMonitor.setServerDown(true);
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
   calculateStats(): void {
-    // Stats are based on full dataset - we'd need a separate endpoint for accurate stats
-    // For now, use current page data as approximation
     this.stats = {
-      total: this.totalCount || this.subscribers.length,
-      active: this.subscribers.filter(s => s.status === 'Active').length,
-      paused: this.subscribers.filter(s => s.status === 'Paused').length,
-      lapsed: this.subscribers.filter(s => s.status === 'Lapsed').length
+      total: this.allSubscribers.length,
+      active: this.allSubscribers.filter(s => s.status === 'Active').length,
+      paused: this.allSubscribers.filter(s => s.status === 'Paused').length,
+      lapsed: this.allSubscribers.filter(s => s.status === 'Lapsed').length
     };
+  }
+
+  onSearchChange(query: string): void {
+    this.searchSubject.next(query);
+  }
+
+  onMealSlotChange(slots: any[]): void {
+    this.selectedMealSlots = slots;
+    this.clientPaginationMode = slots.length > 0;
+    this.currentPage = 1;
+    this.fetchSubscribers();
+  }
+
+  onStatusChange(statuses: any[]): void {
+    this.selectedStatuses = statuses;
+    this.currentPage = 1;
+    this.fetchSubscribers();
+  }
+
+  onPageChange(page: number): void {
+    if (this.clientPaginationMode) return;
+    this.currentPage = page;
+    this.fetchSubscribers();
+  }
+
+  onSizeChange(size: number): void {
+    if (this.clientPaginationMode) return;
+    this.pageSize = size;
+    this.currentPage = 1;
+    this.fetchSubscribers();
+  }
+
+  onExportRequest(): void {
+    const planStr = this.selectedMealSlots.map(s => s.name || '').filter(Boolean).join(',');
+    const statusStr = this.selectedStatuses.map(s => s.name || '').filter(Boolean).join(',');
+
+    this.subscriberService.getSubscribers(this.searchQuery, 0, 100000, planStr, statusStr).subscribe({
+      next: ({ subscribers }) => {
+        const exportData = subscribers;
+        const headers = ['Name', 'Email', 'Roll Number', 'Meal Plan', 'Status', 'Joined Date'];
+        const rows = exportData.map(sub => [
+          this.escapeCsv(sub.name),
+          this.escapeCsv(sub.email),
+          this.escapeCsv(sub.roll_number),
+          this.escapeCsv(sub.mealPlan),
+          this.escapeCsv(sub.status),
+          this.escapeCsv(sub.joinedDate),
+        ]);
+
+        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'subscribers.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Failed to fetch data for export', err);
+        this.toastService.error('Failed to export subscribers.');
+      }
+    });
+  }
+
+  private escapeCsv(val: string): string {
+    if (!val) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
   }
 
   openAddModal(): void {
@@ -138,7 +295,7 @@ export class SubscriberManagementComponent implements OnInit {
 
   onSubscriberSave(data: any): void {
     console.log('Creating new subscriber:', data);
-    
+
     this.subscriberService.createSubscriber(data).subscribe({
       next: (res) => {
         const newCustomerId = res.responseData?.data?.customer?._id?.$oid || res.responseData?.data?._id?.$oid || res.responseData?.data?.id;
@@ -146,7 +303,7 @@ export class SubscriberManagementComponent implements OnInit {
         this.subscriberFormData = { ...data, backendId: newCustomerId };
         this.toastService.success('Subscriber created successfully.');
         this.showAddModal = false;
-        this.loadSubscribers();
+        this.fetchInitialData();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -154,7 +311,7 @@ export class SubscriberManagementComponent implements OnInit {
         this.showAddModal = false;
         this.connectionMonitor.setServerDown(true);
         this.toastService.error('Failed to create subscriber.');
-        this.loadSubscribers();
+        this.fetchInitialData();
         this.cdr.detectChanges();
       }
     });
@@ -173,7 +330,7 @@ export class SubscriberManagementComponent implements OnInit {
     console.log('Final Subscriber Configuration:', data);
 
     this.showCardModal = false;
-    this.loadSubscribers();
+    this.fetchInitialData();
     this.cdr.detectChanges();
   }
 
@@ -185,7 +342,7 @@ export class SubscriberManagementComponent implements OnInit {
           console.log('Successfully updated subscriber:', res);
           this.showEditModal = false;
           this.editSubscriberData = null;
-          this.loadSubscribers();
+          this.fetchInitialData();
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -193,7 +350,7 @@ export class SubscriberManagementComponent implements OnInit {
           this.showEditModal = false;
           this.editSubscriberData = null;
           this.connectionMonitor.setServerDown(true);
-          this.loadSubscribers();
+          this.fetchInitialData();
           this.cdr.detectChanges();
         }
       });
@@ -201,27 +358,9 @@ export class SubscriberManagementComponent implements OnInit {
       console.error('No subscriber roll number available for update');
       this.showEditModal = false;
       this.editSubscriberData = null;
-      this.loadSubscribers();
+      this.fetchInitialData();
       this.cdr.detectChanges();
     }
-  }
-
-  onSearchChange(term: string): void {
-    this.searchTerm = term;
-    this.currentPage = 1;
-    this.loadSubscribers();
-  }
-
-  onFilterChange(filters: { plan: string; status: string }): void {
-    this.selectedPlan = filters.plan;
-    this.selectedStatus = filters.status;
-    this.currentPage = 1;
-    this.loadSubscribers();
-  }
-
-  onPageChange(page: number): void {
-    this.currentPage = page;
-    this.loadSubscribers();
   }
 
   openEditModal(sub: Subscriber): void {
@@ -251,7 +390,7 @@ export class SubscriberManagementComponent implements OnInit {
           this.toastService.success('Subscriber deleted successfully.');
           this.showDeleteConfirmPopup = false;
           this.pendingDeleteSubscriber = null;
-          this.loadSubscribers();
+          this.fetchInitialData();
         },
         error: (err) => {
           console.error('Failed to delete subscriber:', err);
