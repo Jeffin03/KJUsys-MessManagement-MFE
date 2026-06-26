@@ -5,6 +5,7 @@ import { DashboardService, ApiResponse, BackendSchedule, DisplayConfig } from '.
 import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
 import { SharedToastService } from '@libs/shared-toast';
 import { ButtonComponent } from '@libs/shared-ui';
+import { MealSlotService } from '../../../../shared/services/meal-slot.service';
 
 interface SuggestionItem {
   label: string;
@@ -318,6 +319,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   constructor(
     private elementRef: ElementRef,
     private dashboardService: DashboardService,
+    private mealSlotService: MealSlotService,
     private cdr: ChangeDetectorRef,
     private toastService: SharedToastService
   ) { }
@@ -671,6 +673,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
         this.slots = this.slots.filter((s: MealSlotConfig) => s.id !== slot.id);
         this.cdr.detectChanges();
         this.toastService.success('Meal slot deleted.');
+        this.mealSlotService.refresh().subscribe();
       });
     } else {
       this.slots.splice(index, 1);
@@ -741,6 +744,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           this.cdr.detectChanges();
           this.toastService.success('Meal slot updated.');
           this.configurationSaved.emit();
+          this.mealSlotService.refresh().subscribe();
         },
         error: (err: any) => {
           console.error('Update failed', err);
@@ -766,6 +770,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           this.cdr.detectChanges();
           this.toastService.success('Meal slot added.');
           this.configurationSaved.emit();
+          this.mealSlotService.refresh().subscribe();
         },
         error: (err) => {
           console.error('Failed to create schedule:', err);

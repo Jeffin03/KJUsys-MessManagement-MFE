@@ -8,20 +8,20 @@ import { SubscriberCardModalComponent } from './components/subscriber-card-modal
 import { SubscriberCardPreviewComponent } from './components/subscriber-card-preview/subscriber-card-preview.component';
 import { SubscriberStatsComponent } from './components/subscriber-stats/subscriber-stats.component';
 import { SubscriberTableComponent } from './components/subscriber-table/subscriber-table.component';
+import { TabsModule } from '@libs/tabs';
 
 
 @NgModule({
-  declarations: [
+  imports: [
+    CommonModule,
+    SubscriberManagementModuleRoutingModule,
+    TabsModule,
     SubscriberManagementComponent,
     AddSubscriberModalComponent,
     SubscriberCardModalComponent,
     SubscriberCardPreviewComponent,
     SubscriberStatsComponent,
     SubscriberTableComponent
-  ],
-  imports: [
-    CommonModule,
-    SubscriberManagementModuleRoutingModule
   ]
 })
 export class SubscriberManagementModule { }

@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription, firstValueFrom, Observable, of, BehaviorSubject, filter, take, switchMap } from 'rxjs';
 import { MealSlotsComponent } from './components/meal-slots/meal-slots.component';
 import { EntriesTableComponent } from './components/entries-table/entries-table.component';
@@ -8,22 +9,21 @@ import { DashboardStat, MealSlot, MealEntry, HardwareDevice } from '../../shared
 import { DashboardService } from './services/dashboard.service';
 import { SubscriberService } from '../subscriber-management/services/subscriber.service';
 import { Subscriber } from '../../shared/models/subscriber';
-import { DashboardTabsComponent } from './components/dashboard-tabs/dashboard-tabs.component';
 import { WebsocketService } from '../../shared/services/websocket.service';
 import { NetworkService } from '../../shared/services/network.service';
 import { ConnectionMonitorService } from '../../shared/services/connection-monitor.service';
 import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
-
+import { TabItem, TabsModule } from '@libs/tabs';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
     CommonModule,
+    TabsModule,
     MealSlotsComponent,
     EntriesTableComponent,
     HardwareStatusComponent,
-    DashboardTabsComponent,
     BreadcrumbsTitleComponent
   ],
   templateUrl: './dashboard.component.html',
@@ -39,6 +39,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
     { label: 'Hostel' },
     { label: 'Mess Management' }
   ];
+
+  tabs: TabItem[] = [
+    { id: 'dashboard', label: 'Dashboard', subtitle: 'Overview' },
+    { id: 'subscriber', label: 'Subscriber Management', subtitle: 'Manage Subscribers' },
+    { id: 'reports', label: 'Reports', subtitle: 'View Reports' }
+  ];
+  activeTab = 'dashboard';
+
+  onTabChange(tabId: string) {
+    this.activeTab = tabId;
+    if (tabId === 'dashboard') {
+      this.router.navigate(['../dashboard'], { relativeTo: this.route });
+    } else if (tabId === 'subscriber') {
+      this.router.navigate(['../subscriber-management'], { relativeTo: this.route });
+    } else if (tabId === 'reports') {
+      // this.router.navigate(['../reports'], { relativeTo: this.route });
+    }
+  }
+
+
 
   stats: DashboardStat[] = [
     { label: 'Total Subscribers', value: 0, icon: 'subscribers', color: 'text-blue-400' },
@@ -82,7 +102,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private networkService: NetworkService,
     private connectionMonitor: ConnectionMonitorService,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private router: Router,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit() {
