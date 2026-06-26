@@ -10,6 +10,7 @@ export class DatePickerComponent implements OnInit, OnDestroy {
   @Input() initialEndDate: Date | null = null;
   @Input() placeholder: string = 'Select Date Range';
   @Input() singleSelect: boolean = false;
+  @Input() showRangeInTrigger: boolean = true;
   
   @Output() dateRangeSelected = new EventEmitter<{ from: Date; to: Date | null }>();
   @Output() onClear = new EventEmitter<void>();
@@ -96,6 +97,10 @@ export class DatePickerComponent implements OnInit, OnDestroy {
     const end = this.isOpen ? this.tempEndDate : this.confirmedEndDate;
 
     if (this.singleSelect) {
+      return start ? this.formatDate(start) : this.placeholder;
+    }
+
+    if (!this.showRangeInTrigger) {
       return start ? this.formatDate(start) : this.placeholder;
     }
 

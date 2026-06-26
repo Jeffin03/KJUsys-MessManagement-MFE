@@ -21,6 +21,8 @@ export interface BackendStudent {
     days_remaining: number;
     pauseStart_Date?: number;
     pauseEnd_Date?: number;
+    is_Paused?: boolean;
+    effective_End_Date?: number;
   };
 }
 
@@ -102,24 +104,35 @@ export class SubscriberService {
 
     let status: 'Active' | 'Paused' | 'Lapsed' = 'Lapsed';
     if (student.subscription) {
-      // Check if subscription has expired based on end date
       const endDate = new Date(student.subscription.end_Date);
       const now = new Date();
 
       if (endDate < now) {
-        // Subscription has expired
         status = 'Lapsed';
+      } else if (student.subscription.is_Paused) {
+        status = 'Paused';
       } else if (student.subscription.active) {
-        // Subscription is active and not expired
         status = 'Active';
       } else {
-        // Subscription is explicitly paused (not active but not expired)
-        status = 'Paused';
+        const pauseEnd = student.subscription.pauseEnd_Date;
+        if (pauseEnd && new Date(pauseEnd) <= now) {
+          status = 'Active';
+        } else {
+          status = 'Paused';
+        }
       }
     }
 
-      // Format end_Date for the form (DD/MM/YY)
+      // Format dates for the form (DD/MM/YY)
+      let startDateString = '';
       let endDateString = '';
+      if (student.subscription?.start_Date) {
+        const startDate = new Date(student.subscription.start_Date);
+        const sd = String(startDate.getDate()).padStart(2, '0');
+        const sm = String(startDate.getMonth() + 1).padStart(2, '0');
+        const sy = String(startDate.getFullYear()).slice(-2);
+        startDateString = `${sd}/${sm}/${sy}`;
+      }
       if (student.subscription?.end_Date) {
         const endDate = new Date(student.subscription.end_Date);
         const ed = String(endDate.getDate()).padStart(2, '0');
@@ -145,9 +158,10 @@ export class SubscriberService {
       mealPlan: mealPlanStr || 'None',
       status: status,
       joinedDate: dateString,
-      startDate: dateString, // For form, start date is same as joinedDate
+      startDate: startDateString,
       endDate: endDateString,
-      pauseEndDate: pauseEndDateString
+      pauseEndDate: pauseEndDateString,
+      mealNames: mealsArray
     };
   }
 

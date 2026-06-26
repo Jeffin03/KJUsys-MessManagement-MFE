@@ -9,7 +9,7 @@
 
     <!-- Tab Bar -->
     <div class="mb-5 w-full">
-      <app-dashboard-tabs></app-dashboard-tabs>
+      <lib-tabs [tabs]="tabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-tabs>
     </div>
 
     <!-- Stats Cards -->

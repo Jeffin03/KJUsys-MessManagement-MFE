@@ -1,27 +1,28 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
 
 import { SubscriberStatsComponent } from './components/subscriber-stats/subscriber-stats.component';
 import { SubscriberTableComponent } from './components/subscriber-table/subscriber-table.component';
-import { DashboardTabsComponent } from '../dashboard/components/dashboard-tabs/dashboard-tabs.component';
 import { AddSubscriberModalComponent } from './components/add-subscriber-modal/add-subscriber-modal.component';
 import { EditSubscriberModalComponent } from './components/edit-subscriber-modal/edit-subscriber-modal.component';
 
-import { Subscriber } from './models/subscriber.model';
+import { Subscriber } from '../../shared/models/subscriber';
 import { SubscriberService } from './services/subscriber.service';
 import { NetworkService } from '../../shared/services/network.service';
 import { ConnectionMonitorService } from '../../shared/services/connection-monitor.service';
 import { SharedToastService } from '@libs/shared-toast';
 import { BreadcrumbsTitleComponent, ButtonComponent } from '@libs/shared-ui';
+import { TabItem, TabsModule } from '@libs/tabs';
 
 @Component({
   selector: 'app-subscriber-management',
   standalone: true,
   imports: [
     CommonModule,
+    TabsModule,
     SubscriberStatsComponent,
     SubscriberTableComponent,
-    DashboardTabsComponent,
     AddSubscriberModalComponent,
     EditSubscriberModalComponent,
     BreadcrumbsTitleComponent,
@@ -31,6 +32,24 @@ import { BreadcrumbsTitleComponent, ButtonComponent } from '@libs/shared-ui';
   styleUrls: ['./subscriber-management.component.css']
 })
 export class SubscriberManagementComponent implements OnInit {
+
+  tabs: TabItem[] = [
+    { id: 'dashboard', label: 'Dashboard', subtitle: 'Overview' },
+    { id: 'subscriber', label: 'Subscriber Management', subtitle: 'Manage Subscribers' },
+    { id: 'reports', label: 'Reports', subtitle: 'View Reports' }
+  ];
+  activeTab = 'subscriber';
+
+  onTabChange(tabId: string) {
+    this.activeTab = tabId;
+    if (tabId === 'dashboard') {
+      this.router.navigate(['../dashboard'], { relativeTo: this.route });
+    } else if (tabId === 'subscriber') {
+      this.router.navigate(['../subscriber-management'], { relativeTo: this.route });
+    } else if (tabId === 'reports') {
+      // this.router.navigate(['../reports'], { relativeTo: this.route });
+    }
+  }
 
   breadcrumbs = [
     { label: 'Hostel' },
@@ -71,7 +90,9 @@ export class SubscriberManagementComponent implements OnInit {
     private networkService: NetworkService,
     private connectionMonitor: ConnectionMonitorService,
     private cdr: ChangeDetectorRef,
-    private toastService: SharedToastService
+    private toastService: SharedToastService,
+    private router: Router,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
