@@ -39,9 +39,9 @@ export class HardwareManagementService {
   constructor(private http: HttpClient) {}
 
   getDevices(): Observable<HardwareDevice[]> {
-    return this.http.get<ApiResponse<{ devices: HardwareDevice[] }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE}`)
+    return this.http.get<ApiResponse<{ hardware: HardwareDevice[] }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE}`)
       .pipe(
-        map(res => res.responseData?.data?.devices || [])
+        map(res => res.responseData?.data?.hardware || [])
       );
   }
 
