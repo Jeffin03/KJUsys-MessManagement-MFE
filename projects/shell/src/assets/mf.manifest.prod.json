@@ -4,18 +4,25 @@
     "displayName": "MessManagement",
     "routePath": "mess-management",
     "subModule": [
-  {
+      {
         "exposedModule": "./Dashboard",
         "displayName": "Dashboard",
         "subPath": "mess-management/dashboard",
         "componentName": "DashboardComponent",
         "pinned": false
       },
-     {
+      {
         "exposedModule": "./SubscriberManagement",
         "displayName": "Subscriber Management",
         "subPath": "mess-management/subscriber-management",
         "componentName": "SubscriberManagementComponent",
+        "pinned": false
+      },
+      {
+        "exposedModule": "./ReportsModule",
+        "displayName": "Reports",
+        "subPath": "mess-management/reports",
+        "ngModuleName": "ReportsModule",
         "pinned": false
       }
     ]

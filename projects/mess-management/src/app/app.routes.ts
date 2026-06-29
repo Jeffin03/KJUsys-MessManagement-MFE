@@ -30,7 +30,18 @@ export const APP_ROUTES: Routes = [
         loadChildren: () =>
           import('./modules/subscriber-management/subscriber-management.module')
             .then((m) => m.SubscriberManagementModule),
-      }
+      },
+      {
+        path: 'reports',
+        loadChildren: () =>
+          import('./modules/reports/reports.module')
+            .then((m) => m.ReportsModule)
+            .catch((error) => {
+               console.error('Error loading ReportsModule', error);
+               throw error;
+            }),
+      },
+
     ],
   },
 ];

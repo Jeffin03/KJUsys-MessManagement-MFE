@@ -11,11 +11,18 @@
         "componentName": "DashboardComponent",
         "pinned": false
       },
-     {
+      {
         "exposedModule": "./SubscriberManagement",
         "displayName": "Subscriber Management",
         "subPath": "mess-management/subscriber-management",
         "componentName": "SubscriberManagementComponent",
+        "pinned": false
+      },
+      {
+        "exposedModule": "./ReportsModule",
+        "displayName": "Reports",
+        "subPath": "mess-management/reports",
+        "ngModuleName": "ReportsModule",
         "pinned": false
       }
     ]

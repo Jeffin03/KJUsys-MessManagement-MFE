@@ -67,7 +67,9 @@
       <!-- Bottom Row: Table + Hardware -->
       <div class="flex gap-4">
         <app-entries-table class="flex-1 min-w-0" [entries]="recentEntries"></app-entries-table>
-        <app-hardware-status [hardware]="hardware" [uptimeSeconds]="uptimeSeconds" [isRefreshing]="isHardwareRefreshing" (refreshRequested)="onHardwareRefreshRequested()"></app-hardware-status>
+        <app-hardware-status [hardware]="hardware" [uptimeSeconds]="uptimeSeconds" [responseTimeMs]="responseTimeMs" [isRefreshing]="isHardwareRefreshing" (refreshRequested)="onHardwareRefreshRequested()" (settingsRequested)="onHardwareSettingsRequested()"></app-hardware-status>
       </div>
     </div>
   </div>
+  <app-hardware-settings-modal [isOpen]="hardwareSettingsOpen" (close)="hardwareSettingsOpen = false"></app-hardware-settings-modal>
+
