@@ -109,12 +109,13 @@ export class DashboardService {
       );
   }
 
-  getHardwareStatus(bypassCache: boolean = false): Observable<{ hardware: HardwareDevice[], serverUptimeSeconds: number }> {
-    const request = this.http.get<ApiResponse<{ hardware: HardwareDevice[], serverUptimeSeconds: number }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_STATUS}`)
+  getHardwareStatus(bypassCache: boolean = false): Observable<{ hardware: HardwareDevice[], serverUptimeSeconds: number, responseTimeMs: number }> {
+    const request = this.http.get<ApiResponse<{ hardware: HardwareDevice[], serverUptimeSeconds: number, responseTimeMs: number }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_STATUS}`)
       .pipe(
         map(res => {
           const hardware = res.responseData?.data?.hardware || [];
           const serverUptimeSeconds = res.responseData?.data?.serverUptimeSeconds || 0;
+          const responseTimeMs = res.responseData?.data?.responseTimeMs || 0;
           return {
             hardware: hardware.map(h => ({
               deviceId: h.deviceId,
@@ -123,7 +124,8 @@ export class DashboardService {
               status: h.status as HardwareDevice['status'],
               lastSeenMs: h.lastSeenMs
             })),
-            serverUptimeSeconds
+            serverUptimeSeconds,
+            responseTimeMs
           };
         })
       );

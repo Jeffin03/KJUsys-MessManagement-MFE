@@ -49,7 +49,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     } else if (tabId === 'subscriber') {
       this.router.navigate(['../subscriber-management'], { relativeTo: this.route });
     } else if (tabId === 'reports') {
-      // this.router.navigate(['../reports'], { relativeTo: this.route });
+      this.router.navigate(['../reports'], { relativeTo: this.route });
     }
   }
 
@@ -229,14 +229,14 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   }
 
   onPageChange(page: number): void {
-    if (this.clientPaginationMode) return;
     this.currentPage = page;
+    if (this.clientPaginationMode) return;
     this.fetchSubscribers();
   }
 
   onSizeChange(size: number): void {
-    if (this.clientPaginationMode) return;
     this.pageSize = size;
+    if (this.clientPaginationMode) return;
     this.currentPage = 1;
     this.fetchSubscribers();
   }

@@ -6,6 +6,7 @@ import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
 import { SharedToastService } from '@libs/shared-toast';
 import { ButtonComponent } from '@libs/shared-ui';
 import { MealSlotService } from '../../../../shared/services/meal-slot.service';
+import { HardwareManagementService, HardwareDevice } from '../../../../shared/services/hardware-management.service';
 
 interface SuggestionItem {
   label: string;
@@ -66,6 +67,10 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   onTabChange(tabId: string) {
     this.activeTab = tabId as 'mealSlots' | 'displayPanel' | 'tokenCustomization';
+    const scrollContainer = this.elementRef.nativeElement.querySelector('.overflow-y-auto');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'instant' });
+    }
   }
 
   displayConfig = {
@@ -89,6 +94,13 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     section2: '',
     section3: ''
   };
+
+  hardwareDevices: HardwareDevice[] = [];
+  printerDevices: HardwareDevice[] = [];
+  selectedDeviceId = '';
+  selectedPrinterId = '';
+  testOnHardwareLoading = false;
+  testPrinterLoading = false;
 
   // ── Autocomplete ──────────────────────────────────────────────────────────
   suggestionState: {
@@ -281,6 +293,68 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     this.suggestionState = { show: false, field: null, items: [], selectedIndex: -1 };
   }
 
+  loadHardwareDevices() {
+    this.hardwareService.getDevices().subscribe({
+      next: (devices) => {
+        this.hardwareDevices = devices.filter(d => d.state === 'active' && d.peripherals?.some(p => p.type === 'lcd'));
+        this.printerDevices = devices.filter(d => d.state === 'active' && d.peripherals?.some(p => p.type === 'printer'));
+        if (this.hardwareDevices.length > 0) {
+          this.selectedDeviceId = this.hardwareDevices[0]._id;
+        }
+        if (this.printerDevices.length > 0) {
+          this.selectedPrinterId = this.printerDevices[0]._id;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.hardwareDevices = [];
+        this.printerDevices = [];
+      }
+    });
+  }
+
+  testLcdOnHardware() {
+    if (!this.selectedDeviceId) {
+      this.toastService.error('No hardware device selected');
+      return;
+    }
+    this.testOnHardwareLoading = true;
+    const line1 = this.getPreviewLine1().trim();
+    const line2 = this.getPreviewLine2().trim();
+    this.hardwareService.sendTestDisplay(this.selectedDeviceId, line1, line2).subscribe({
+      next: () => {
+        this.toastService.success('LCD test sent to device');
+        this.testOnHardwareLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.toastService.error('Failed to send LCD test');
+        this.testOnHardwareLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  testPrinterOnHardware() {
+    if (!this.selectedPrinterId) {
+      this.toastService.error('No printer device selected');
+      return;
+    }
+    this.testPrinterLoading = true;
+    this.hardwareService.sendTestCommand(this.selectedPrinterId, 'printer').subscribe({
+      next: () => {
+        this.toastService.success('Print test sent to device');
+        this.testPrinterLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.toastService.error('Failed to send print test');
+        this.testPrinterLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   getDisplayConfigValue(fieldKey: string): string {
     const [state, line] = fieldKey.split('.');
     if (state === 'tokenConfig') {
@@ -321,7 +395,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     private dashboardService: DashboardService,
     private mealSlotService: MealSlotService,
     private cdr: ChangeDetectorRef,
-    private toastService: SharedToastService
+    private toastService: SharedToastService,
+    private hardwareService: HardwareManagementService
   ) { }
 
   private loadDisplayConfigs(): void {
@@ -861,6 +936,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           }
           // Load display configs after slots are loaded
           this.loadDisplayConfigs();
+          this.loadHardwareDevices();
           this.cdr.detectChanges();
         }
       });

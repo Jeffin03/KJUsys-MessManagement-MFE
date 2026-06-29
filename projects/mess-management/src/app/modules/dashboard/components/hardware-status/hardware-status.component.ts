@@ -1,19 +1,22 @@
 import { Component, Input, OnChanges, Output, EventEmitter } from '@angular/core';
 import { DashboardService } from '../../services/dashboard.service';
 import { CommonModule } from '@angular/common';
+import { ButtonComponent } from '@libs/shared-ui';
 import { HardwareDevice } from '../../../../shared/models/dashboard.models';
 
 @Component({
   selector: 'app-hardware-status',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ButtonComponent],
   templateUrl: './hardware-status.component.html',
 })
 export class HardwareStatusComponent implements OnChanges {
   @Input() hardware: HardwareDevice[] = [];
   @Input() uptimeSeconds = 0;
+  @Input() responseTimeMs = 0;
   @Input() isRefreshing = false;
   @Output() refreshRequested = new EventEmitter<void>();
+  @Output() settingsRequested = new EventEmitter<void>();
 
   lastStatusUpdate: Date | null = null;
 

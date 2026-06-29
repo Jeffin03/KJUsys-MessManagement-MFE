@@ -107,6 +107,11 @@
 </div>
 
         </div>
+
+      <!-- Hardware Settings Button -->
+      <div class="px-5 pt-2 pb-4 bg-white">
+        <lib-button label="Hardware Settings" type="secondary" [customClass]="'w-full'" (onClick)="settingsRequested.emit()"></lib-button>
+      </div>
     </div>
 
     <!-- System Uptime -->
@@ -117,7 +122,7 @@
 
         <div class="mb-3">
             <div class="flex justify-between mb-1.5">
-                <span class="text-[#4A5565] text-xs">Today's Runtime</span>
+                <span class="text-[#4A5565] text-xs">System Runtime</span>
                 <span class="text-[#1D9F00] text-xs font-bold">{{ formattedUptime }}</span>
             </div>
             <div class="h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
@@ -129,7 +134,7 @@
 
         <div class="flex justify-between py-2.5 border-t border-[#E5E7EB]">
             <span class="text-[#4A5565] text-xs">API Response</span>
-            <span class="text-[#155DFC] text-xs font-semibold">48 ms avg</span>
+            <span class="text-[#155DFC] text-xs font-semibold">{{ responseTimeMs > 0 ? responseTimeMs + ' ms' : '—' }}</span>
         </div>
 
         <div class="flex justify-between items-center py-2.5 border-t border-[#E5E7EB]">

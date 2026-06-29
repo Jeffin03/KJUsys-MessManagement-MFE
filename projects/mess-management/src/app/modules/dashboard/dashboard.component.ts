@@ -5,6 +5,7 @@ import { Subscription, firstValueFrom, Observable, of, BehaviorSubject, filter, 
 import { MealSlotsComponent } from './components/meal-slots/meal-slots.component';
 import { EntriesTableComponent } from './components/entries-table/entries-table.component';
 import { HardwareStatusComponent } from './components/hardware-status/hardware-status.component';
+import { HardwareSettingsModalComponent } from './components/hardware-settings-modal/hardware-settings-modal.component';
 import { DashboardStat, MealSlot, MealEntry, HardwareDevice } from '../../shared/models/dashboard.models';
 import { DashboardService } from './services/dashboard.service';
 import { SubscriberService } from '../subscriber-management/services/subscriber.service';
@@ -24,6 +25,7 @@ import { TabItem, TabsModule } from '@libs/tabs';
     MealSlotsComponent,
     EntriesTableComponent,
     HardwareStatusComponent,
+    HardwareSettingsModalComponent,
     BreadcrumbsTitleComponent
   ],
   templateUrl: './dashboard.component.html',
@@ -54,7 +56,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     } else if (tabId === 'subscriber') {
       this.router.navigate(['../subscriber-management'], { relativeTo: this.route });
     } else if (tabId === 'reports') {
-      // this.router.navigate(['../reports'], { relativeTo: this.route });
+      this.router.navigate(['../reports'], { relativeTo: this.route });
     }
   }
 
@@ -71,26 +73,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   recentEntries: MealEntry[] = [];
 
-  hardware: HardwareDevice[] = [
-    {
-      name: 'ESP32 Unit 1', icon: 'chip', status: 'Offline',
-      deviceId: ''
-    },
-    {
-      name: 'ESP32 Unit 2', icon: 'chip', status: 'Offline',
-      deviceId: ''
-    },
-    {
-      name: 'WiFi Router', icon: 'wifi', status: 'Offline',
-      deviceId: ''
-    },
-    {
-      name: 'POS Printer', icon: 'printer', status: 'Offline',
-      deviceId: ''
-    },
-  ];
+  hardware: HardwareDevice[] = [];
 
   uptimeSeconds = 0;
+  responseTimeMs = 0;
+  hardwareSettingsOpen = false;
   isLoading = true;
   isHardwareRefreshing = false;
   errorMessage = '';
@@ -138,29 +125,50 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private async loadDataProgressively() {
     this.isLoading = true;
     try {
-      // Initiate all network requests concurrently
+      // 1. Initiate all network requests concurrently
       const subscribersPromise = firstValueFrom(this.subscriberService.getSubscribers());
       const schedulesPromise = firstValueFrom(this.dashboardService.getSchedules());
       const tapsPromise = firstValueFrom(this.dashboardService.getTaps());
       const hardwarePromise = firstValueFrom(this.dashboardService.getHardwareStatus());
 
-      // 1. Wait for subscribers and process it first (required for other processing)
-      const { subscribers } = await subscribersPromise;
-      this.processSubscribers(subscribers);
+      // 2. Wait for subscribers first (required for other processing)
+      try {
+        const { subscribers } = await subscribersPromise;
+        this.processSubscribers(subscribers);
+      } catch (err) {
+        console.error('Failed to load subscribers:', err);
+      }
 
-      // 2. Wait for schedules, taps, and hardware concurrently, then process them in parallel
-      const [schedules, taps, hardwareResponse] = await Promise.all([
+      // 3. Process remaining data independently — one failure doesn't block others
+      const [schedules, taps, hardwareResponse] = await Promise.allSettled([
         schedulesPromise,
         tapsPromise,
         hardwarePromise
       ]);
 
-      // Process schedules and taps concurrently (they don't depend on each other)
-      this.processSchedules(schedules);
-      this.processTaps(taps);
-      // Process hardware
-      this.hardware = hardwareResponse.hardware;
-      this.uptimeSeconds = hardwareResponse.serverUptimeSeconds;
+      if (schedules.status === 'fulfilled') {
+        this.processSchedules(schedules.value);
+      } else {
+        console.error('Failed to load schedules:', schedules.reason);
+      }
+
+      if (taps.status === 'fulfilled') {
+        this.processTaps(taps.value);
+      } else {
+        console.error('Failed to load taps:', taps.reason);
+      }
+
+      if (hardwareResponse.status === 'fulfilled') {
+        const backendDevices = hardwareResponse.value.hardware || [];
+        this.hardware = [
+          ...backendDevices,
+          { name: 'WiFi Router', icon: 'wifi', status: 'Offline', deviceId: '' },
+        ];
+        this.uptimeSeconds = hardwareResponse.value.serverUptimeSeconds;
+        this.responseTimeMs = hardwareResponse.value.responseTimeMs;
+      } else {
+        console.error('Failed to load hardware status:', hardwareResponse.reason);
+      }
 
       // Update Wi-Fi router status based on browser online status
       this.updateWifiStatus();
@@ -174,8 +182,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.hardwarePollingInterval = setInterval(() => {
         this.dashboardService.getHardwareStatus(true).subscribe({
           next: (res) => {
-            this.hardware = res.hardware;
+            const backendDevices = res.hardware || [];
+            this.hardware = [
+              ...backendDevices,
+              { name: 'WiFi Router', icon: 'wifi', status: 'Offline', deviceId: '' },
+            ];
+            this.updateWifiStatus();
             this.uptimeSeconds = res.serverUptimeSeconds;
+            this.responseTimeMs = res.responseTimeMs;
             this.cdr.detectChanges();
           },
           error: () => { /* silent fail - WebSocket will handle */ }
@@ -188,13 +202,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       console.error('Failed to load dashboard data:', err);
       this.errorMessage = 'Failed to load dashboard data. Please try again later.';
       this.isLoading = false;
-      if (this.hardware) {
-        this.hardware.forEach(device => {
-          if (device.icon !== 'wifi') {
-            device.status = 'Offline';
-          }
-        });
-      }
       this.updateWifiStatus();
       this.connectionMonitor.setServerDown(true);
       // Initialize WebSocket anyway to receive live tap events
@@ -265,10 +272,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.stats[2].value = mealsServed;
     this.stats[3].value = Math.max(0, active - mealsServed);
 
-    // Enrich taps with roll number and set recent entries
+    // Enrich taps with roll number and set recent entries (service already returns newest first)
     if (taps.length > 0) {
-      // Reverse to ensure the initial load shows newest taps at the top (reverse-chronological)
-      this.recentEntries = this.enrichTapsWithRollNumber(taps).reverse();
+      this.recentEntries = this.enrichTapsWithRollNumber(taps);
     }
 
     // Process meal slots with taps data
@@ -409,14 +415,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private updateHardwareStatus(hardwareData: any): void {
-    this.hardware = hardwareData.hardware.map((device: any) => ({
+    const backendDevices = (hardwareData.hardware || []).map((device: any) => ({
       deviceId: device.deviceId,
       name: device.name,
       icon: device.icon,
       status: device.status as HardwareDevice['status'],
       lastSeenMs: device.lastSeenMs
     }));
+    this.hardware = [
+      ...backendDevices,
+      { name: 'WiFi Router', icon: 'wifi', status: 'Offline', deviceId: '' },
+    ];
     this.uptimeSeconds = hardwareData.serverUptimeSeconds;
+    this.responseTimeMs = hardwareData.responseTimeMs || this.responseTimeMs;
+    this.updateWifiStatus();
     this.cdr.detectChanges();
   }
 
@@ -427,12 +439,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.websocketService.disconnect();
   }
 
+  onHardwareSettingsRequested(): void {
+    this.hardwareSettingsOpen = true;
+  }
+
   onHardwareRefreshRequested(): void {
     this.isHardwareRefreshing = true;
     this.dashboardService.getHardwareStatus(true).subscribe({
       next: (response) => {
         this.hardware = response.hardware;
         this.uptimeSeconds = response.serverUptimeSeconds;
+        this.responseTimeMs = response.responseTimeMs;
         this.isHardwareRefreshing = false;
         this.cdr.detectChanges();
       },
