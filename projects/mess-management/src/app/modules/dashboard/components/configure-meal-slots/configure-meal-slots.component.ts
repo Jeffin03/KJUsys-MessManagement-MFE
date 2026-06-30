@@ -19,6 +19,7 @@ interface SuggestionItem {
 interface MealSlotConfig {
   id?: string;
   name: string;
+  code: string;
   icon: string;
   timeRange: string;
   status: 'Closed' | 'Live' | 'Upcoming';
@@ -45,6 +46,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   showDeleteConfirmPopup = false;
   pendingDeleteIndex: number | null = null;
+  pendingDeleteSlotName = '';
 
   // Form validation flags
   nameInvalid = false;
@@ -480,6 +482,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   newSlot = {
     name: '',
+    code: '',
     icon: '',
     status: '',
     startHour: null as any,
@@ -734,6 +737,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   requestDeleteSlot(index: number) {
     this.pendingDeleteIndex = index;
+    this.pendingDeleteSlotName = this.slots[index]?.name || 'this Meal Slot';
     this.showDeleteConfirmPopup = true;
   }
 
@@ -743,6 +747,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     const slot = this.slots[index];
     this.showDeleteConfirmPopup = false;
     this.pendingDeleteIndex = null;
+    this.pendingDeleteSlotName = '';
     if (slot.id) {
       this.dashboardService.deleteSchedule(slot.id).subscribe(() => {
         this.slots = this.slots.filter((s: MealSlotConfig) => s.id !== slot.id);
@@ -759,6 +764,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   cancelDeleteSlot() {
     this.showDeleteConfirmPopup = false;
     this.pendingDeleteIndex = null;
+    this.pendingDeleteSlotName = '';
   }
 
   // Add or Update slot
@@ -787,8 +793,11 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       return;
     }
 
+    const code = this.newSlot.code.trim().toUpperCase();
     const payload = {
       meal: this.newSlot.name.toUpperCase(),
+      code,
+      icon: this.newSlot.icon,
       active: true,
       schedule: {
         weekday: { start: s24, end: e24 },
@@ -807,6 +816,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           this.slots[currentIndex] = {
             id: slotId,
             name: this.newSlot.name,
+            code,
             icon: this.newSlot.icon,
             timeRange: `${this.formatTime(this.newSlot.startHour, this.newSlot.startMin)} - ${this.formatTime(this.newSlot.endHour, this.newSlot.endMin)}`,
             status,
@@ -835,6 +845,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
           this.slots.push({
             id: (res.responseData?.data?.schedule as any)?._id?.$oid || (res.responseData?.data as any)?._id?.$oid || undefined,
             name: this.newSlot.name,
+            code,
             icon: this.newSlot.icon,
             timeRange: `${this.formatTime(this.newSlot.startHour, this.newSlot.startMin)} - ${this.formatTime(this.newSlot.endHour, this.newSlot.endMin)}`,
             status,
@@ -862,6 +873,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   private resetForm() {
     this.newSlot = {
       name: '',
+      code: '',
       icon: '',
       status: '',
       startHour: null as any,
@@ -883,6 +895,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     this.editIndex = index;
     const slot = this.slots[index];
     this.newSlot.name = slot.name;
+    this.newSlot.code = slot.code;
     this.newSlot.icon = slot.icon;
     this.newSlot.status = slot.status;
     // Parse timeRange back to hour/min
@@ -923,7 +936,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
             return {
               id: s._id.$oid,
               name: s.meal.charAt(0).toUpperCase() + s.meal.slice(1).toLowerCase(),
-              icon: s.meal.toLowerCase(),
+              code: s.code || '',
+              icon: s.icon || s.meal.toLowerCase(),
               timeRange: `${start24} - ${end24}`,
               status: this.computeStatus(start24, end24),
               start24,

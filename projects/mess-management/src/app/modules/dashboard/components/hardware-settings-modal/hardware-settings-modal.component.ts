@@ -53,6 +53,11 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
 
   rotatingDeviceId = '';
   confirmingDeviceId = '';
+  editingDeviceId: string | null = null;
+  editNameValue = '';
+
+  showDeleteConfirmPopup = false;
+  pendingDeleteDevice: HardwareDevice | null = null;
 
   readonly deviceTypes = [
     { id: 'esp32', title: 'ESP32 (LCD + Printer + Buzzer)' },
@@ -117,21 +122,25 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
     });
   }
 
+  isDeviceOnline(device: HardwareDevice): boolean {
+    return device.state === 'active' && (Date.now() - device.lastSeenMs! < 60000);
+  }
+
   getStatusLabel(device: HardwareDevice): string {
-    const now = Date.now();
     switch (device.state) {
       case 'pending': return 'Pending';
-      case 'active': return now - device.lastSeen < 60000 ? 'Online' : 'Offline';
+      case 'active':
+      case 'disconnected': return this.isDeviceOnline(device) ? 'Online' : 'Offline';
       case 'revoked': return 'Revoked';
-      default: return 'Unknown';
+      default: return 'Offline';
     }
   }
 
   getStatusColor(device: HardwareDevice): string {
-    const now = Date.now();
     switch (device.state) {
       case 'pending': return '#FE9A00';
-      case 'active': return now - device.lastSeen < 60000 ? '#1D9F00' : '#D92C2B';
+      case 'active':
+      case 'disconnected': return this.isDeviceOnline(device) ? '#1D9F00' : '#D92C2B';
       case 'revoked': return '#86868B';
       default: return '#86868B';
     }
@@ -145,8 +154,21 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
     }
   }
 
-  deleteDevice(deviceId: string): void {
-    if (!confirm('Remove this device?')) return;
+  requestDeleteDevice(device: HardwareDevice): void {
+    this.pendingDeleteDevice = device;
+    this.showDeleteConfirmPopup = true;
+  }
+
+  cancelDeleteDevice(): void {
+    this.showDeleteConfirmPopup = false;
+    this.pendingDeleteDevice = null;
+  }
+
+  confirmDeleteDevice(): void {
+    if (!this.pendingDeleteDevice) return;
+    const deviceId = this.pendingDeleteDevice._id;
+    this.showDeleteConfirmPopup = false;
+    this.pendingDeleteDevice = null;
     this.hwMgmt.deleteDevice(deviceId).subscribe({
       next: () => {
         this.toast.success('Device removed');
@@ -156,9 +178,48 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
     });
   }
 
+  startEdit(device: HardwareDevice): void {
+    this.editingDeviceId = device._id;
+    this.editNameValue = device.name;
+    setTimeout(() => {
+      const input = document.querySelector<HTMLInputElement>('input[name="device-name"]');
+      input?.focus();
+      input?.select();
+    });
+  }
+
+  saveEdit(deviceId: string): void {
+    if (!this.editingDeviceId) return;
+    const name = this.editNameValue.trim();
+    if (!name) {
+      this.cancelEdit();
+      return;
+    }
+    this.hwMgmt.updateDevice(deviceId, { name }).subscribe({
+      next: () => {
+        this.editingDeviceId = null;
+        this.loadDevices();
+      },
+      error: () => {
+        this.toast.error('Failed to rename device');
+        this.editingDeviceId = null;
+      }
+    });
+  }
+
+  cancelEdit(): void {
+    this.editingDeviceId = null;
+    this.editNameValue = '';
+  }
+
+  getEffectivePeripheralStatus(device: HardwareDevice, peripheral: HardwarePeripheral): string {
+    if (!this.isDeviceOnline(device)) return 'offline';
+    return peripheral.status;
+  }
+
   getOnlinePeripheralCount(device: HardwareDevice): number {
     if (!device.peripherals) return 0;
-    return device.peripherals.filter(p => p.status === 'online').length;
+    return device.peripherals.filter(p => this.getEffectivePeripheralStatus(device, p) === 'online').length;
   }
 
   getTotalPeripheralCount(device: HardwareDevice): number {

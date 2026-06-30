@@ -8,6 +8,7 @@ export interface MealEntry {
 
 export interface MealSlot {
   name: string;
+  code: string;
   icon: string;
   status: 'Closed' | 'Live' | 'Upcoming';
   timeRange: string;

@@ -35,8 +35,20 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <span class="w-2 h-2 rounded-full flex-shrink-0" [style.background]="getStatusColor(device)"></span>
-              <div>
-                <div class="text-sm font-medium" style="color:#1D1D1F;">{{ device.name }}</div>
+                <div>
+                  <ng-container *ngIf="editingDeviceId !== device._id; else editNameInput">
+                    <span class="text-sm font-medium" style="color:#1D1D1F;">{{ device.name }}</span>
+                  </ng-container>
+                  <ng-template #editNameInput>
+                    <input #nameInput name="device-name" type="text" [value]="editNameValue"
+                      class="text-sm font-medium border rounded px-1.5 py-0.5 w-44"
+                      style="color:#1D1D1F;border-color:#155DFC;outline:none;"
+                      (input)="editNameValue = nameInput.value"
+                      (keyup.enter)="saveEdit(device._id)"
+                      (keyup.escape)="cancelEdit()"
+                      (blur)="saveEdit(device._id)">
+                    <lib-button type="secondary" label="Confirm Edit" (onClick)="saveEdit(device._id)"></lib-button>
+                  </ng-template>
                 <div class="text-xs mt-0.5" style="color:#86868B;">
                   {{ device.type === 'esp32' ? 'ESP32 + ' + getOnlinePeripheralCount(device) + '/' + getTotalPeripheralCount(device) + ' peripherals' : getTypeIcon(device.type) + ' ' + device.type }} &middot; {{ getStatusLabel(device) }}
                 </div>
@@ -56,15 +68,21 @@
                 [loading]="rotatingDeviceId === device._id"
                 (onClick)="rotateSecret(device._id)">
               </lib-button>
-              <button class="text-xs bg-transparent border border-gray-200 rounded-md px-3 py-1.5 cursor-pointer hover:bg-gray-50"
-                style="color:#D92C2B;" (click)="deleteDevice(device._id)">Remove</button>
+              <button (click)="startEdit(device)" title="Edit"
+                class="flex items-center justify-center w-8 h-8 rounded-lg border border-[#E5E7EB] hover:bg-gray-50">
+                <img src="assets/edit_button.svg" alt="Edit" class="w-4 h-4" />
+              </button>
+              <button (click)="requestDeleteDevice(device)" title="Delete"
+                class="flex items-center justify-center w-8 h-8 rounded-lg border border-[#E5E7EB] hover:bg-gray-50">
+                <img src="assets/trash-2.png" alt="Delete" class="w-4 h-4" />
+              </button>
             </div>
           </div>
           <div *ngIf="device.peripherals && device.peripherals.length > 0" class="ml-6 mt-2 pl-3 border-l-2 border-gray-100 space-y-1">
             <div *ngFor="let p of device.peripherals" class="flex items-center gap-2 py-1">
-              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" [style.background]="getPeripheralColor(p.status)"></span>
+              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" [style.background]="getPeripheralColor(getEffectivePeripheralStatus(device, p))"></span>
               <span class="text-xs" style="color:#4A5565;">{{ getPeripheralLabel(p.type) }}</span>
-              <span class="text-xs" style="color:#86868B;">{{ p.status }}</span>
+              <span class="text-xs" style="color:#86868B;">{{ getEffectivePeripheralStatus(device, p) }}</span>
               <button *ngIf="p.type === 'lcd'"
                 class="ml-auto text-xs bg-transparent border border-gray-200 rounded px-2 py-0.5 cursor-pointer hover:bg-gray-50 disabled:opacity-40"
                 style="color:#155DFC;"
@@ -157,6 +175,23 @@
         </details>
       </div>
 
+    </div>
+
+    <!-- Delete Confirmation Popup -->
+    <div *ngIf="showDeleteConfirmPopup" class="absolute z-[100] flex items-center justify-center inset-0"
+        style="background:rgba(0,0,0,.15);">
+      <div class="relative bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] w-full max-w-xs mx-4 px-8 py-8 flex flex-col items-center gap-5">
+        <button (click)="cancelDeleteDevice()"
+          class="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#374151] transition-colors text-lg leading-none p-1">✕</button>
+        <img src="assets/exclamation-circle.svg" class="w-16 h-16" />
+        <p class="text-[15px] font-semibold text-[#111827] text-center leading-6">
+          Are you sure you want to delete {{ pendingDeleteDevice?.name }}?
+        </p>
+        <div class="flex gap-3 w-full *:flex-1 *:w-full">
+          <lib-button type="secondary" label="No, cancel" (onClick)="cancelDeleteDevice()"></lib-button>
+          <lib-button type="primary" label="Confirm" (onClick)="confirmDeleteDevice()"></lib-button>
+        </div>
+      </div>
     </div>
 
     <!-- Fixed Footer -->

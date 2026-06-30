@@ -250,8 +250,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private processSchedules(schedules: MealSlot[]): void {
     if (schedules && schedules.length > 0) {
       this.mealSlots = schedules.map((slot: MealSlot) => {
-        const mealChar = slot.name.charAt(0).toUpperCase();
-        const eligibleSubs = this.activeByMealPlan?.[mealChar] || 0;
+        const eligibleSubs = this.activeByMealPlan?.[slot.code] || 0;
 
         return {
           ...slot,
@@ -370,28 +369,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private updateMealSlotStats(tapData: any): void {
     const tapMeal = (tapData.meal || '').toLowerCase();
-    console.log('[DEBUG] updateMealSlotStats called with:', { tapMeal, mealSlots: this.mealSlots.map(s => ({ name: s.name, hadMeal: s.hadMeal, total: s.total })) });
+    console.log('[DEBUG] updateMealSlotStats called with:', { tapMeal, mealSlots: this.mealSlots.map(s => ({ name: s.name, code: s.code, hadMeal: s.hadMeal, total: s.total })) });
+
+    // Build a lookup: meal name (lowercase) → code
+    const mealNameToCode: Record<string, string> = {};
+    for (const slot of this.mealSlots) {
+      mealNameToCode[slot.name.toLowerCase()] = slot.code;
+    }
+    const tapCode = mealNameToCode[tapMeal];
 
     this.mealSlots = this.mealSlots.map(slot => {
-      const slotMeal = (slot.name || '').toLowerCase();
+      const isMatch = slot.code === tapCode || slot.name.toLowerCase() === tapMeal;
 
-      // Match by exact name, first letter, or dynamic first-letter codes (B, BR, L, S, D, LN, MS, etc.)
-      // Also handle UPPERCASE from backend (BREAKFAST, LUNCH, etc.) vs capitalized slot names
-      const slotCode = this.getMealCode(slotMeal);
-      const tapCode = this.getMealCode(tapMeal);
-
-      const isMatch =
-        slotMeal === tapMeal ||
-        slotCode === tapCode ||
-        slotMeal.startsWith(tapMeal[0]) ||
-        tapMeal.startsWith(slotMeal[0]) ||
-        (slotMeal === 'brunch' && tapMeal === 'breakfast') ||
-        (slotMeal === 'breakfast' && tapMeal === 'brunch');
-
-      console.log('[DEBUG] Matching:', { slotMeal, tapMeal, slotCode, tapCode, isMatch });
+      console.log('[DEBUG] Matching:', { slotName: slot.name, slotCode: slot.code, tapMeal, tapCode, isMatch });
 
       if (isMatch) {
-        // WebSocket tap.new is only broadcast on SUCCESS, so always increment
         console.log('[DEBUG] Incrementing hadMeal for:', slot.name);
         return {
           ...slot,
@@ -402,16 +394,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
       return slot;
     });
-  }
-
-  private getMealCode(meal: string): string {
-    const words = meal.trim().split(/\s+/).filter(w => w.length > 0);
-    if (words.length === 0) return meal;
-    let code = '';
-    for (const word of words) {
-      code += word.charAt(0).toUpperCase();
-    }
-    return code;
   }
 
   private updateHardwareStatus(hardwareData: any): void {

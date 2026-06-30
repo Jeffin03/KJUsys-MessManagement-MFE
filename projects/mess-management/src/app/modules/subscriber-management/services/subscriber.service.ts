@@ -5,6 +5,7 @@ import { map, shareReplay, tap, switchMap } from 'rxjs/operators';
 import { Subscriber } from '../../../shared/models/subscriber';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
 import { environment } from '../../../../environments/environment';
+import { MealSlotService } from '../../../shared/services/meal-slot.service';
 
 export interface BackendStudent {
   _id: { $oid: string };
@@ -44,63 +45,23 @@ export class SubscriberService {
   // Cache duration in milliseconds (5 minutes for subscriber data - less frequent changes)
   private readonly CACHE_DURATION = 5 * 60 * 1000;
 
-  constructor(private http: HttpClient) { }
-
-  /**
-   * Generate dynamic short codes for meal slots.
-   * Examples:
-   *   "Breakfast" → "B"
-   *   "Brunch" → "BR"
-   *   "Late Night" → "LN"
-   *   "Midnight Snack" → "MS"
-   *   "Early Breakfast" → "EB" (conflicts with "Breakfast" → "B")
-   */
-  private generateMealSlotCodes(mealNames: string[]): { [key: string]: string } {
-    const codes: { [key: string]: string } = {};
-    const usedCodes = new Set<string>();
-
-    // Sort by length (shorter first) to give priority to simpler names
-    const sortedNames = [...mealNames].sort((a, b) => a.length - b.length);
-
-    for (const name of sortedNames) {
-      const words = name.trim().split(/\s+/).filter(w => w.length > 0);
-      if (words.length === 0) continue;
-
-      let code = '';
-      // Try first letter of each word progressively
-      for (let i = 0; i < words.length; i++) {
-        code += words[i].charAt(0).toUpperCase();
-        if (!usedCodes.has(code)) {
-          usedCodes.add(code);
-          codes[name.toUpperCase()] = code;
-          break;
-        }
-      }
-      // Fallback: if all combinations taken, append number
-      if (!codes[name.toUpperCase()]) {
-        let suffix = 2;
-        let fallbackCode = code + suffix;
-        while (usedCodes.has(fallbackCode)) {
-          suffix++;
-          fallbackCode = code + suffix;
-        }
-        usedCodes.add(fallbackCode);
-        codes[name.toUpperCase()] = fallbackCode;
-      }
-    }
-
-    return codes;
-  }
+  constructor(
+    private http: HttpClient,
+    private mealSlotService: MealSlotService
+  ) { }
 
   private mapToSubscriber(student: BackendStudent): Subscriber {
     // Convert timestamp to date string (e.g., '10 Jan 26')
     const date = new Date(student.subscription?.start_Date || Date.now());
     const dateString = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
 
-    // Dynamic meal slot codes - handles any meal name including new ones
+    // Use admin-defined meal codes from MealSlotService — filter out deleted slots
     const mealsArray = student.subscription?.meals || [];
-    const dynamicCodes = this.generateMealSlotCodes(mealsArray);
-    const mealPlanStr = mealsArray.map((m: string) => dynamicCodes[m.toUpperCase()] || m).join('+');
+    const mealSlots = this.mealSlotService.getMealSlotsSync();
+    const mealPlanStr = mealsArray.map((m: string) => {
+      const slot = mealSlots.find(s => s.name.toUpperCase() === m.toUpperCase());
+      return slot?.code || null;
+    }).filter(Boolean).join('+');
 
     let status: 'Active' | 'Paused' | 'Lapsed' = 'Lapsed';
     if (student.subscription) {
