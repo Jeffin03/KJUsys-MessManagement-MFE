@@ -1,0 +1,10 @@
+<div class="flex flex-col min-h-screen bg-[#FAFAFC] font-['Inter',sans-serif]">
+  <div class="flex-1 p-5 pb-12">
+    <div class="mb-3">
+      <lib-breadcrumbs-title title="Mess Management" [breadcrumbs]="breadcrumbs"></lib-breadcrumbs-title>
+    </div>
+    <div class="mb-5 w-full">
+      <lib-tabs [tabs]="tabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-tabs>
+    </div>
+  </div>
+</div>
