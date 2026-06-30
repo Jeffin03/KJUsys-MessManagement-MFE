@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -24,6 +24,7 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
   @Input() clientPaginationMode = false;
   @Input() selectedMealSlots: any[] = [];
   @Input() selectedStatuses: any[] = [];
+  @Input() expiryFilterDays: number | null = null;
 
   @Output() addSubscriber = new EventEmitter<void>();
   @Output() editSubscriber = new EventEmitter<Subscriber>();
@@ -33,6 +34,7 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
   @Output() searchChange = new EventEmitter<string>();
   @Output() mealSlotChange = new EventEmitter<any[]>();
   @Output() statusChange = new EventEmitter<any[]>();
+  @Output() expiryChange = new EventEmitter<number | null>();
   @Output() exportRequest = new EventEmitter<void>();
   @Output() clearFilters = new EventEmitter<void>();
 
@@ -57,7 +59,13 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
         'Lapsed': { bg: '#FFF1F2', text: '#C70036' },
       },
     },
-    { key: 'joinedDate', label: 'JOINED', type: 'date', minWidth: '100px' },
+    {
+      key: 'joinedDate',
+      label: 'JOINED',
+      type: 'stacked',
+      minWidth: '120px',
+      subFields: [{ key: 'expiryWarning', type: 'text' }]
+    },
   ];
 
   primaryActions: PrimaryAction[] = [
@@ -83,7 +91,15 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
     { name: 'Lapsed' },
   ];
 
+  expiryOptions = [
+    { name: 'Expires in 7 days', value: 7 },
+    { name: 'Expires in 15 days', value: 15 },
+    { name: 'Expires in 30 days', value: 30 },
+  ];
+
   searchText = '';
+  showFilterPanel = false;
+  filterSearchText = '';
 
   private searchSubject = new Subject<string>();
   private searchSubscription: Subscription | null = null;
@@ -122,6 +138,79 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
     this.statusChange.emit(selected);
   }
 
+  onExpiryChange(selected: any[]): void {
+    if (selected.length > 0 && selected[0].value) {
+      this.expiryChange.emit(selected[0].value);
+    } else {
+      this.expiryChange.emit(null);
+    }
+  }
+
+  get activeFilterCount(): number {
+    let count = 0;
+    if (this.selectedMealSlots.length > 0) count++;
+    if (this.selectedStatuses.length > 0) count++;
+    if (this.expiryFilterDays !== null) count++;
+    return count;
+  }
+
+  isMealSlotSelected(slot: any): boolean {
+    return this.selectedMealSlots.some(s => s.name === slot.name);
+  }
+
+  toggleMealSlot(slot: any): void {
+    const idx = this.selectedMealSlots.findIndex(s => s.name === slot.name);
+    if (idx >= 0) {
+      this.selectedMealSlots.splice(idx, 1);
+    } else {
+      this.selectedMealSlots.push(slot);
+    }
+    this.mealSlotChange.emit([...this.selectedMealSlots]);
+  }
+
+  isStatusSelected(s: any): boolean {
+    return this.selectedStatuses.some(st => st.name === s.name);
+  }
+
+  toggleStatus(s: any): void {
+    const idx = this.selectedStatuses.findIndex(st => st.name === s.name);
+    if (idx >= 0) {
+      this.selectedStatuses.splice(idx, 1);
+    } else {
+      this.selectedStatuses.push(s);
+    }
+    this.statusChange.emit([...this.selectedStatuses]);
+  }
+
+  setExpiryDays(days: number | null): void {
+    this.expiryChange.emit(days);
+  }
+
+  get filteredMealSlots(): any[] {
+    if (!this.filterSearchText) return this.mealSlotList;
+    const q = this.filterSearchText.toLowerCase();
+    return this.mealSlotList.filter(s => s.name.toLowerCase().includes(q));
+  }
+
+  selectAllFilters(e: Event): void {
+    e.stopPropagation();
+    this.mealSlotList.forEach(slot => {
+      if (!this.isMealSlotSelected(slot)) {
+        this.selectedMealSlots.push(slot);
+      }
+    });
+    this.mealSlotChange.emit([...this.selectedMealSlots]);
+  }
+
+  clearAllFilters(e: Event): void {
+    e.stopPropagation();
+    this.selectedMealSlots = [];
+    this.selectedStatuses = [];
+    this.setExpiryDays(null);
+    this.mealSlotChange.emit([]);
+    this.statusChange.emit([]);
+  }
+
   onPageChange(page: number): void {
     this.pageChange.emit(page);
   }
@@ -149,7 +238,24 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
 
   onClearFilters(): void {
     this.searchText = '';
+    this.showFilterPanel = false;
     this.clearFilters.emit();
+  }
+
+  toggleFilterPanel(e: Event): void {
+    e.stopPropagation();
+    this.showFilterPanel = !this.showFilterPanel;
+  }
+
+  closeFilterPanel(): void {
+    this.showFilterPanel = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocClick(e: MouseEvent): void {
+    if (!(e.target as HTMLElement).closest('.filter-panel-wrap')) {
+      this.closeFilterPanel();
+    }
   }
 
   exportCSV(): void {

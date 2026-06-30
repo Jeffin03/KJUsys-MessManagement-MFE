@@ -14,35 +14,127 @@
     </button>
   </div>
 
-  <div class="toolbar-dd">
-    <lib-dropdown-lib
-      label=""
-      placeholder="Select meal slots"
-      [singleSelection]="false"
-      [data]="mealSlotList"
-      [idField]="dropdownIdField"
-      [textField]="dropdownTextField"
-      [selectedItems]="selectedMealSlots"
-      triggerHeight="40px"
-      (selectionChange)="onMealSlotChange($event)">
-    </lib-dropdown-lib>
+  <div class="filter-panel-wrap relative">
+    <!-- Trigger -->
+    <div
+      (click)="toggleFilterPanel($event)"
+      class="flex items-center justify-between border rounded-lg px-3 py-2 text-xs transition-all min-h-[42px] cursor-pointer bg-white hover:bg-slate-50 border-gray-300 w-[200px]"
+      [class.ring-2]="showFilterPanel"
+      [class.ring-blue-50]="showFilterPanel"
+      [class.border-blue-300]="showFilterPanel"
+    >
+      <div class="flex items-center gap-1.5 flex-nowrap flex-1 overflow-hidden">
+        <ng-container *ngIf="activeFilterCount === 0">
+          <span class="text-gray-500 font-medium truncate">All filters</span>
+        </ng-container>
+        <ng-container *ngIf="activeFilterCount > 0">
+          <div class="flex items-center gap-1 border border-gray-200 bg-white rounded-full px-2.5 py-1 text-xs text-gray-700 font-medium shadow-sm">
+            <span class="truncate">{{ activeFilterCount }} filter{{ activeFilterCount > 1 ? 's' : '' }} active</span>
+          </div>
+        </ng-container>
+      </div>
+      <svg class="w-4 h-4 ml-2 transition-transform duration-200 shrink-0" [class.rotate-180]="showFilterPanel"
+        style="color:#6b7280;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+
+    <!-- Dropdown -->
+    <div *ngIf="showFilterPanel"
+      class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg z-[9999] flex flex-col overflow-hidden shadow-xl"
+      style="width: 300px;"
+      (click)="$event.stopPropagation()">
+
+      <!-- Search -->
+      <div class="p-2 border-b border-gray-100">
+        <div class="relative w-full">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8.75 8.75L7.5 7.5" stroke="#414D63" stroke-width="0.625" stroke-linecap="round"/>
+            <circle cx="4.58331" cy="5" r="3.75" stroke="#414D63" stroke-width="0.625"/>
+          </svg>
+          <input type="text" [(ngModel)]="filterSearchText" placeholder="Search"
+            class="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white font-medium placeholder-gray-500">
+        </div>
+      </div>
+
+      <!-- Sections -->
+      <div class="max-h-[300px] overflow-y-auto">
+        <!-- Meal Slots -->
+        <div class="border-b border-gray-100">
+          <div class="px-3 pt-3 pb-1 text-[10px] font-semibold tracking-wider" style="color:#6A7282;">MEAL SLOTS</div>
+          <div class="px-1 pb-2">
+            <div *ngFor="let slot of filteredMealSlots"
+              (click)="toggleMealSlot(slot)"
+              class="flex items-center px-3 py-2 cursor-pointer rounded-md hover:bg-gray-50 transition-colors">
+              <div class="w-4 h-4 mr-3 flex flex-shrink-0 items-center justify-center border-2 rounded transition-all duration-200"
+                [class.border-blue-600]="isMealSlotSelected(slot)"
+                [class.bg-blue-600]="isMealSlotSelected(slot)"
+                [class.border-gray-300]="!isMealSlotSelected(slot)"
+                [class.bg-white]="!isMealSlotSelected(slot)">
+                <svg *ngIf="isMealSlotSelected(slot)" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span class="text-[12px] font-medium text-gray-700 truncate">{{ slot.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="border-b border-gray-100">
+          <div class="px-3 pt-3 pb-1 text-[10px] font-semibold tracking-wider" style="color:#6A7282;">STATUS</div>
+          <div class="px-1 pb-2">
+            <div *ngFor="let s of statusData"
+              (click)="toggleStatus(s)"
+              class="flex items-center px-3 py-2 cursor-pointer rounded-md hover:bg-gray-50 transition-colors">
+              <div class="w-4 h-4 mr-3 flex flex-shrink-0 items-center justify-center border-2 rounded transition-all duration-200"
+                [class.border-blue-600]="isStatusSelected(s)"
+                [class.bg-blue-600]="isStatusSelected(s)"
+                [class.border-gray-300]="!isStatusSelected(s)"
+                [class.bg-white]="!isStatusSelected(s)">
+                <svg *ngIf="isStatusSelected(s)" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span class="text-[12px] font-medium text-gray-700 truncate">{{ s.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expiry -->
+        <div>
+          <div class="px-3 pt-3 pb-1 text-[10px] font-semibold tracking-wider" style="color:#6A7282;">EXPIRES IN</div>
+          <div class="px-1 pb-2">
+            <div *ngFor="let opt of expiryOptions"
+              (click)="setExpiryDays(opt.value)"
+              class="flex items-center px-3 py-2 cursor-pointer rounded-md hover:bg-gray-50 transition-colors">
+              <div class="w-4 h-4 mr-3 flex flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200"
+                [class.border-blue-600]="expiryFilterDays === opt.value"
+                [class.border-gray-300]="expiryFilterDays !== opt.value">
+                <div *ngIf="expiryFilterDays === opt.value" class="w-2 h-2 rounded-full bg-blue-600"></div>
+              </div>
+              <span class="text-[12px] font-medium text-gray-700 truncate">{{ opt.name }}</span>
+            </div>
+            <div *ngIf="expiryFilterDays !== null"
+              (click)="setExpiryDays(null)"
+              class="flex items-center px-3 py-2 cursor-pointer rounded-md hover:bg-gray-50 transition-colors">
+              <div class="w-4 h-4 mr-3 flex flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300">
+              </div>
+              <span class="text-[12px] font-medium text-gray-500 truncate">Any</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-4 py-2 border-t border-gray-100 flex justify-end gap-3 bg-white">
+        <button type="button" (click)="selectAllFilters($event)" class="text-[12px] font-semibold text-blue-600 hover:text-blue-700 transition-colors">Select All</button>
+        <button type="button" (click)="clearAllFilters($event)" class="text-[12px] font-semibold text-gray-500 hover:text-gray-700 transition-colors">Clear All</button>
+      </div>
+    </div>
   </div>
 
-  <div class="toolbar-dd">
-    <lib-dropdown-lib
-      label=""
-      placeholder="Select status"
-      [singleSelection]="false"
-      [data]="statusData"
-      [idField]="dropdownIdField"
-      [textField]="dropdownTextField"
-      [selectedItems]="selectedStatuses"
-      triggerHeight="40px"
-      (selectionChange)="onStatusChange($event)">
-    </lib-dropdown-lib>
-  </div>
-
-  <button *ngIf="searchText || selectedMealSlots.length || selectedStatuses.length"
+  <button *ngIf="searchText || selectedMealSlots.length || selectedStatuses.length || expiryFilterDays !== null"
     type="button" class="clear-filters-btn flex items-center gap-1.5 px-3 cursor-pointer"
     (click)="onClearFilters()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">

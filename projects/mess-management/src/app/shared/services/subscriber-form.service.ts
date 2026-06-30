@@ -14,6 +14,8 @@ export interface SubscriberFormValue {
     [key: string]: boolean | string;
   };
   pauseEndDate: string;
+  pauseStartDate: string;
+  pauseReason: string;
 }
 
 export interface ValidationErrors {
@@ -22,6 +24,8 @@ export interface ValidationErrors {
   email: string;
   roll_number: string;
   pauseEndDate: string;
+  pauseStartDate: string;
+  pauseReason: string;
 }
 
 const months = [
@@ -79,7 +83,9 @@ export class SubscriberFormService {
       lastName: '',
       email: '',
       roll_number: '',
-      pauseEndDate: ''
+      pauseEndDate: '',
+      pauseStartDate: '',
+      pauseReason: ''
     };
 
     const nameRegex = /^[A-Za-z ]+$/;
@@ -111,9 +117,14 @@ export class SubscriberFormService {
     }
 
     if (form.mealSlot.status === 'Paused') {
-      const pauseEndDate = form.pauseEndDate;
-      if (!pauseEndDate || !pauseEndDate.trim()) {
-        errors.pauseEndDate = 'Pause end date is required when status is Paused';
+      if (!form.pauseStartDate || !form.pauseStartDate.trim()) {
+        errors.pauseStartDate = 'Pause start date is required';
+      }
+      if (!form.pauseEndDate || !form.pauseEndDate.trim()) {
+        errors.pauseEndDate = 'Pause end date is required';
+      }
+      if (!form.pauseReason || !form.pauseReason.trim()) {
+        errors.pauseReason = 'Reason for pause is required';
       }
     }
 
@@ -148,7 +159,9 @@ export class SubscriberFormService {
         endDate: '',
         status: 'Active'
       },
-      pauseEndDate: ''
+      pauseEndDate: '',
+      pauseStartDate: '',
+      pauseReason: ''
     };
 
     mealSlots.forEach(slot => {
@@ -175,17 +188,12 @@ export class SubscriberFormService {
       }
     });
 
-    let pauseExpired = false;
-    if (subscriber.pauseEndDate) {
-      const [pd, pm, py] = subscriber.pauseEndDate.split('/').map(Number);
-      const pauseEnd = new Date(2000 + py, pm - 1, pd).getTime();
-      pauseExpired = pauseEnd < Date.now();
-    }
+    form.mealSlot.status = subscriber.status || 'Active';
 
-    form.mealSlot.status = pauseExpired ? 'Active' : (subscriber.status || 'Active');
-
-    if (subscriber.pauseEndDate && !pauseExpired) {
-      form.pauseEndDate = subscriber.pauseEndDate;
+    if (subscriber.status === 'Paused') {
+      if (subscriber.pauseEndDate) form.pauseEndDate = subscriber.pauseEndDate;
+      if (subscriber.pauseStartDate) form.pauseStartDate = subscriber.pauseStartDate;
+      if (subscriber.pauseReason) form.pauseReason = subscriber.pauseReason;
     }
 
     if (subscriber.startDate && subscriber.endDate) {
@@ -226,6 +234,8 @@ export class SubscriberFormService {
     form.mealSlot.endDate = '';
     form.mealSlot.status = 'Active';
     form.pauseEndDate = '';
+    form.pauseStartDate = '';
+    form.pauseReason = '';
 
     mealSlots.forEach(slot => {
       form.mealSlot[slot.name.toLowerCase()] = false;

@@ -19,8 +19,6 @@ class ConfigLoaderService {
     return this._resolvedSource;
   }
 
-  // Synchronous load to block execution until config is fetched, 
-  // avoiding top-level await issues in Webpack without modifying other files.
   load(environmentObj: any): void {
     if (this.isDevMode()) {
       this._resolvedUrl = LOCALHOST_URL;
@@ -30,47 +28,57 @@ class ConfigLoaderService {
       return;
     }
 
-    if (!GIST_RAW_URL) {
-      this._resolvedUrl = localStorage.getItem(LS_KEY);
-      this._resolvedSource = this._resolvedUrl ? 'cached' : 'environment';
-      if (this._resolvedUrl) this.updateEnvironment(environmentObj, this._resolvedUrl);
-      return;
-    }
+    // Use cached URL or fallback to localhost immediately (non-blocking)
+    const cachedUrl = localStorage.getItem(LS_KEY);
+    const candidateUrl = cachedUrl || LOCALHOST_URL;
 
-    let gistUrl: string | null = null;
-
-    try {
-      const freshUrl = `${GIST_RAW_URL}?t=${Date.now()}`;
-      const response = this.syncRequest(freshUrl);
-      if (response.status === 200) {
-        const text = response.text;
-        try {
-          const parsed = JSON.parse(text);
-          gistUrl = (parsed && (parsed.backendUrl || parsed.backend_url)) ? (parsed.backendUrl || parsed.backend_url).trim() : (text.trim() || null);
-        } catch {
-          gistUrl = text.trim() || null;
-        }
-      }
-    } catch {
-      console.warn('[ConfigLoader] Gist unreachable, will try cached / localhost fallback.');
-    }
-
-    const candidateUrl = gistUrl || localStorage.getItem(LS_KEY) || LOCALHOST_URL;
-
-    // 1. USE IMMEDIATELY (No waiting)
     this._resolvedUrl = candidateUrl;
-    this._resolvedSource = gistUrl ? 'gist' : (localStorage.getItem(LS_KEY) ? 'cached' : 'localhost');
+    this._resolvedSource = cachedUrl ? 'cached' : 'localhost';
     this.updateEnvironment(environmentObj, candidateUrl);
-    console.info(`[ConfigLoader] Applied ${this._resolvedSource} URL immediately: ${candidateUrl}`);
+    console.info(`[ConfigLoader] Applied ${this._resolvedSource} URL: ${candidateUrl}`);
 
-    // 2. BACKGROUND PROBE (Does not block)
+    // Background: fetch gist + probe server (does not block main thread)
     this.runBackgroundProbe(candidateUrl, environmentObj);
   }
 
   private async runBackgroundProbe(candidateUrl: string, environmentObj: any) {
     console.info(`[ConfigLoader] Running background probe for: ${candidateUrl}`);
-    const isAlive = await this.probeServerAsync(candidateUrl);
 
+    // Fetch gist in the background to get the canonical backend URL
+    if (GIST_RAW_URL) {
+      try {
+        const freshUrl = `${GIST_RAW_URL}?t=${Date.now()}`;
+        const response = await fetch(freshUrl);
+        if (response.ok) {
+          const text = await response.text();
+          let gistUrl: string | null = null;
+          try {
+            const parsed = JSON.parse(text);
+            gistUrl = (parsed && (parsed.backendUrl || parsed.backend_url)) ? (parsed.backendUrl || parsed.backend_url).trim() : (text.trim() || null);
+          } catch {
+            gistUrl = text.trim() || null;
+          }
+
+          if (gistUrl && gistUrl !== candidateUrl) {
+            console.info(`[ConfigLoader] Gist provided URL: ${gistUrl}`);
+            this._resolvedUrl = gistUrl;
+            this._resolvedSource = 'gist';
+            this.updateEnvironment(environmentObj, gistUrl);
+            localStorage.setItem(LS_KEY, gistUrl);
+
+            const isAlive = await this.probeServerAsync(gistUrl);
+            if (isAlive) {
+              console.info(`[ConfigLoader] Background probe successful for gist URL: ${gistUrl}`);
+              return;
+            }
+          }
+        }
+      } catch {
+        console.warn('[ConfigLoader] Gist background fetch failed, using cached/localhost URL.');
+      }
+    }
+
+    const isAlive = await this.probeServerAsync(candidateUrl);
     if (isAlive) {
       localStorage.setItem(LS_KEY, candidateUrl);
       console.info(`[ConfigLoader] Background probe successful for ${candidateUrl}. Saved to cache.`);
@@ -92,13 +100,6 @@ class ConfigLoaderService {
     if (envObj) {
       envObj.baseUrl = `${baseUrl}/kjusys-api/mess-management`;
     }
-  }
-
-  private syncRequest(url: string): { status: number, text: string } {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', url, false);
-    xhr.send(null);
-    return { status: xhr.status, text: xhr.responseText };
   }
 
   private async probeServerAsync(baseUrl: string): Promise<boolean> {

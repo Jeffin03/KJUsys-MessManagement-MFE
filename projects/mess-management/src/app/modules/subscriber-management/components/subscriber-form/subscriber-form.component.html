@@ -213,11 +213,80 @@
                         {{ s }}
                     </div>
                 </div>
+            </div>
 
-                <!-- Pause End Date (shown when status is Paused) -->
-                <div *ngIf="form.mealSlot.status === 'Paused'" class="mt-3">
+        </div>
+
+        <!-- Pause Details (shown when status is Paused) -->
+        <div *ngIf="form.mealSlot.status === 'Paused'" class="mt-5">
+            <div class="text-xs font-semibold mb-3.5" style="color:#1D1D1F;">Pause Details</div>
+            <div class="grid grid-cols-3 gap-3.5">
+                <!-- Pause Start Date -->
+                <div class="flex flex-col relative">
+                    <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Pause Start Date</label>
+                    <p *ngIf="errors.pauseStartDate" class="mb-1 text-[10px]" style="color:#C70036;">{{ errors.pauseStartDate }}</p>
+                    <div class="date-picker-trigger h-[42px] border border-gray-200 rounded-lg px-3 text-xs bg-white cursor-pointer flex items-center justify-between hover:border-gray-300"
+                        (click)="togglePicker('pauseStart', $event)">
+                        <span [style.color]="!form.pauseStartDate ? '#86868B' : '#1D1D1F'">{{ form.pauseStartDate || 'dd/mm/yy' }}</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </div>
+                    <div *ngIf="showPauseStartPicker" class="calendar-popup fixed z-[9999] bg-white rounded-[18px] p-4 w-[300px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-gray-200"
+                        [ngStyle]="{ top: popupTop + 'px', left: popupLeft + 'px' }" (click)="$event.stopPropagation()">
+                        <div class="flex items-center justify-between mb-4">
+                            <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
+                                (click)="prevMonth('pauseStart')">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 18 9 12 15 6"/>
+                                </svg>
+                            </button>
+                            <span class="text-sm font-bold" style="color:#1D1D1F;">{{ months[pauseStartViewDate.getMonth()] }} {{ pauseStartViewDate.getFullYear() }}</span>
+                            <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
+                                (click)="nextMonth('pauseStart')">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="9 18 15 12 9 6"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-7 mb-2">
+                            <span *ngFor="let d of weekDays" class="text-center text-[10px] font-semibold" style="color:#86868B;">{{ d }}</span>
+                        </div>
+                        <div class="grid grid-cols-7">
+                            <div *ngFor="let day of getCalendarDays(pauseStartViewDate)" class="h-8 flex items-center justify-center relative"
+                                (click)="selectPauseStartDay(day)">
+                                <div *ngIf="isPauseStartInRange(day)" class="absolute inset-0 bg-blue-100"></div>
+                                <div class="w-8 h-8 text-xs font-medium flex items-center justify-center rounded-lg cursor-pointer z-10 relative"
+                                    [class.bg-blue-600]="isPauseStartBoundaryDate(day)"
+                                    [class.text-white]="isPauseStartBoundaryDate(day)"
+                                    [class.rounded-r-none]="isPauseStartBoundaryStart(day)"
+                                    [class.rounded-l-lg]="isPauseStartBoundaryStart(day)"
+                                    [class.rounded-l-none]="isPauseStartBoundaryEnd(day)"
+                                    [class.rounded-r-lg]="isPauseStartBoundaryEnd(day)"
+                                    [class.ring-1]="isToday(day) && !isPauseStartBoundaryDate(day)"
+                                    [class.ring-inset]="isToday(day) && !isPauseStartBoundaryDate(day)"
+                                    [class.ring-blue-300]="isToday(day) && !isPauseStartBoundaryDate(day)"
+                                    [class.cursor-default]="!day"
+                                    [style.color]="isPauseStartBoundaryDate(day) ? '#fff' : day && isCurrentMonth(day, pauseStartViewDate) ? '#1D1D1F' : '#86868B'">
+                                    {{ day ? day.getDate() : '' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <button class="flex-1 h-10 rounded-xl border border-gray-200 bg-white text-xs font-medium cursor-pointer hover:bg-gray-50"
+                                style="color:#1D1D1F;" (click)="clearPauseStartDate()">Clear</button>
+                            <button class="flex-1 h-10 rounded-xl border-none bg-blue-600 text-white text-xs font-semibold cursor-pointer hover:bg-blue-700"
+                                (click)="confirmPauseStartDate()">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pause End Date -->
+                <div class="flex flex-col relative">
                     <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Pause End Date</label>
-                    <p *ngIf="errors.pauseEndDate" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.pauseEndDate }}</p>
+                    <p *ngIf="errors.pauseEndDate" class="mb-1 text-[10px]" style="color:#C70036;">{{ errors.pauseEndDate }}</p>
                     <div class="date-picker-trigger h-[42px] border border-gray-200 rounded-lg px-3 text-xs bg-white cursor-pointer flex items-center justify-between hover:border-gray-300"
                         (click)="togglePicker('pauseEnd', $event)">
                         <span [style.color]="!form.pauseEndDate ? '#86868B' : '#1D1D1F'">{{ form.pauseEndDate || 'dd/mm/yy' }}</span>
@@ -275,8 +344,17 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
+                <!-- Reason for Pause -->
+                <div class="flex flex-col relative">
+                    <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Reason for Pause</label>
+                    <input
+                        class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
+                        style="color:#1D1D1F;" placeholder="e.g. Medical leave" [(ngModel)]="form.pauseReason"
+                        (input)="validateForm()" />
+                    <p *ngIf="errors.pauseReason" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.pauseReason }}</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -13,6 +13,7 @@ export interface BackendStudent {
   roll_number: string;
   uid?: string;
   email: string;
+  pauseReason?: string;
   subscription: {
     meals: string[];
     start_Date: number;
@@ -65,22 +66,39 @@ export class SubscriberService {
 
     let status: 'Active' | 'Paused' | 'Lapsed' = 'Lapsed';
     if (student.subscription) {
-      const endDate = new Date(student.subscription.end_Date);
       const now = new Date();
 
-      if (endDate < now) {
+      // Use effective_End_Date if available (accounts for pause extensions), else fall back to end_Date
+      const effectiveEnd = student.subscription.effective_End_Date || student.subscription.end_Date;
+      const effectiveEndDate = new Date(effectiveEnd);
+
+      if (effectiveEndDate < now) {
         status = 'Lapsed';
-      } else if (student.subscription.is_Paused) {
-        status = 'Paused';
-      } else if (student.subscription.active) {
-        status = 'Active';
       } else {
         const pauseEnd = student.subscription.pauseEnd_Date;
-        if (pauseEnd && new Date(pauseEnd) <= now) {
+        const pauseEndDate = pauseEnd ? new Date(pauseEnd) : null;
+        const pauseExpired = pauseEndDate && pauseEndDate <= now;
+
+        if (pauseExpired) {
+          status = 'Active';
+        } else if (student.subscription.is_Paused || pauseEndDate) {
+          status = 'Paused';
+        } else if (student.subscription.active) {
           status = 'Active';
         } else {
           status = 'Paused';
         }
+      }
+    }
+
+    // Compute expiry warning (only for active subscribers within 7 days)
+    let expiryWarning = '';
+    if (status === 'Active' && student.subscription) {
+      const effectiveEnd = student.subscription.effective_End_Date || student.subscription.end_Date;
+      const now = Date.now();
+      const daysUntilExpiry = Math.ceil((effectiveEnd - now) / (1000 * 60 * 60 * 24));
+      if (daysUntilExpiry > 0 && daysUntilExpiry <= 7) {
+        expiryWarning = `expiry in ${daysUntilExpiry} day${daysUntilExpiry > 1 ? 's' : ''}`;
       }
     }
 
@@ -111,6 +129,15 @@ export class SubscriberService {
         pauseEndDateString = `${pd}/${pm}/${py}`;
       }
 
+      let pauseStartDateString = undefined;
+      if (student.subscription?.pauseStart_Date) {
+        const psd = new Date(student.subscription.pauseStart_Date);
+        const psd_d = String(psd.getDate()).padStart(2, '0');
+        const psd_m = String(psd.getMonth() + 1).padStart(2, '0');
+        const psd_y = String(psd.getFullYear()).slice(-2);
+        pauseStartDateString = `${psd_d}/${psd_m}/${psd_y}`;
+      }
+
     return {
       id: student._id.$oid,
       name: student.name,
@@ -122,6 +149,9 @@ export class SubscriberService {
       startDate: startDateString,
       endDate: endDateString,
       pauseEndDate: pauseEndDateString,
+      pauseStartDate: pauseStartDateString,
+      pauseReason: student.pauseReason,
+      expiryWarning: expiryWarning,
       mealNames: mealsArray
     };
   }
@@ -201,7 +231,10 @@ export class SubscriberService {
     const endDateTs = parseDate(formData.mealSlot.endDate);
     const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
 
-    const payload = {
+    const pauseStartTs = formData.pauseStartDate ? parseDate(formData.pauseStartDate) : null;
+    const pauseEndTs = formData.pauseEndDate ? parseDate(formData.pauseEndDate) : null;
+
+    const payload: any = {
       roll_number: formData.roll_number,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
       email: formData.email,
@@ -211,10 +244,14 @@ export class SubscriberService {
         end_Date: endDateTs,
         active: formData.mealSlot.status !== 'Paused',
         duration_days: durationDays,
-        pauseStart_Date: null,
-        pauseEnd_Date: null
+        pauseStart_Date: pauseStartTs,
+        pauseEnd_Date: pauseEndTs
       }
     };
+
+    if (formData.pauseReason) {
+      payload.pauseReason = formData.pauseReason;
+    }
 
     return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
   }
@@ -257,42 +294,52 @@ export class SubscriberService {
         const existingPauseStart = existingStudent?.subscription?.pauseStart_Date;
         const existingPauseEnd = existingStudent?.subscription?.pauseEnd_Date;
         const formPauseEndDate = formData.pauseEndDate;
+        const formPauseStartDate = formData.pauseStartDate;
         const formStatus = formData.mealSlot.status;
 
-        // Parse form pause end date if provided
+        // Parse form pause dates if provided
         const formPauseEndTimestamp = formPauseEndDate ? parseDate(formPauseEndDate) : null;
+        const formPauseStartTimestamp = formPauseStartDate ? parseDate(formPauseStartDate) : null;
 
         // Determine what to do with pause dates:
         if (formStatus === 'Paused' && formPauseEndTimestamp !== null) {
-          // User wants to set/update a pause end date
-          // Check if this is a new pause or an extension of an existing pause
-          const isCurrentlyPaused = existingPauseStart !== null && existingPauseEnd !== null &&
-            Date.now() >= existingPauseStart && Date.now() <= existingPauseEnd;
-
-          if (isCurrentlyPaused) {
-            // Extending an existing pause: keep original pause start date, update end date
-            subscription.pauseStart_Date = existingPauseStart;
+          if (formPauseStartTimestamp !== null) {
+            subscription.pauseStart_Date = formPauseStartTimestamp;
             subscription.pauseEnd_Date = formPauseEndTimestamp;
           } else {
-            // Starting a new pause (either not currently paused or pause has ended)
-            // Set pause start to current time
-            subscription.pauseStart_Date = Date.now();
-            subscription.pauseEnd_Date = formPauseEndTimestamp;
+            const isCurrentlyPaused = existingPauseStart !== null && existingPauseEnd !== null &&
+              Date.now() >= existingPauseStart && Date.now() <= existingPauseEnd;
+            if (isCurrentlyPaused) {
+              subscription.pauseStart_Date = existingPauseStart;
+              subscription.pauseEnd_Date = formPauseEndTimestamp;
+            } else {
+              subscription.pauseStart_Date = Date.now();
+              subscription.pauseEnd_Date = formPauseEndTimestamp;
+            }
           }
         } else if (formStatus !== 'Paused') {
-          // User wants to end any pause (set status to Active/Lapsed)
+          // Resuming from pause — extend end date by the pause duration
+          if (existingPauseStart && existingPauseEnd) {
+            const pauseDurationMs = existingPauseEnd - existingPauseStart;
+            const newEndTs = endDateTs + pauseDurationMs;
+            subscription.end_Date = newEndTs;
+            subscription.duration_days = Math.round((newEndTs - startDateTs) / (1000 * 60 * 60 * 24));
+          }
           subscription.pauseStart_Date = null;
           subscription.pauseEnd_Date = null;
+          subscription.active = true;
         }
-        // Else: status is Paused but no pause end date provided
-        // Preserve existing pause dates (do nothing)
 
-        const payload = {
+        const payload: any = {
           roll_number: formData.roll_number,
           name: `${formData.firstName} ${formData.lastName}`.trim(),
           email: formData.email,
           subscription: subscription
         };
+
+        if (formData.pauseReason) {
+          payload.pauseReason = formData.pauseReason;
+        }
 
         // Use roll_number for the endpoint (backend expects roll_number, not MongoDB _id)
         return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`, payload);

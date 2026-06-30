@@ -67,6 +67,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   searchQuery = '';
   selectedMealSlots: any[] = [];
   selectedStatuses: any[] = [];
+  expiryFilterDays: number | null = null;
   clientPaginationMode = false;
 
   allSubscribers: Subscriber[] = [];
@@ -132,6 +133,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     this.searchQuery = '';
     this.selectedMealSlots = [];
     this.selectedStatuses = [];
+    this.expiryFilterDays = null;
     this.clientPaginationMode = false;
     this.currentPage = 1;
     // Fetch all subscribers for stats, then show first page in table
@@ -162,6 +164,26 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     });
   }
 
+  private filterByStatus(data: Subscriber[]): Subscriber[] {
+    const selected = this.selectedStatuses.map(s => String(s.name || '').toLowerCase()).filter(Boolean);
+    if (selected.length === 0) return data;
+    return data.filter(sub => selected.includes(sub.status.toLowerCase()));
+  }
+
+  private filterByExpiry(data: Subscriber[]): Subscriber[] {
+    if (this.expiryFilterDays === null) return data;
+    const now = Date.now();
+    const maxTs = now + this.expiryFilterDays * 24 * 60 * 60 * 1000;
+    return data.filter(sub => {
+      if (sub.status !== 'Active') return false;
+      // Parse endDate (DD/MM/YY) to timestamp
+      if (!sub.endDate) return false;
+      const [d, m, y] = sub.endDate.split('/');
+      const endTs = new Date(2000 + parseInt(y), parseInt(m) - 1, parseInt(d)).getTime();
+      return endTs > now && endTs <= maxTs;
+    });
+  }
+
   private fetchSubscribers(): void {
     this.isLoading = true;
 
@@ -170,7 +192,9 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     if (this.clientPaginationMode) {
       this.subscriberService.getSubscribers(this.searchQuery, 0, 10000, '', statusStr).subscribe({
         next: ({ subscribers }) => {
-          const filtered = this.filterByMealSlots(subscribers);
+          let filtered = this.filterByMealSlots(subscribers);
+          filtered = this.filterByStatus(filtered);
+          filtered = this.filterByExpiry(filtered);
           this.subscribers = filtered;
           this.totalItems = filtered.length;
           this.isLoading = false;
@@ -187,8 +211,10 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
       const apiPage = this.currentPage - 1;
       this.subscriberService.getSubscribers(this.searchQuery, apiPage, this.pageSize, '', statusStr).subscribe({
         next: ({ subscribers, total }) => {
-          this.subscribers = subscribers;
-          this.totalItems = total;
+          let filtered = this.filterByStatus(subscribers);
+          filtered = this.filterByExpiry(filtered);
+          this.subscribers = filtered;
+          this.totalItems = filtered.length;
           this.isLoading = false;
           this.cdr.detectChanges();
         },
@@ -217,13 +243,21 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
 
   onMealSlotChange(slots: any[]): void {
     this.selectedMealSlots = slots;
-    this.clientPaginationMode = slots.length > 0;
+    this.clientPaginationMode = slots.length > 0 || this.selectedStatuses.length > 0 || this.expiryFilterDays !== null;
     this.currentPage = 1;
     this.fetchSubscribers();
   }
 
   onStatusChange(statuses: any[]): void {
     this.selectedStatuses = statuses;
+    this.clientPaginationMode = statuses.length > 0 || this.selectedMealSlots.length > 0 || this.expiryFilterDays !== null;
+    this.currentPage = 1;
+    this.fetchSubscribers();
+  }
+
+  onExpiryChange(days: number | null): void {
+    this.expiryFilterDays = days;
+    this.clientPaginationMode = days !== null || this.selectedMealSlots.length > 0 || this.selectedStatuses.length > 0;
     this.currentPage = 1;
     this.fetchSubscribers();
   }
