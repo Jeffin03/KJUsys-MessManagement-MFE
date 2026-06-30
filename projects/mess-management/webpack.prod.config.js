@@ -39,7 +39,6 @@ module.exports = {
           './App': './projects/mess-management/src/app/app.component.ts',
           './Dashboard': './projects/mess-management/src/app/modules/dashboard/dashboard.component.ts',
           './SubscriberManagement': './projects/mess-management/src/app/modules/subscriber-management/subscriber-management.component.ts',
-          './ReportsModule': './projects/mess-management/src/app/modules/reports/reports.module.ts',
 
         },
         shared: share({
