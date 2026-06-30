@@ -132,7 +132,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       await firstValueFrom(this.mealSlotService.getMealSlots());
 
       // 1. Initiate all network requests concurrently
-      const subscribersPromise = firstValueFrom(this.subscriberService.getSubscribers());
+      const subscribersPromise = firstValueFrom(this.subscriberService.getSubscribers('', 0, 10000));
       const schedulesPromise = firstValueFrom(this.dashboardService.getSchedules());
       const tapsPromise = firstValueFrom(this.dashboardService.getTaps());
       const hardwarePromise = firstValueFrom(this.dashboardService.getHardwareStatus());
@@ -460,7 +460,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Full refresh: fetch schedules, subscribers, and taps to recompute derived values
     this.dashboardService.getSchedules(true).subscribe({
       next: (schedules) => {
-        this.subscriberService.getSubscribers().subscribe({
+        this.subscriberService.getSubscribers('', 0, 10000).subscribe({
           next: ({ subscribers }) => {
             this.processSubscribers(subscribers);
             this.processSchedules(schedules);
