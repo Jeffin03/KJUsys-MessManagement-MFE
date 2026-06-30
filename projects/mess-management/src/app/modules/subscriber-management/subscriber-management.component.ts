@@ -136,13 +136,12 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     this.expiryFilterDays = null;
     this.clientPaginationMode = false;
     this.currentPage = 1;
-    // Fetch all subscribers for stats, then show first page in table
-    this.subscriberService.getSubscribers('', 0, 10000, '', '').subscribe({
+
+    // Fetch first page for immediate table display — small payload, fast
+    this.subscriberService.getSubscribers('', 0, this.pageSize, '', '').subscribe({
       next: ({ subscribers, total }) => {
-        this.allSubscribers = subscribers;
-        this.calculateStats();
+        this.subscribers = subscribers;
         this.totalItems = total;
-        this.subscribers = subscribers.slice(0, this.pageSize);
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -152,6 +151,15 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
         this.isLoading = false;
         this.cdr.detectChanges();
       }
+    });
+
+    // Fetch all subscribers for stats in background (does not block table)
+    this.subscriberService.getSubscribers('', 0, 10000, '', '').subscribe({
+      next: ({ subscribers }) => {
+        this.allSubscribers = subscribers;
+        this.calculateStats();
+      },
+      error: () => {}
     });
   }
 
@@ -211,10 +219,8 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
       const apiPage = this.currentPage - 1;
       this.subscriberService.getSubscribers(this.searchQuery, apiPage, this.pageSize, '', statusStr).subscribe({
         next: ({ subscribers, total }) => {
-          let filtered = this.filterByStatus(subscribers);
-          filtered = this.filterByExpiry(filtered);
-          this.subscribers = filtered;
-          this.totalItems = filtered.length;
+          this.subscribers = subscribers;
+          this.totalItems = total;
           this.isLoading = false;
           this.cdr.detectChanges();
         },
