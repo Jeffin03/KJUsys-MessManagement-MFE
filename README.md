@@ -1,118 +1,367 @@
-# KJUsys UI Base
+# KJUsys Mess Management — Frontend (Angular MFE)
 
-This is a clean, modular micro-frontend base workspace built on **Angular 16** and **Webpack Module Federation**. It is designed to act as a boilerplate/starter kit for building modular web applications. All domain-specific libraries and remote applications have been pruned, and authentication checks have been bypassed to allow instant, direct access to the portal dashboard.
+> Built by **Software Development Centre (SDC)** — Kristu Jayanti College (Deemed to be University)
 
----
-
-## 1. Features
-- **Zero-Auth Bypassed Routing**: Direct redirection to the dashboard (`/kjusys`). The `AuthGuard` returns `true` unconditionally.
-- **Dynamic Manifest-Driven Navigation**: The host shell dynamically discovers and registers all micro-frontend (MFE) remote applications and their sub-modules at runtime by reading local manifests (`mf.manifest.json`), eliminating backend API dependencies.
-- **Automation CLI Tools**: Built-in scripts to generate new MFE remote projects and internal modules with automated route and manifest registration.
-- **Pre-Built Shared Libraries**: Contains core reusable libraries for shared utilities, UI components, custom grids, alerts, and navigation menus.
+Micro-frontend application for the KJUsys Mess Management System. Built with **Angular 16**, **Webpack Module Federation**, and **TailwindCSS**. Runs as a remote MFE loaded by the KJUsys shell at runtime.
 
 ---
 
-## 2. Workspace Topography
+## Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Modules & Features](#modules--features)
+- [API Endpoints Consumed](#api-endpoints-consumed)
+- [Shared Services](#shared-services)
+- [WebSocket Events](#websocket-events)
+- [Component Tree](#component-tree)
+- [MFE Manifest (Exposed Modules)](#mfe-manifest-exposed-modules)
+- [Route Map](#route-map)
+- [Shared Libraries Used](#shared-libraries-used)
+- [Data Models](#data-models)
+- [Environment Configuration](#environment-configuration)
+- [Production Servers](#production-servers)
+
+---
+
+## Architecture Overview
+
+The frontend is a **Webpack Module Federation remote** (port 4201) that exposes three modules to the KJUsys shell (port 4200). It uses:
+
+- **Standalone components** (Angular 16) with lazy-loaded NgModule wrappers
+- **NgRx** for state (via shared auth lib)
+- **WebSocket** for real-time tap and hardware-status updates
+- **Hash-based routing** (`HashLocationStrategy`)
+- **Dynamic backend URL resolution** via `ConfigLoaderService` (supports dev-mode GitHub gist override, local storage cache, and server probing)
+
+**Build order dependencies:** Shared libraries (`@libs/*`) must be compiled to `dist/libs/` before the app builds.
+
+---
+
+## Modules & Features
+
+### 1. Dashboard Module (`/kjusys/dashboard`)
+
+| Feature | Component | Description |
+|---|---|---|
+| **Stats Overview** | `StatsBarComponent` | 4 stat cards: Total Subscribers, Active Subscriptions, Total Meals Served Today, Absent Today |
+| **Meal Slot Status** | `MealSlotsComponent` | Live/Upcoming/Closed meal slots with animated counters, real-time updates via WebSocket |
+| **Configure Meal Slots** | `ConfigureMealSlotsComponent` | Modal with 3 sub-tabs: |
+| | | **Meal Slots** — Add/edit/delete meal schedules with time pickers, overlap validation |
+| | | **Display Panel** — LCD message templates per tap scenario with variable substitution (`"name"`, `"rollno"`, `"meal"`, `"status"`) and device test |
+| | | **Token Customization** — Receipt/token layout configuration with printer test |
+| **Recent Tap Activity** | `EntriesTableComponent` | Table of recent RFID taps (Subscriber, Roll Number, Meal Slot, Time, Status) |
+| **Hardware Status** | `HardwareStatusComponent` | Device list with online/offline indicators, uptime bar, response time, last sync |
+| **Hardware Settings** | `HardwareSettingsModalComponent` | Full device lifecycle: list, pair (2-min window), confirm, test peripherals (LCD/Printer/Buzzer/Relay), rename, delete, rotate HMAC secret, emergency stop |
+
+### 2. Subscriber Management Module (`/kjusys/subscriber-management`)
+
+| Feature | Component | Description |
+|---|---|---|
+| **Subscriber Stats** | `SubscriberStatsComponent` | Total, Active, Paused, Lapsed counts |
+| **Subscriber Table** | `SubscriberTableComponent` | Paginated, searchable, filterable table with columns: Subscriber, Roll Number, Meal Plan, Status (colored badge), Joined Date. Export to CSV. |
+| **Add Subscriber** | `AddSubscriberModalComponent` | Form with name, email, roll number, meal slot multi-select, start/end dates, status dropdown, pause end date |
+| **Edit Subscriber** | `EditSubscriberModalComponent` | Pre-populated form for editing existing subscribers |
+| **Subscriber Form** | `SubscriberFormComponent` | Reusable form with custom-built date pickers, validation, conditional pause date field |
+| **ID Card Preview** | `SubscriberCardPreviewComponent` | Front/back card design with Mess Pass branding, roll number, terms & conditions |
+| **Card Modal** | `SubscriberCardModalComponent` | Post-creation preview of subscriber's ID card |
+
+### 3. Reports Module (`/kjusys/reports`)
+
+- **ReportsComponent** — Placeholder shell with breadcrumbs and tabs. Report features (date range reports, exports) are consumed via API but UI is pending.
+
+---
+
+## API Endpoints Consumed
+
+All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys-api/mess-management`
+
+### Health
+
+| Method | Endpoint | Service | Purpose |
+|---|---|---|---|
+| GET | `/health` | `ConnectionMonitorService` | Server health check / ping |
+
+### Students (Subscriber CRUD)
+
+| Method | Endpoint | Service | Purpose |
+|---|---|---|---|
+| GET | `/students?search=&page=&size=&plan=&status=` | `SubscriberService` | Paginated subscriber list with filters |
+| GET | `/students/expiring` | `SubscriberService` | Subscribers expiring soon |
+| GET | `/students/lookup/:roll_number` | `SubscriberService` | Quick lookup for registration flow |
+| GET | `/students/:roll_number` | `SubscriberService` | Single subscriber by roll number |
+| POST | `/students` | `SubscriberService` | Create new subscriber |
+| PUT | `/students/:roll_number` | `SubscriberService` | Update subscriber |
+| DELETE | `/students/:roll_number` | `SubscriberService` | Delete subscriber |
+| PUT | `/students/:roll_number/renew` | `SubscriberService` | Renew subscription |
+| PUT | `/students/:roll_number/pause` | `SubscriberService` | Pause subscription |
+
+### Schedule (Meal Slots)
+
+| Method | Endpoint | Service | Purpose |
+|---|---|---|---|
+| GET | `/schedule` | `MealSlotService` / `DashboardService` | All meal schedules |
+| GET | `/schedule/today` | `DashboardService` | Today's schedule with day type |
+| POST | `/schedule` | `MealSlotService` / `DashboardService` | Create meal schedule |
+| PUT | `/schedule/:id` | `MealSlotService` / `DashboardService` | Update meal schedule |
+| DELETE | `/schedule/:id` | `MealSlotService` / `DashboardService` | Delete meal schedule |
+| POST | `/schedule/holiday` | — | Mark holiday (not yet wired in UI) |
+
+### Taps
+
+| Method | Endpoint | Service | Purpose |
+|---|---|---|---|
+| GET | `/taps?meal=` | `DashboardService` | Today's tap entries |
+
+### Hardware Status & Management
+
+| Method | Endpoint | Service | Purpose |
+|---|---|---|---|
+| GET | `/hardware-status` | `DashboardService` | Devices status + server stats |
+| GET | `/hardware` | `HardwareManagementService` | List all devices |
+| GET | `/hardware/:id` | `HardwareManagementService` | Single device |
+| POST | `/hardware` | `HardwareManagementService` | Register device |
+| PUT | `/hardware/:id` | `HardwareManagementService` | Update device |
+| DELETE | `/hardware/:id` | `HardwareManagementService` | Delete device |
+| POST | `/hardware/start-pairing` | `HardwareManagementService` | Open pairing window |
+| POST | `/hardware/pair` | `HardwareManagementService` | Pair device by MAC + code |
+| POST | `/hardware/:id/confirm` | `HardwareManagementService` | Confirm/activate device |
+| POST | `/hardware/:id/test-printer` | `HardwareManagementService` | Test printer |
+| POST | `/hardware/:id/test-display` | `HardwareManagementService` | Test LCD display |
+| POST | `/hardware/:id/rotate-secret` | `HardwareManagementService` | Rotate HMAC secret |
+| POST | `/hardware/:id/stop` | `HardwareManagementService` | Emergency stop |
+| POST | `/hardware/:id/heartbeat` | — | Device heartbeat (device → server) |
+
+### Display Configuration
+
+| Method | Endpoint | Service | Purpose |
+|---|---|---|---|
+| GET | `/display-config` | `DashboardService` | All LCD display configs |
+| GET | `/display-config/:meal` | `DashboardService` | Display config by meal |
+| PUT | `/display-config` | `DashboardService` | Update display config |
+
+### Reports
+
+| Method | Endpoint | Service | Purpose |
+|---|---|---|---|
+| GET | `/reports/today` | — | Today's report (not yet wired) |
+| GET | `/reports/exports` | — | List exports |
+| GET | `/reports/exports/:date` | — | Download export by date |
+| POST | `/reports/export/trigger` | — | Trigger export |
+| GET | `/reports/range?from=&to=` | — | Report by date range |
+
+### Settings
+
+| Method | Endpoint | Service | Purpose |
+|---|---|---|---|
+| GET | `/settings` | — | Get mess settings |
+| PUT | `/settings` | — | Update mess settings |
+
+---
+
+## Shared Services
+
+| Service | Location | Purpose |
+|---|---|---|
+| `DashboardService` | `modules/dashboard/services/` | Fetches schedules, taps, hardware status, display configs |
+| `SubscriberService` | `modules/subscriber-management/services/` | Full subscriber CRUD with backend mapping |
+| `MealSlotService` | `shared/services/` | Cached meal slot CRUD with `BehaviorSubject` + 5-min stale time |
+| `SubscriberFormService` | `shared/services/` | Form validation, date parsing (DD/MM/YY ↔ timestamp), meal plan ↔ codes mapping |
+| `HardwareManagementService` | `shared/services/` | All hardware lifecycle operations |
+| `WebsocketService` | `shared/services/` | Raw WebSocket connection with auto-reconnect |
+| `ConnectionMonitorService` | `shared/services/` | Server health polling, server-down alerts with retry |
+| `NetworkService` | `shared/services/` | Browser online/offline monitoring with Wi-Fi alerts |
+| `NetworkInterceptor` | `shared/services/` | HTTP interceptor: detects 502-504/status 0 as server-down |
+
+---
+
+## WebSocket Events
+
+Connection to `ws://{host}/kjusys-api/mess-management/ws`
+
+| Event | Direction | Payload | Component Reaction |
+|---|---|---|---|
+| `tap.new` | Server → Client | `{ event: "tap.new", data: { ... } }` | Dashboard: live-update meal slot counts, add row to recent entries |
+| `tap.duplicate` | Server → Client | `{ event: "tap.duplicate", data: { ... } }` | Dashboard: show duplicate indication |
+| `hardware.status` | Server → Client | `{ event: "hardware.status", data: { ... } }` | Dashboard: update device status indicators |
+| `connected` | Server → Client | `{ event: "connected", message: "..." }` | WebSocketService: confirm connection |
+| `get.hardware.status` | Client → Server | `{ event: "get.hardware.status" }` | Sent on connect to request initial status |
+
+---
+
+## Component Tree
 
 ```
-base_project/
-├── angular.json               # Angular workspace configuration
-├── package.json               # Workspace dependencies & build/serve scripts
-├── tsconfig.json              # TypeScript configuration & path mappings
-├── prod-server/               # Express static servers for production builds
-│   ├── shell.js               # Shell/Host server (Port 4200)
-│   └── server.js              # Production static reverse-proxy runner
-├── scripts/                   # Automation and build orchestration scripts
-│   ├── create-project.js      # CLI tool to bootstrap a new MFE remote project
-│   ├── create-module.js       # CLI tool to add an MFE sub-module
-│   └── dynamic-build.js       # Resource-aware parallel package compiler
-└── projects/
-    ├── shell/                 # Core Host Shell application
-    └── libs/                  # Reusable shared libraries
-        ├── shared-auth/       # Bypassed authentication library and mock session
-        ├── shared-ui/         # Standalone UI components (e.g. lib-breadcrumbs-title)
-        ├── tabs/              # Scroll-aware dynamic tabs library component
-        ├── left-menu-lib/     # Main left sidebar menu renderer
-        ├── menu-header-lib/   # Top navbar and user profile header (stubbed)
-        └── http-common/       # Interceptor-enabled HttpClient wrapper
+AppComponent
+├── NavigationComponent (router-outlet shell)
+│   ├── [Route: /kjusys/dashboard]
+│   │   └── DashboardComponent
+│   │       ├── StatsBarComponent (4 stat cards)
+│   │       ├── MealSlotsComponent (live slot grid)
+│   │       │   └── ConfigureMealSlotsComponent (modal)
+│   │       ├── EntriesTableComponent (recent taps)
+│   │       ├── HardwareStatusComponent (devices + server stats)
+│   │       │   └── HardwareSettingsModalComponent (full device mgmt)
+│   │       └── lib-tabs (Dashboard / Subscriber Management / Reports)
+│   │
+│   ├── [Route: /kjusys/subscriber-management]
+│   │   └── SubscriberManagementComponent
+│   │       ├── SubscriberStatsComponent (counts)
+│   │       ├── SubscriberTableComponent (table + filters + pagination)
+│   │       ├── AddSubscriberModalComponent
+│   │       │   └── SubscriberFormComponent
+│   │       ├── EditSubscriberModalComponent
+│   │       │   └── SubscriberFormComponent
+│   │       ├── SubscriberCardPreviewComponent
+│   │       └── SubscriberCardModalComponent
+│   │
+│   └── [Route: /kjusys/reports]
+│       └── ReportsComponent (placeholder)
 ```
 
 ---
 
-## 3. Getting Started
+## MFE Manifest (Exposed Modules)
 
-### Prerequisites
-- Node.js version **v16+** (v18 or v20 LTS recommended)
-- Angular CLI installed globally: `npm i -g @angular/cli@16`
+Exposed in `webpack.config.js` and registered in `mf.manifest.json`:
 
-### Installation
-```bash
-npm install
-```
-
-### Build Libraries
-Before running or building applications, you must build the shared libraries first:
-```bash
-npm run build:lib
-```
-
-### Local Development
-To start the dev server (spawns the shell and all registered remote applications concurrently):
-```bash
-npm run serve
-```
-Open your browser and navigate to **`http://localhost:4200`** to view the clean welcome dashboard.
+| Exposed Module | Angular Artifact | Route Path |
+|---|---|---|
+| `./App` | `AppComponent` (bootstrap) | — |
+| `./Dashboard` | `DashboardComponent` | `mess-management/dashboard` |
+| `./SubscriberManagement` | `SubscriberManagementComponent` | `mess-management/subscriber-management` |
+| `./ReportsModule` | `ReportsModule` (NgModule) | `mess-management/reports` |
 
 ---
 
-## 4. Automation CLI Commands
+## Route Map
 
-### 4.1. Create a New Remote Project
-Bootstrap a clean, pre-configured MFE application:
-```bash
-npm run create:project -- --name <project-name> --port <port>
-```
-*Example:*
-```bash
-npm run create:project -- --name hr --port 4205
-```
-
-**Port Configuration Rules:**
-* **Required Parameter:** The `--port <port>` flag is **required** to specify the project's port.
-* **Unique Ports:** Every project must run on a different unique port. Make sure to choose a different port number for each remote project.
-* **Shell Reservation:** Port `4200` is reserved for the host shell and cannot be used for any remote project.
-
-This command:
-1. Configures Module Federation for the new application.
-2. Creates environment files, routes, and main navigation components.
-3. Automatically registers the project in `angular.json`, `package.json` scripts, and the dynamic manifests.
-
-### 4.2. Create a Sub-Module inside a Remote
-Bootstrap a new module and register it dynamically inside an existing project:
-```bash
-npm run create:module -- --project <project-name> --module <module-name>
-```
-*Example:*
-```bash
-npm run create:module -- --project hr --module onboarding
-```
-This command:
-1. Generates an Angular routing module and component.
-2. Injects the module route entry inside the project's `app.routes.ts` file.
-3. Exposes the module entry in `webpack.config.js`.
-4. Adds the module as a dynamic menu route to the shell manifests (`mf.manifest.json`).
+| URL Path | Module | Component |
+|---|---|---|
+| `/` | — | Redirects to `/login` |
+| `/login` | `SharedAuthComponent` (from `@libs/shared-auth`) | Login page |
+| `/kjusys/dashboard` | `DashboardModule` (lazy) | `DashboardComponent` |
+| `/kjusys/subscriber-management` | `SubscriberManagementModule` (lazy) | `SubscriberManagementComponent` |
+| `/kjusys/reports` | `ReportsModule` (lazy) | `ReportsComponent` |
 
 ---
 
-## 5. Deployment & Production Build
+## Shared Libraries Used
 
-To build the entire workspace (shell + all registered remotes + libraries):
-```bash
-npm run build
+| Library | Import Path | Components/Services Used |
+|---|---|---|
+| `shared-auth` | `@libs/shared-auth` | `SharedAuthComponent`, `SharedToastService` |
+| `http-common` | `@libs/http-common` | `HttpCommonService` |
+| `shared-ui` | `@libs/shared-ui` | `BreadcrumbsTitleComponent`, `EmptyStateComponent`, `ButtonComponent` |
+| `tabs` | `@libs/tabs` | `TabsModule`, `TabItem` |
+| `sub-tabs` | `@libs/sub-tabs` | `SubTabsModule`, `SubTabItem` |
+| `table` | `@libs/table` | `TableModule`, `TableColumn`, `PaginationConfig` |
+| `dropdown-lib` | `@libs/dropdown-lib` | Multi-select dropdown for meal slot/status filters |
+| `alert` | `@libs/alert` | `AlertService` for connection alerts |
+| `left-menu-lib` | `@libs/left-menu-lib` | Sidebar navigation |
+| `menu-header-lib` | `@libs/menu-header-lib` | Top header bar |
+
+**Note:** Auth is bypassed — `AuthGuard` in `shared-auth` unconditionally returns `true` for development.
+
+---
+
+## Data Models
+
+```typescript
+// Shared models (shared/models/)
+
+interface MealEntry {
+  customer: string;
+  roll_number: string;
+  mealSlot: 'Breakfast' | 'Lunch' | 'Dinner';
+  time: string;
+  status: 'Allowed' | 'Not Subscribed';
+}
+
+interface MealSlot {
+  name: string;
+  code: string;
+  icon: string;
+  status: 'Closed' | 'Live' | 'Upcoming';
+  timeRange: string;
+  total: number;
+  hadMeal: number | null;
+  thirdStat: number | null;
+  thirdLabel: string;
+  startTime?: string;
+}
+
+interface HardwareDevice {
+  deviceId: string;
+  name: string;
+  icon: string;
+  status: 'Online' | 'Connected' | 'Low Paper' | 'Offline';
+  lastSeenMs?: number;
+}
+
+interface DashboardStat {
+  label: string;
+  value: number;
+  icon: string;
+  color: string;
+}
+
+interface Subscriber {
+  id: string | number;
+  name: string;
+  email: string;
+  roll_number: string;
+  mealPlan: string;       // e.g. "Breakfast+Lunch+Dinner"
+  status: 'Active' | 'Paused' | 'Lapsed';
+  joinedDate: string;
+  startDate?: string;     // DD/MM/YY
+  endDate?: string;       // DD/MM/YY
+  pauseEndDate?: string;  // DD/MM/YY
+  mealNames?: string[];
+}
 ```
 
-To run the production static servers locally:
-```bash
-npm run start
-```
-*Note: Make sure to define any environment variables or replace remote endpoints in the environments configuration (`environment.prod.ts`) before compiling for staging/production.*
+---
+
+## Environment Configuration
+
+Six environment variants in `projects/mess-management/src/environments/`:
+
+| File | `production` | Backend URL |
+|---|---|---|
+| `environment.ts` | `false` | `http://localhost:8080/kjusys-api/mess-management` |
+| `environment.prod.ts` | `true` | `https://kjusys.kristujayanti.edu.in/kjusys-api` |
+| `environment.dev.ts` | `true` | `http://dev-kjusys.kristujayanti.edu.in/kjusys-api` |
+| `environment.local.ts` | `true` | Local override |
+| `environment.demo.ts` | `true` | Demo server |
+| `environment.local-server.ts` | `true` | Local server |
+
+**`ConfigLoaderService`** dynamically resolves the backend URL at bootstrap by checking (in order):
+1. Dev mode flag (`localStorage.kjusys_devMode`)
+2. GitHub Gist raw URL (sync XHR)
+3. LocalStorage cache
+4. Localhost fallback
+
+---
+
+## Production Servors
+
+Located in `prod-server/`:
+
+| File | Port | Description |
+|---|---|---|
+| `shell.js` | 4200 | Express server for shell app (gzip, smart caching) |
+| `mess-management.js` | 4201 | Express server for mess-management remote static files |
+| `server.js` | 4300 | Standalone Express server (alternative) |
+
+---
+
+## CLI Scaffolding
+
+| Command | Purpose |
+|---|---|
+| `npm run create:project -- --name <name> --port <port>` | Bootstrap new MFE remote project |
+| `npm run create:module -- --project <name> --module <name>` | Add sub-module to existing remote |
+| `npm run build:lib` | Build all shared libraries (3-stage parallel) |
+| `npm run build` | Build shell + mess-management |
+| `npm run serve` | Dev servers (shell:4200, mess:4201) concurrently |
+| `npm run start` | Production Express servers |
