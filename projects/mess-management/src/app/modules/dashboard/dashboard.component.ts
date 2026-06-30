@@ -13,6 +13,7 @@ import { Subscriber } from '../../shared/models/subscriber';
 import { WebsocketService } from '../../shared/services/websocket.service';
 import { NetworkService } from '../../shared/services/network.service';
 import { ConnectionMonitorService } from '../../shared/services/connection-monitor.service';
+import { MealSlotService } from '../../shared/services/meal-slot.service';
 import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
 import { TabItem, TabsModule } from '@libs/tabs';
 
@@ -36,6 +37,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private roll_numberLookup = new Map<string, string>();
   private activeByMealPlan: { [key: string]: number } = {};
   private subscriptions = new Subscription();
+  private wsInitialized = false;
 
   breadcrumbs = [
     { label: 'Hostel' },
@@ -88,6 +90,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private websocketService: WebsocketService,
     private networkService: NetworkService,
     private connectionMonitor: ConnectionMonitorService,
+    private mealSlotService: MealSlotService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private router: Router,
@@ -125,6 +128,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private async loadDataProgressively() {
     this.isLoading = true;
     try {
+      // 0. Ensure meal slot codes are loaded FIRST so subscriber meal plans map correctly
+      await firstValueFrom(this.mealSlotService.getMealSlots());
+
       // 1. Initiate all network requests concurrently
       const subscribersPromise = firstValueFrom(this.subscriberService.getSubscribers());
       const schedulesPromise = firstValueFrom(this.dashboardService.getSchedules());
@@ -305,6 +311,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   initWebSocket() {
+    if (this.wsInitialized) {
+      console.log('[DEBUG] WebSocket already initialized, skipping');
+      return;
+    }
+    this.wsInitialized = true;
     console.log('[DEBUG] initWebSocket called');
     this.websocketService.connect();
 
@@ -419,6 +430,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.hardwarePollingInterval) clearInterval(this.hardwarePollingInterval);
     this.subscriptions.unsubscribe();
     this.websocketService.disconnect();
+    this.wsInitialized = false;
   }
 
   onHardwareSettingsRequested(): void {

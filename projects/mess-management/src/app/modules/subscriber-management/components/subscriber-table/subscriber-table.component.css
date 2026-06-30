@@ -80,6 +80,11 @@
   color: #1D2939 !important;
 }
 
+/* Expiry warning in joined column */
+:host ::ng-deep .kjt-td:nth-child(5) .kjt-sub-text {
+  color: #C70036 !important;
+}
+
 /* ── Actions column cell ── */
 :host .kjt-td-actions {
   border-bottom: 1px solid #F3F4F6 !important;
@@ -225,4 +230,13 @@
 .export-btn:hover {
   background: #F9FAFB !important;
   border-color: #9CA3AF !important;
+}
+
+/* ── Delete action button color ── */
+:host ::ng-deep button[title="Delete"] {
+  color: #D92C2B !important;
+}
+
+:host ::ng-deep button[title="Delete"]:hover {
+  background: #FEF2F2 !important;
 }

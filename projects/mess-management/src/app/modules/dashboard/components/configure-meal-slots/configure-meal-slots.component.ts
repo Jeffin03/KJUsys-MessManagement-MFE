@@ -447,9 +447,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     };
 
     this.dashboardService.updateDisplayConfig(defaultConfig).subscribe({
-      next: () => {
-        this.toastService.success('Display configuration saved');
-      },
+      next: () => {},
       error: (err) => {
         console.error('Failed to save display config:', err);
         this.toastService.error('Failed to save display configuration');
@@ -909,6 +907,10 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     this.newSlot.endMin = endM;
     this.startTimeSet = true;
     this.endTimeSet = true;
+    setTimeout(() => {
+      const form = document.getElementById('meal-slot-form');
+      form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   cancelEdit() {
@@ -919,9 +921,19 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   }
 
   saveConfiguration() {
+    if (this.isEditing) {
+      this.toastService.warning('Please complete or cancel the current edit before saving');
+      return;
+    }
     this.saveDisplayConfigs();
     this.close();
     this.configurationSaved.emit();
+    const tabMessages: Record<string, string> = {
+      mealSlots: 'Meal slots configuration saved',
+      displayPanel: 'Display panel configuration saved',
+      tokenCustomization: 'Token customization saved'
+    };
+    this.toastService.success(tabMessages[this.activeTab] || 'Configuration saved');
   }
 
   ngOnChanges(changes: SimpleChanges) {

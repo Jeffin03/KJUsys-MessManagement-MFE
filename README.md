@@ -58,10 +58,10 @@ The frontend is a **Webpack Module Federation remote** (port 4201) that exposes 
 | Feature | Component | Description |
 |---|---|---|
 | **Subscriber Stats** | `SubscriberStatsComponent` | Total, Active, Paused, Lapsed counts |
-| **Subscriber Table** | `SubscriberTableComponent` | Paginated, searchable, filterable table with columns: Subscriber, Roll Number, Meal Plan, Status (colored badge), Joined Date. Export to CSV. |
-| **Add Subscriber** | `AddSubscriberModalComponent` | Form with name, email, roll number, meal slot multi-select, start/end dates, status dropdown, pause end date |
+| **Subscriber Table** | `SubscriberTableComponent` | Paginated, searchable, filterable table with columns: Subscriber, Roll Number, Meal Plan, Status (colored badge), Joined Date (with expiry warning for subscribers expiring within 7 days). Custom filter panel with checkbox selections for meal slots and status, plus radio selection for expiry range (7/15/30 days). Export to CSV. |
+| **Add Subscriber** | `AddSubscriberModalComponent` | Form with name, email, roll number, meal slot multi-select, start/end dates, status dropdown, pause start/end dates, pause reason |
 | **Edit Subscriber** | `EditSubscriberModalComponent` | Pre-populated form for editing existing subscribers |
-| **Subscriber Form** | `SubscriberFormComponent` | Reusable form with custom-built date pickers, validation, conditional pause date field |
+| **Subscriber Form** | `SubscriberFormComponent` | Reusable form with custom-built date pickers, validation, conditional pause start/end date fields, pause reason input |
 | **ID Card Preview** | `SubscriberCardPreviewComponent` | Front/back card design with Mess Pass branding, roll number, terms & conditions |
 | **Card Modal** | `SubscriberCardModalComponent` | Post-creation preview of subscriber's ID card |
 
@@ -89,8 +89,8 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 | GET | `/students/expiring` | `SubscriberService` | Subscribers expiring soon |
 | GET | `/students/lookup/:roll_number` | `SubscriberService` | Quick lookup for registration flow |
 | GET | `/students/:roll_number` | `SubscriberService` | Single subscriber by roll number |
-| POST | `/students` | `SubscriberService` | Create new subscriber |
-| PUT | `/students/:roll_number` | `SubscriberService` | Update subscriber |
+| POST | `/students` | `SubscriberService` | Create new subscriber. Body: supports `pauseReason`, `pauseStart_Date`, `pauseEnd_Date`. |
+| PUT | `/students/:roll_number` | `SubscriberService` | Update subscriber. Merges subscription fields; extends `end_Date` by pause duration when resuming from pause. Body: supports `pauseReason`, `pauseStart_Date`, `pauseEnd_Date`. |
 | DELETE | `/students/:roll_number` | `SubscriberService` | Delete subscriber |
 | PUT | `/students/:roll_number/renew` | `SubscriberService` | Renew subscription |
 | PUT | `/students/:roll_number/pause` | `SubscriberService` | Pause subscription |
@@ -165,10 +165,11 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 | `DashboardService` | `modules/dashboard/services/` | Fetches schedules, taps, hardware status, display configs |
 | `SubscriberService` | `modules/subscriber-management/services/` | Full subscriber CRUD with backend mapping |
 | `MealSlotService` | `shared/services/` | Cached meal slot CRUD with `BehaviorSubject` + 5-min stale time |
-| `SubscriberFormService` | `shared/services/` | Form validation, date parsing (DD/MM/YY ↔ timestamp), meal plan ↔ codes mapping |
+| `SubscriberFormService` | `shared/services/` | Form validation, date parsing (DD/MM/YY ↔ timestamp), meal plan ↔ codes mapping, pause start/end date and pause reason validation |
 | `HardwareManagementService` | `shared/services/` | All hardware lifecycle operations |
 | `WebsocketService` | `shared/services/` | Raw WebSocket connection with auto-reconnect |
 | `ConnectionMonitorService` | `shared/services/` | Server health polling, server-down alerts with retry |
+| `ConfigLoaderService` | `environments/` | Dynamic backend URL resolution at bootstrap: applies cached/localhost URL immediately, then fetches GitHub Gist asynchronously in background and probes server |
 | `NetworkService` | `shared/services/` | Browser online/offline monitoring with Wi-Fi alerts |
 | `NetworkInterceptor` | `shared/services/` | HTTP interceptor: detects 502-504/status 0 as server-down |
 
@@ -316,6 +317,9 @@ interface Subscriber {
   startDate?: string;     // DD/MM/YY
   endDate?: string;       // DD/MM/YY
   pauseEndDate?: string;  // DD/MM/YY
+  pauseStartDate?: string; // DD/MM/YY
+  pauseReason?: string;
+  expiryWarning?: string;  // "expiry in N days" for active subs within 7 days
   mealNames?: string[];
 }
 ```
@@ -336,10 +340,10 @@ Six environment variants in `projects/mess-management/src/environments/`:
 | `environment.local-server.ts` | `true` | Local server |
 
 **`ConfigLoaderService`** dynamically resolves the backend URL at bootstrap by checking (in order):
-1. Dev mode flag (`localStorage.kjusys_devMode`)
-2. GitHub Gist raw URL (sync XHR)
-3. LocalStorage cache
-4. Localhost fallback
+1. Dev mode flag (`localStorage.kjusys_devMode`) — uses `http://localhost:8080` immediately
+2. LocalStorage cache (previously resolved URL) — applied immediately, non-blocking
+3. GitHub Gist raw URL — fetched asynchronously in background; if a different URL is returned, swaps to it and probes the server
+4. Localhost fallback — used if nothing else resolves
 
 ---
 

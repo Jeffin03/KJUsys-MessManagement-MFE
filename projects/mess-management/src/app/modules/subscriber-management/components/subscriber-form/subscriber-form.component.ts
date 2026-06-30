@@ -35,6 +35,7 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
       this.showStartPicker = false;
       this.showEndPicker = false;
       this.showPauseEndPicker = false;
+      this.showPauseStartPicker = false;
     }
   }
 
@@ -55,7 +56,9 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
       endDate: '',
       status: 'Active'
     },
-    pauseEndDate: ''
+    pauseEndDate: '',
+    pauseStartDate: '',
+    pauseReason: ''
   };
 
   errors: ValidationErrors = {
@@ -63,7 +66,9 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     lastName: '',
     email: '',
     roll_number: '',
-    pauseEndDate: ''
+    pauseEndDate: '',
+    pauseStartDate: '',
+    pauseReason: ''
   };
 
   dateError = '';
@@ -72,6 +77,7 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   showStartPicker = false;
   showEndPicker = false;
   showPauseEndPicker = false;
+  showPauseStartPicker = false;
 
   popupTop = 0;
   popupLeft = 0;
@@ -79,6 +85,7 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   startViewDate = new Date();
   endViewDate = new Date();
   pauseEndViewDate = new Date();
+  pauseStartViewDate = new Date();
 
   months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -148,6 +155,7 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     this.showStartPicker = false;
     this.showEndPicker = false;
     this.showPauseEndPicker = false;
+    this.showPauseStartPicker = false;
     this.showStatus = false;
   }
 
@@ -157,20 +165,23 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     this.showStartPicker = false;
     this.showEndPicker = false;
     this.showPauseEndPicker = false;
+    this.showPauseStartPicker = false;
   }
 
-  togglePicker(type: 'start' | 'end' | 'pauseEnd', e: Event): void {
+  togglePicker(type: 'start' | 'end' | 'pauseEnd' | 'pauseStart', e: Event): void {
     e.stopPropagation();
-    const alreadyOpen = type === 'start' ? this.showStartPicker : (type === 'end' ? this.showEndPicker : this.showPauseEndPicker);
+    const alreadyOpen = type === 'start' ? this.showStartPicker : (type === 'end' ? this.showEndPicker : (type === 'pauseEnd' ? this.showPauseEndPicker : this.showPauseStartPicker));
     if (alreadyOpen) {
       this.showStartPicker = false;
       this.showEndPicker = false;
       this.showPauseEndPicker = false;
+      this.showPauseStartPicker = false;
       return;
     }
     this.showStartPicker = false;
     this.showEndPicker = false;
     this.showPauseEndPicker = false;
+    this.showPauseStartPicker = false;
     this.showStatus = false;
 
     const target = e.currentTarget as HTMLElement;
@@ -199,25 +210,31 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
       const d = this.parseDate(this.form.mealSlot.endDate);
       if (d) this.endViewDate = new Date(d.getFullYear(), d.getMonth(), 1);
       this.showEndPicker = true;
-    } else {
+    } else if (type === 'pauseEnd') {
       this.showPauseEndPicker = true;
+    } else {
+      const d = this.parseDate(this.form.pauseStartDate);
+      if (d) this.pauseStartViewDate = new Date(d.getFullYear(), d.getMonth(), 1);
+      this.showPauseStartPicker = true;
     }
   }
 
-  prevMonth(type: 'start' | 'end' | 'pauseEnd'): void {
-    const d = type === 'start' ? this.startViewDate : (type === 'end' ? this.endViewDate : this.pauseEndViewDate);
+  prevMonth(type: 'start' | 'end' | 'pauseEnd' | 'pauseStart'): void {
+    const d = type === 'start' ? this.startViewDate : (type === 'end' ? this.endViewDate : (type === 'pauseEnd' ? this.pauseEndViewDate : this.pauseStartViewDate));
     const nd = new Date(d.getFullYear(), d.getMonth() - 1, 1);
     if (type === 'start') this.startViewDate = nd;
     else if (type === 'end') this.endViewDate = nd;
-    else this.pauseEndViewDate = nd;
+    else if (type === 'pauseEnd') this.pauseEndViewDate = nd;
+    else this.pauseStartViewDate = nd;
   }
 
-  nextMonth(type: 'start' | 'end' | 'pauseEnd'): void {
-    const d = type === 'start' ? this.startViewDate : (type === 'end' ? this.endViewDate : this.pauseEndViewDate);
+  nextMonth(type: 'start' | 'end' | 'pauseEnd' | 'pauseStart'): void {
+    const d = type === 'start' ? this.startViewDate : (type === 'end' ? this.endViewDate : (type === 'pauseEnd' ? this.pauseEndViewDate : this.pauseStartViewDate));
     const nd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
     if (type === 'start') this.startViewDate = nd;
     else if (type === 'end') this.endViewDate = nd;
-    else this.pauseEndViewDate = nd;
+    else if (type === 'pauseEnd') this.pauseEndViewDate = nd;
+    else this.pauseStartViewDate = nd;
   }
 
   getCalendarDays(viewDate: Date): (Date | null)[] {
@@ -352,6 +369,48 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
 
   confirmPauseEndDate(): void {
     this.showPauseEndPicker = false;
+    this.validateForm();
+  }
+
+  isPauseStartBoundaryDate(day: Date | null): boolean {
+    if (!day) return false;
+    const fmt = this.formatDate(day);
+    return fmt === this.form.pauseStartDate || fmt === this.form.pauseEndDate;
+  }
+
+  isPauseStartInRange(day: Date | null): boolean {
+    if (!day) return false;
+    const start = this.parseDate(this.form.pauseStartDate);
+    const end = this.parseDate(this.form.pauseEndDate);
+    if (!start || !end) return false;
+    return day > start && day < end;
+  }
+
+  isPauseStartBoundaryStart(day: Date | null): boolean {
+    if (!day) return false;
+    return this.formatDate(day) === this.form.pauseStartDate;
+  }
+
+  isPauseStartBoundaryEnd(day: Date | null): boolean {
+    if (!day) return false;
+    return this.formatDate(day) === this.form.pauseEndDate;
+  }
+
+  selectPauseStartDay(day: Date | null): void {
+    if (!day) return;
+    this.form.pauseStartDate = this.formatDate(day);
+    this.showPauseStartPicker = false;
+    this.validateForm();
+  }
+
+  clearPauseStartDate(): void {
+    this.form.pauseStartDate = '';
+    this.showPauseStartPicker = false;
+    this.validateForm();
+  }
+
+  confirmPauseStartDate(): void {
+    this.showPauseStartPicker = false;
     this.validateForm();
   }
 
