@@ -9,6 +9,8 @@ import { environment } from '../../../../environments/environment';
 export interface BackendSchedule {
   _id: { $oid: string };
   meal: string;
+  code: string;
+  icon: string;
   active: boolean;
   schedule: {
     weekday: { start: string; end: string };
@@ -65,7 +67,8 @@ export class DashboardService {
 
             return {
               name: m.meal.charAt(0) + m.meal.slice(1).toLowerCase(),
-              icon: m.meal.toLowerCase(),
+              code: m.code || '',
+              icon: m.icon || m.meal.toLowerCase(),
               status: status,
               timeRange: `${m.start} - ${m.end}`,
               total: 0,

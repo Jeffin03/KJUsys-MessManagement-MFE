@@ -14,8 +14,8 @@ export interface HardwareDevice {
   _id: string;
   name: string;
   type: string;
-  state: 'pending' | 'active' | 'revoked';
-  lastSeen: number;
+  state: 'pending' | 'active' | 'revoked' | 'disconnected';
+  lastSeenMs: number;
   macAddress?: string;
   peripherals: HardwarePeripheral[];
   hmacSecret?: string;
@@ -103,5 +103,9 @@ export class HardwareManagementService {
 
   stopDevice(deviceId: string): Observable<any> {
     return this.http.post(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_STOP(deviceId)}`, {});
+  }
+
+  updateDevice(deviceId: string, data: Partial<{ name: string; type: string }>): Observable<any> {
+    return this.http.put(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_BY_ID(deviceId)}`, data);
   }
 }

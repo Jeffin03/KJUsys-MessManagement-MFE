@@ -3,13 +3,13 @@
     <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
             <span class="text-sm font-semibold" style="color:#111827;">Meal Slots</span>
-            <span class="text-xs" style="color:#747474;">· 3 slots configured for today</span>
+            <span class="text-xs" style="color:#747474;">· {{ mealSlots.length }} slot{{ mealSlots.length !== 1 ? 's' : '' }} configured for today</span>
         </div>
         <lib-button type="primary" label="Configure" (onClick)="openConfigure()"></lib-button>
     </div>
 
     <!-- Cards -->
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-4 gap-4">
         <div *ngFor="let slot of mealSlots" class="rounded-xl px-4 py-5"
             style="background:#FFFFFF; border:1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
             [attr.data-meal-slot]="slot.name">

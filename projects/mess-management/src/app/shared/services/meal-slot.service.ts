@@ -9,6 +9,7 @@ export interface BackendSchedule {
   _id: { $oid: string };
   meal: string;
   code: string;
+  icon: string;
   active: boolean;
   schedule: {
     weekday: { start: string; end: string };
@@ -159,8 +160,8 @@ export class MealSlotService {
     return {
       id: s._id.$oid,
       name: s.meal.charAt(0).toUpperCase() + s.meal.slice(1).toLowerCase(),
-      code: s.code || s.meal.substring(0, 2).toUpperCase(),
-      icon: s.meal.toLowerCase(),
+      code: s.code || '',
+      icon: s.icon || s.meal.toLowerCase(),
       timeRange: `${start24} - ${end24}`,
       status,
       start24,
