@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, Output, EventEmitter } from '@angular/core';
+import { Component, Input, OnChanges, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { DashboardService } from '../../services/dashboard.service';
 import { CommonModule } from '@angular/common';
 import { ButtonComponent } from '@libs/shared-ui';
@@ -19,6 +19,8 @@ export class HardwareStatusComponent implements OnChanges {
   @Output() settingsRequested = new EventEmitter<void>();
 
   lastStatusUpdate: Date | null = null;
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   get formattedUptime(): string {
     const h = Math.floor(this.uptimeSeconds / 3600);
@@ -57,10 +59,10 @@ export class HardwareStatusComponent implements OnChanges {
   }
 
   ngOnChanges(): void {
-    // Update last status update time when new hardware data arrives
     if (this.hardware && this.hardware.length > 0) {
       this.lastStatusUpdate = new Date();
     }
+    this.cdr.detectChanges();
   }
 
   refreshHardwareStatus(): void {

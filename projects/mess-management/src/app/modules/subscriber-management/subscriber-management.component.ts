@@ -174,8 +174,11 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
       next: ({ subscribers }) => {
         this.allSubscribers = subscribers;
         this.calculateStats();
+        this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => {
+        this.cdr.detectChanges();
+      }
     });
   }
 

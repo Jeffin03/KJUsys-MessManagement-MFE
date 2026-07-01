@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, SimpleChanges, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, SimpleChanges, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SubscriberCardPreviewComponent } from '../subscriber-card-preview/subscriber-card-preview.component';
@@ -26,6 +26,8 @@ export class SubscriberCardModalComponent implements OnChanges, OnDestroy {
   roll_number = '';
   roll_numberError = '';
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   ngOnChanges(changes: SimpleChanges): void {
     const appRoot = document.querySelector('app-root') as HTMLElement;
     document.body.style.overflow = 'hidden';
@@ -34,6 +36,7 @@ export class SubscriberCardModalComponent implements OnChanges, OnDestroy {
       appRoot.style.height = '100vh';
       appRoot.style.overflow = 'hidden';
     }
+    this.cdr.detectChanges();
   }
 
   ngOnDestroy(): void {

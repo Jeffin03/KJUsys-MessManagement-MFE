@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MealSlot } from '../../../../shared/models/dashboard.models';
 import { ConfigureMealSlotsComponent } from '../configure-meal-slots/configure-meal-slots.component';
@@ -18,8 +18,10 @@ export class MealSlotsComponent implements OnChanges {
   hovering = false;
   private prevHadMeal = new Map<string, number>();
 
-  openConfigure() { this.isConfigureOpen = true; }
-  closeConfigure() { this.isConfigureOpen = false; }
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  openConfigure() { this.isConfigureOpen = true; this.cdr.detectChanges(); }
+  closeConfigure() { this.isConfigureOpen = false; this.cdr.detectChanges(); }
 
   getStatusClass(status: MealSlot['status']): string {
     switch (status) {
@@ -40,6 +42,7 @@ export class MealSlotsComponent implements OnChanges {
         }
         this.prevHadMeal.set(slot.name, curr);
       });
+      this.cdr.detectChanges();
     }
   }
 
