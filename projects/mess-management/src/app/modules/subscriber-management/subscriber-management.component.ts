@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 
+import { StudentDetailComponent } from '../reports/components/student-detail/student-detail.component';
+
 import { SubscriberStatsComponent } from './components/subscriber-stats/subscriber-stats.component';
 import { SubscriberTableComponent } from './components/subscriber-table/subscriber-table.component';
 import { AddSubscriberModalComponent } from './components/add-subscriber-modal/add-subscriber-modal.component';
@@ -30,7 +32,8 @@ import { MealSlotService, MealSlotWithCode } from '../../shared/services/meal-sl
     EditSubscriberModalComponent,
     BreadcrumbsTitleComponent,
     ButtonComponent,
-    QuickModalComponent
+    QuickModalComponent,
+    StudentDetailComponent
   ],
   templateUrl: './subscriber-management.component.html',
   styleUrls: ['./subscriber-management.component.css']
@@ -87,6 +90,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   showEditModal = false;
   showQuickModal = false;
   quickModalRollNumber: string | null = null;
+  selectedStudentRollNumber: string | null = null;
 
   subscriberFormData: any = null;
   editSubscriberData: any = null;
@@ -116,6 +120,14 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
       this.searchQuery = search;
       this.currentPage = 1;
       this.fetchSubscribers();
+    });
+
+    this.route.queryParams.subscribe(params => {
+      const roll = params['student'];
+      if (roll) {
+        this.selectedStudentRollNumber = roll;
+        this.router.navigate([], { relativeTo: this.route, queryParams: { student: null }, queryParamsHandling: 'merge' });
+      }
     });
 
     this.fetchMealSlots();
@@ -408,8 +420,11 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   }
 
   openQuickModal(sub: Subscriber): void {
-    this.quickModalRollNumber = sub.roll_number;
-    this.showQuickModal = true;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { student: sub.roll_number },
+      queryParamsHandling: 'merge'
+    });
   }
 
   openEditModal(sub: Subscriber): void {
@@ -425,6 +440,10 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   requestDeleteSubscriber(subscriber: Subscriber): void {
     this.pendingDeleteSubscriber = subscriber;
     this.showDeleteConfirmPopup = true;
+  }
+
+  backFromStudentDetail(): void {
+    this.selectedStudentRollNumber = null;
   }
 
   cancelDeleteSubscriber(): void {

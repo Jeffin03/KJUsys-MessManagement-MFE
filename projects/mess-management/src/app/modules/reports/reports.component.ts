@@ -1,6 +1,5 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Subscription } from 'rxjs';
 import { TabItem } from '@libs/tabs';
 import { SubTabItem } from '@libs/sub-tabs';
 
@@ -9,14 +8,11 @@ import { SubTabItem } from '@libs/sub-tabs';
   templateUrl: './reports.component.html',
   styleUrls: ['./reports.component.css']
 })
-export class ReportsComponent implements OnInit, OnDestroy {
+export class ReportsComponent {
 
-  activeSubTab = 'student-search';
-  studentRollNumber = '';
-  private querySub: Subscription | null = null;
+  activeSubTab = 'analytics';
 
   subTabs: SubTabItem[] = [
-    { id: 'student-search', label: 'Student Explorer' },
     { id: 'analytics', label: 'Analytics Dashboard' },
     { id: 'audit', label: 'Audit Tools' },
     { id: 'holidays', label: 'Holiday Calendar' },
@@ -37,23 +33,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private cdr: ChangeDetectorRef
   ) { }
-
-  ngOnInit() {
-    this.querySub = this.route.queryParams.subscribe(params => {
-      const roll = params['student'];
-      if (roll) {
-        this.studentRollNumber = roll;
-        this.activeSubTab = 'student-detail';
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  ngOnDestroy() {
-    this.querySub?.unsubscribe();
-  }
 
   onTabChange(tabId: string) {
     this.activeTab = tabId;
@@ -66,17 +46,5 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   onSubTabChange(tabId: string) {
     this.activeSubTab = tabId;
-  }
-
-  onViewStudent(rollNumber: string) {
-    this.studentRollNumber = rollNumber;
-    this.activeSubTab = 'student-detail';
-    this.router.navigate([], { relativeTo: this.route, queryParams: { student: rollNumber }, queryParamsHandling: 'merge' });
-  }
-
-  backToSearch() {
-    this.activeSubTab = 'student-search';
-    this.studentRollNumber = '';
-    this.router.navigate([], { relativeTo: this.route, queryParams: { student: null }, queryParamsHandling: 'merge' });
   }
 }
