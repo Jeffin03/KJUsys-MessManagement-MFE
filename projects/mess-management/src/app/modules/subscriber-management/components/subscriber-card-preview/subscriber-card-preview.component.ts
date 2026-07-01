@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectorRef, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -7,7 +7,13 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   templateUrl: './subscriber-card-preview.component.html'
 })
-export class SubscriberCardPreviewComponent {
+export class SubscriberCardPreviewComponent implements OnChanges {
   @Input() roll_number = '';
   @Input() subscriberName = '';
+
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    this.cdr.detectChanges();
+  }
 }

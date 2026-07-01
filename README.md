@@ -98,8 +98,8 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 | POST | `/students` | `SubscriberService` | Create new subscriber. Body: supports `pauseReason`, `pauseStart_Date`, `pauseEnd_Date`. |
 | PUT | `/students/:roll_number` | `SubscriberService` | Update subscriber. Merges subscription fields; extends `end_Date` by pause duration when resuming from pause. Body: supports `pauseReason`, `pauseStart_Date`, `pauseEnd_Date`. |
 | DELETE | `/students/:roll_number` | `SubscriberService` | Delete subscriber |
-| PUT | `/students/:roll_number/renew` | `SubscriberService` | Renew subscription |
-| PUT | `/students/:roll_number/pause` | `SubscriberService` | Pause subscription |
+| POST | `/students/:roll_number/renew` | `SubscriberService` | Renew subscription |
+| POST | `/students/:roll_number/pause` | `SubscriberService` | Pause subscription |
 
 ### Schedule (Meal Slots)
 
@@ -164,13 +164,6 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 | GET | `/reports/exports` | — | List export records |
 | GET | `/reports/exports/:date` | — | Download export Excel file by date |
 | POST | `/reports/export/trigger` | — | Manual export trigger |
-
-### Settings
-
-| Method | Endpoint | Service | Purpose |
-|---|---|---|---|
-| GET | `/settings` | — | Get mess settings |
-| PUT | `/settings` | — | Update mess settings |
 
 ---
 
@@ -397,3 +390,28 @@ Located in `prod-server/`:
 | `npm run build` | Build shell + mess-management |
 | `npm run serve` | Dev servers (shell:4200, mess:4201) concurrently |
 | `npm run start` | Production Express servers |
+
+---
+
+## Changelog
+
+### 2026-07-02 — Endpoint & CDR cleanup
+
+**Purged endpoints (no frontend UI planned):**
+- `GET /settings`, `PUT /settings` — removed entire settings infrastructure (subrouter, handler, service, constants)
+- `POST /students/:roll_number/block`, `POST /students/:roll_number/unblock` — removed routes, handlers, constants (may be re-added if card blocking is needed later)
+- `DELETE /display-config/:meal` — removed route and handler (display configs managed via PUT only)
+
+**Bug fix:**
+- `PUT /students/:roll_number/renew` → `POST` (frontend was sending wrong HTTP method)
+- `PUT /students/:roll_number/pause` → `POST` (frontend was sending wrong HTTP method)
+
+**Change detection:**
+- Added `ChangeDetectorRef` with `detectChanges()` / `markForCheck()` to:
+  - `SubscriberStatsComponent` — `OnPush` strategy + input setter
+  - `SubscriberTableComponent`
+  - `SubscriberCardModalComponent`
+  - `SubscriberCardPreviewComponent`
+  - `MealSlotsComponent` (dashboard)
+  - `HardwareStatusComponent` (dashboard)
+- Parent `SubscriberManagementComponent`: added `cdr.detectChanges()` after background stats fetch to ensure stats cards render

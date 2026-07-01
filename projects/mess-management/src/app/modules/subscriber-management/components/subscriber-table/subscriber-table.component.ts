@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -105,6 +105,8 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
 
   private searchSubject = new Subject<string>();
   private searchSubscription: Subscription | null = null;
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.searchSubscription = this.searchSubject.pipe(
@@ -248,6 +250,7 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
   toggleFilterPanel(e: Event): void {
     e.stopPropagation();
     this.showFilterPanel = !this.showFilterPanel;
+    this.cdr.detectChanges();
   }
 
   closeFilterPanel(): void {

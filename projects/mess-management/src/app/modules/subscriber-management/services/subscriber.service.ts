@@ -199,7 +199,7 @@ export class SubscriberService {
   }
 
   renewSubscriber(roll_number: string, duration_days: number = 30): Observable<any> {
-    return this.http.put(`${this.baseUrl}${API_ENDPOINTS.STUDENT_RENEW(roll_number)}`, { duration_days });
+    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.STUDENT_RENEW(roll_number)}`, { duration_days });
   }
 
   getExpiringSubscribers(): Observable<Subscriber[]> {
@@ -356,6 +356,6 @@ export class SubscriberService {
     };
 
     // Use roll_number for the endpoint (backend expects roll_number, not MongoDB _id)
-    return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_PAUSE(roll_number)}`, payload);
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_PAUSE(roll_number)}`, payload);
   }
 }

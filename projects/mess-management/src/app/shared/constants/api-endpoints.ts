@@ -9,8 +9,6 @@ export const API_ENDPOINTS = {
   STUDENT_LOOKUP: (rollNumber: string) => `/students/lookup/${rollNumber}`,
   STUDENT_RENEW: (rollNumber: string) => `/students/${rollNumber}/renew`,
   STUDENT_PAUSE: (rollNumber: string) => `/students/${rollNumber}/pause`,
-  STUDENT_BLOCK: (rollNumber: string) => `/students/${rollNumber}/block`,
-  STUDENT_UNBLOCK: (rollNumber: string) => `/students/${rollNumber}/unblock`,
   STUDENTS_EXPIRING: '/students/expiring',
 
   // Schedule
@@ -42,9 +40,6 @@ export const API_ENDPOINTS = {
   // Reports — Holidays
   HOLIDAYS_LIST: '/schedule/holidays',
   HOLIDAY_BY_ID: (id: string) => `/schedule/holiday/${id}`,
-
-  // Settings
-  SETTINGS: '/settings',
 
   // Hardware
   HARDWARE_STATUS: '/hardware-status',
