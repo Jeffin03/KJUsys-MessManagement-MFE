@@ -12,7 +12,7 @@ interface SuggestionItem {
   label: string;
   insertText: string;
   previewValue: string;
-  variable: 'name' | 'rollno' | 'meal';
+  variable: 'name' | 'rollno' | 'meal' | 'token' | 'date' | 'time';
   description: string;
 }
 
@@ -92,19 +92,12 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   previewState: 'defaultMsg' | 'tapAllowed' | 'alreadyTapped' | 'notSubscribed' = 'tapAllowed';
 
   tokenConfig = {
-    section1: '',
-    section2: '',
-    section3: ''
+    sections: [] as { text: string; bold: boolean; italic: boolean; fontSize: number; align: 'left' | 'center' | 'right'; expanded: boolean; dividerAfter?: boolean }[]
   };
 
-  hardwareDevices: HardwareDevice[] = [];
-  printerDevices: HardwareDevice[] = [];
-  selectedDeviceId = '';
-  selectedPrinterId = '';
-  testOnHardwareLoading = false;
-  testPrinterLoading = false;
+  private activeInputEl: HTMLTextAreaElement | null = null;
 
-  // ── Autocomplete ──────────────────────────────────────────────────────────
+  // ── Autocomplete state ─────────────────────────────────────────────────
   suggestionState: {
     show: boolean;
     field: string | null;
@@ -114,13 +107,21 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   suggestionPosition = { top: 0, left: 0, width: 0 };
 
+  highlightedIndex: number | null = null;
+  hardwareDevices: HardwareDevice[] = [];
+  printerDevices: HardwareDevice[] = [];
+  selectedDeviceId = '';
+  selectedPrinterId = '';
+  testOnHardwareLoading = false;
+  testPrinterLoading = false;
+
   previewSubstitutions = {
     name: 'Alfie',
     rollno: '22BCS001',
-    meal: ''
+    meal: '',
+    date: '',
+    time: ''
   };
-
-  private activeInputEl: HTMLInputElement | null = null;
 
   readonly nameSuggestions: SuggestionItem[] = [
     { label: 'Short name', insertText: '"name"', previewValue: 'Alex',        variable: 'name', description: '4 chars · e.g. Alex' },
@@ -143,6 +144,18 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       description: slot.timeRange
     }));
   }
+
+  readonly tokenSuggestions: SuggestionItem[] = [
+    { label: 'Token number', insertText: '"token"', previewValue: 'B-13', variable: 'token' as const, description: 'e.g. B-13 (meal code + sequential)' },
+  ];
+
+  readonly dateSuggestions: SuggestionItem[] = [
+    { label: 'Current date', insertText: '"date"', previewValue: '16/06/26', variable: 'date' as const, description: 'dd/mm/yy format' },
+  ];
+
+  readonly timeSuggestions: SuggestionItem[] = [
+    { label: 'Current time', insertText: '"time"', previewValue: '09:02:23', variable: 'time' as const, description: 'hh:mm:ss format' },
+  ];
 
   setPreviewState(state: 'defaultMsg' | 'tapAllowed' | 'alreadyTapped' | 'notSubscribed') {
     this.previewState = state;
@@ -176,10 +189,81 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   substituteTokenVars(text: string, defaultText: string): string {
     if (!text) return defaultText;
     const mealFallback = this.previewSubstitutions.meal || this.slots[0]?.name || 'Meal';
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yy = String(now.getFullYear()).slice(-2);
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
     return text
       .replace(/"name"/g, this.previewSubstitutions.name)
       .replace(/"rollno"/g, this.previewSubstitutions.rollno)
-      .replace(/"meal"/g, mealFallback);
+      .replace(/"meal"/g, mealFallback)
+      .replace(/"token"/g, 'B-13')
+      .replace(/"date"/g, this.previewSubstitutions.date || `${dd}/${mm}/${yy}`)
+      .replace(/"time"/g, this.previewSubstitutions.time || `${hh}:${min}:${ss}`);
+  }
+
+  // ── Section Management ──────────────────────────────────────────────────
+
+  addSection() {
+    this.tokenConfig.sections.push({ text: '', bold: false, italic: false, fontSize: 14, align: 'center', expanded: false });
+  }
+
+  toggleSection(index: number) {
+    const willExpand = !this.tokenConfig.sections[index].expanded;
+    this.tokenConfig.sections.forEach((s, i) => s.expanded = i === index ? willExpand : false);
+  }
+
+  removeSection(index: number) {
+    this.tokenConfig.sections.splice(index, 1);
+  }
+
+  moveSection(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= this.tokenConfig.sections.length) return;
+    const temp = this.tokenConfig.sections[index];
+    this.tokenConfig.sections[index] = this.tokenConfig.sections[target];
+    this.tokenConfig.sections[target] = temp;
+    // Restore expanded: clicked section always opens, all others close
+    this.tokenConfig.sections.forEach((s, i) => s.expanded = i === target);
+    this.highlightedIndex = target;
+    setTimeout(() => { this.highlightedIndex = null; }, 1500);
+  }
+
+  toggleBold(index: number) {
+    this.tokenConfig.sections[index].bold = !this.tokenConfig.sections[index].bold;
+  }
+
+  toggleItalic(index: number) {
+    this.tokenConfig.sections[index].italic = !this.tokenConfig.sections[index].italic;
+  }
+
+  adjustFontSize(index: number, delta: number) {
+    const current = this.tokenConfig.sections[index].fontSize;
+    const next = Math.min(Math.max(current + delta, 8), 28);
+    this.tokenConfig.sections[index].fontSize = next;
+  }
+
+  setAlign(index: number, align: 'left' | 'center' | 'right') {
+    this.tokenConfig.sections[index].align = align;
+  }
+
+  toggleDividerAfter(index: number) {
+    this.tokenConfig.sections[index].dividerAfter = !this.tokenConfig.sections[index].dividerAfter;
+  }
+
+  sectionStyle(section: { text: string; bold: boolean; italic: boolean; fontSize: number; align: string; divider?: boolean }): string {
+    const parts: string[] = [];
+    if (section.bold) parts.push('font-bold');
+    if (section.italic) parts.push('italic');
+    switch (section.align) {
+      case 'left':   parts.push('text-left');   break;
+      case 'center': parts.push('text-center'); break;
+      case 'right':  parts.push('text-right');  break;
+    }
+    return parts.join(' ');
   }
 
   get previewStateName() {
@@ -205,16 +289,19 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   computeSuggestions(partialWord: string): SuggestionItem[] {
     const lw = partialWord.toLowerCase();
-    if (!lw) return [...this.nameSuggestions, ...this.rollnoSuggestions, ...this.mealSuggestions];
+    if (!lw) return [...this.nameSuggestions, ...this.rollnoSuggestions, ...this.mealSuggestions, ...this.tokenSuggestions, ...this.dateSuggestions, ...this.timeSuggestions];
     const results: SuggestionItem[] = [];
     if ('name'.startsWith(lw))   results.push(...this.nameSuggestions);
     if ('rollno'.startsWith(lw)) results.push(...this.rollnoSuggestions);
     if ('meal'.startsWith(lw))   results.push(...this.mealSuggestions);
+    if ('token'.startsWith(lw))  results.push(...this.tokenSuggestions);
+    if ('date'.startsWith(lw))   results.push(...this.dateSuggestions);
+    if ('time'.startsWith(lw))   results.push(...this.timeSuggestions);
     return results;
   }
 
   onDisplayInput(event: Event, fieldKey: string) {
-    const input = event.target as HTMLInputElement;
+    const input = event.target as HTMLTextAreaElement;
     this.activeInputEl = input;
 
     // Position the fixed dropdown directly below this input
@@ -285,6 +372,9 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     if (item.variable === 'name')   this.previewSubstitutions.name   = item.previewValue;
     if (item.variable === 'rollno') this.previewSubstitutions.rollno = item.previewValue;
     if (item.variable === 'meal')   this.previewSubstitutions.meal   = item.previewValue;
+    if (item.variable === 'token') { /* token preview uses hardcoded value */ }
+    if (item.variable === 'date')   this.previewSubstitutions.date   = item.previewValue;
+    if (item.variable === 'time')   this.previewSubstitutions.time   = item.previewValue;
 
     const newCursor = start + item.insertText.length;
     setTimeout(() => { input.setSelectionRange(newCursor, newCursor); input.focus(); });
@@ -358,36 +448,51 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   }
 
   getDisplayConfigValue(fieldKey: string): string {
-    const [state, line] = fieldKey.split('.');
-    if (state === 'tokenConfig') {
-      return (this.tokenConfig as any)[line] ?? '';
+    const parts = fieldKey.split('.');
+    if (parts[0] === 'tokenConfig') {
+      let obj: any = this.tokenConfig;
+      for (let i = 1; i < parts.length; i++) {
+        obj = obj?.[parts[i]];
+      }
+      return obj ?? '';
     }
+    const [state, line] = parts;
     return (this.displayConfig as any)[state]?.[line] ?? '';
   }
 
   setDisplayConfigValue(fieldKey: string, value: string): void {
-    const [state, line] = fieldKey.split('.');
-    if (state === 'tokenConfig') {
-      (this.tokenConfig as any)[line] = value;
-    } else if ((this.displayConfig as any)[state]) {
-      (this.displayConfig as any)[state][line] = value;
+    const parts = fieldKey.split('.');
+    if (parts[0] === 'tokenConfig') {
+      let obj: any = this.tokenConfig;
+      for (let i = 1; i < parts.length - 1; i++) {
+        obj = obj[parts[i]];
+      }
+      obj[parts[parts.length - 1]] = value;
+    } else if ((this.displayConfig as any)[parts[0]]) {
+      (this.displayConfig as any)[parts[0]][parts[1]] = value;
     }
   }
 
-  getVariableBadgeClass(variable: 'name' | 'rollno' | 'meal'): string {
+  getVariableBadgeClass(variable: 'name' | 'rollno' | 'meal' | 'token' | 'date' | 'time'): string {
     switch (variable) {
       case 'name':   return 'bg-[#DBEAFE] text-[#1D4ED8]';
       case 'rollno': return 'bg-[#FEF3C7] text-[#92400E]';
       case 'meal':   return 'bg-[#D1FAE5] text-[#065F46]';
+      case 'token':  return 'bg-[#E0E7FF] text-[#4338CA]';
+      case 'date':   return 'bg-[#F3E8FF] text-[#7C3AED]';
+      case 'time':   return 'bg-[#FFE4E6] text-[#BE123C]';
       default:       return '';
     }
   }
 
-  getVariableIcon(variable: 'name' | 'rollno' | 'meal'): string {
+  getVariableIcon(variable: 'name' | 'rollno' | 'meal' | 'token' | 'date' | 'time'): string {
     switch (variable) {
       case 'name':   return '@';
       case 'rollno': return '#';
-      case 'meal':   return '✦';
+      case 'meal':   return '~';
+      case 'token':  return '$';
+      case 'date':   return 'D';
+      case 'time':   return 'T';
       default:       return '·';
     }
   }
@@ -406,7 +511,6 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       next: (configs: DisplayConfig[]) => {
         const defaultConfig = configs.find(c => c.meal === 'DEFAULT');
         if (defaultConfig) {
-          // Load each card independently from saved data, or leave empty to use placeholders
           this.displayConfig = {
             defaultMsg: { 
               line1: defaultConfig.defaultMsg?.line1 || '', 
@@ -425,6 +529,26 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
               line2: defaultConfig.notSubscribed?.line2 || '' 
             }
           };
+            if (defaultConfig.tokenConfig) {
+            if (defaultConfig.tokenConfig.sections) {
+              this.tokenConfig.sections = defaultConfig.tokenConfig.sections.map((s, idx) => ({
+                text: s.text || '',
+                bold: !!s.bold,
+                italic: !!s.italic,
+                fontSize: (s as any).fontSize || 14,
+                align: ((s as any).align as 'left' | 'center' | 'right') || 'center',
+                dividerAfter: !!(s as any).dividerAfter,
+                expanded: idx === 0
+              }));
+            } else {
+              // Legacy flat format migration
+              const old = defaultConfig.tokenConfig as any;
+              this.tokenConfig.sections = [];
+              if (old.section1) this.tokenConfig.sections.push({ text: old.section1, bold: false, italic: false, fontSize: 16, align: 'center', expanded: true });
+              if (old.section2) this.tokenConfig.sections.push({ text: old.section2, bold: false, italic: false, fontSize: 14, align: 'left', expanded: false });
+              if (old.section3) this.tokenConfig.sections.push({ text: old.section3, bold: false, italic: false, fontSize: 14, align: 'center', expanded: false });
+            }
+          }
         }
         this.cdr.detectChanges();
       },
@@ -435,7 +559,6 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   }
 
   private saveDisplayConfigs(): void {
-    // Build config from all 4 cards - only non-empty fields will be saved
     const defaultConfig: DisplayConfig = {
       meal: 'DEFAULT',
       lcd_line1: this.displayConfig.tapAllowed.line1 || '"name"',
@@ -443,7 +566,17 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       defaultMsg: this.displayConfig.defaultMsg,
       tapAllowed: this.displayConfig.tapAllowed,
       alreadyTapped: this.displayConfig.alreadyTapped,
-      notSubscribed: this.displayConfig.notSubscribed
+      notSubscribed: this.displayConfig.notSubscribed,
+      tokenConfig: {
+        sections: this.tokenConfig.sections.map(s => ({
+          text: s.text,
+          bold: s.bold,
+          italic: s.italic,
+          fontSize: s.fontSize,
+          align: s.align,
+          ...(s.dividerAfter ? { dividerAfter: true } : {})
+        }))
+      }
     };
 
     this.dashboardService.updateDisplayConfig(defaultConfig).subscribe({

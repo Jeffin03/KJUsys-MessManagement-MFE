@@ -28,6 +28,15 @@ export interface ApiResponse<T> {
   };
 }
 
+export interface TokenSection {
+  text: string;
+  bold: boolean;
+  italic: boolean;
+  fontSize: number;
+  align: 'left' | 'center' | 'right';
+  dividerAfter?: boolean;
+}
+
 export interface DisplayConfig {
   meal: string;
   lcd_line1?: string;
@@ -36,6 +45,9 @@ export interface DisplayConfig {
   tapAllowed: { line1: string; line2: string };
   alreadyTapped: { line1: string; line2: string };
   notSubscribed: { line1: string; line2: string };
+  tokenConfig?: {
+    sections: TokenSection[];
+  };
 }
 
 export interface DisplayConfigResponse {
