@@ -2,14 +2,13 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '@libs/shared-ui';
-import { DatePickerModule } from '@libs/date-picker';
 import { ReportsService } from '../../services/reports.service';
 import { HolidayRecord } from '../../models/reports.models';
 
 @Component({
   selector: 'app-holiday-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent, DatePickerModule],
+  imports: [CommonModule, FormsModule, ButtonComponent],
   providers: [ReportsService],
   template: `
     <div class="flex flex-col gap-5">
@@ -26,7 +25,8 @@ import { HolidayRecord } from '../../models/reports.models';
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-[10px] font-medium text-[#111827] mb-1">Date</label>
-            <lib-date-picker (dateRangeSelected)="onDateSelected($event)"></lib-date-picker>
+            <input type="date" (change)="onDateSelected($event)"
+              class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
           </div>
           <div>
             <label class="block text-[10px] font-medium text-[#111827] mb-1">Reason</label>
@@ -92,8 +92,9 @@ export class HolidayCalendarComponent implements OnInit {
     });
   }
 
-  onDateSelected(range: { from: Date; to: Date | null }) {
-    this.newHolidayDate = range.from.toISOString().split('T')[0];
+  onDateSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.newHolidayDate = input.value || null;
   }
 
   saveHoliday() {
