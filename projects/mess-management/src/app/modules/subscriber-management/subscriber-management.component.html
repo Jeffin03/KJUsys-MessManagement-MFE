@@ -8,10 +8,13 @@
     <div class="mb-5 w-full">
       <lib-tabs [tabs]="tabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-tabs>
     </div>
+    <!-- Student Detail -->
+    <app-student-detail *ngIf="selectedStudentRollNumber" [rollNumber]="selectedStudentRollNumber" (back)="backFromStudentDetail()"></app-student-detail>
+
     <!-- Stats -->
-    <app-subscriber-stats [stats]="stats"></app-subscriber-stats>
+    <app-subscriber-stats *ngIf="!selectedStudentRollNumber" [stats]="stats"></app-subscriber-stats>
     <!-- Table -->
-    <app-subscriber-table [subscribers]="subscribers" [isLoading]="isLoading" [mealSlotList]="mealSlotList"
+    <app-subscriber-table *ngIf="!selectedStudentRollNumber" [subscribers]="subscribers" [isLoading]="isLoading" [mealSlotList]="mealSlotList"
       [totalItems]="totalItems" [currentPage]="currentPage" [pageSize]="pageSize"
       [clientPaginationMode]="clientPaginationMode"
       [selectedMealSlots]="selectedMealSlots" [selectedStatuses]="selectedStatuses"

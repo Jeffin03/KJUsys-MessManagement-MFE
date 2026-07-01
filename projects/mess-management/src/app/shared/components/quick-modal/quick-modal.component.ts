@@ -110,7 +110,7 @@ export class QuickModalComponent implements OnChanges {
 
   viewFullReport() {
     this.close.emit();
-    this.router.navigate(['/kjusys/mess-management/reports'], {
+    this.router.navigate(['/kjusys/mess-management/subscriber-management'], {
       queryParams: { student: this.rollNumber }
     });
   }
