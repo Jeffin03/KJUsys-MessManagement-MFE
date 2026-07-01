@@ -16,6 +16,7 @@ import { ConnectionMonitorService } from '../../shared/services/connection-monit
 import { MealSlotService } from '../../shared/services/meal-slot.service';
 import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
 import { TabItem, TabsModule } from '@libs/tabs';
+import { QuickModalComponent } from '../../shared/components/quick-modal/quick-modal.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -27,7 +28,8 @@ import { TabItem, TabsModule } from '@libs/tabs';
     EntriesTableComponent,
     HardwareStatusComponent,
     HardwareSettingsModalComponent,
-    BreadcrumbsTitleComponent
+    BreadcrumbsTitleComponent,
+    QuickModalComponent
   ],
   templateUrl: './dashboard.component.html',
 })
@@ -80,6 +82,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   uptimeSeconds = 0;
   responseTimeMs = 0;
   hardwareSettingsOpen = false;
+  showQuickModal = false;
+  quickModalRollNumber: string | null = null;
   isLoading = true;
   isHardwareRefreshing = false;
   errorMessage = '';
@@ -356,7 +360,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
       customer: newTapData.name || 'Unknown',
       roll_number: newTapData.roll_number || '',
       mealSlot: newTapData.meal.charAt(0) + newTapData.meal.slice(1).toLowerCase() as any,
-      time: new Date(newTapData.tap_DateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: (() => {
+        const ts = newTapData.tap_DateTime;
+        if (!ts) return '--:--';
+        const millis = ts?.$numberLong ? Number(ts.$numberLong) : Number(ts);
+        return new Date(millis).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      })(),
       status: 'Allowed' as 'Allowed' | 'Not Subscribed'
     };
 
@@ -431,6 +440,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
     this.websocketService.disconnect();
     this.wsInitialized = false;
+  }
+
+  onEntryClick(entry: MealEntry): void {
+    this.quickModalRollNumber = entry.roll_number;
+    this.showQuickModal = true;
   }
 
   onHardwareSettingsRequested(): void {

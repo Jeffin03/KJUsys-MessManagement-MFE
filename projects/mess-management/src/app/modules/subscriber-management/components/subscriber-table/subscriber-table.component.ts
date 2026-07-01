@@ -29,6 +29,7 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
   @Output() addSubscriber = new EventEmitter<void>();
   @Output() editSubscriber = new EventEmitter<Subscriber>();
   @Output() deleteSubscriber = new EventEmitter<Subscriber>();
+  @Output() viewSubscriber = new EventEmitter<Subscriber>();
   @Output() pageChange = new EventEmitter<number>();
   @Output() sizeChange = new EventEmitter<number>();
   @Output() searchChange = new EventEmitter<string>();
@@ -69,6 +70,7 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
   ];
 
   primaryActions: PrimaryAction[] = [
+    { type: 'view', theme: 'secondary', label: 'View' },
     { type: 'edit', theme: 'secondary', label: 'Edit' },
     { type: 'delete', theme: 'alert', label: 'Delete' },
   ];
@@ -228,7 +230,8 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
   }
 
   onPrimaryAction(event: { actionKey: string; row: any }): void {
-    if (event.actionKey === 'edit') this.onEdit(event.row);
+    if (event.actionKey === 'view') this.viewSubscriber.emit(event.row);
+    else if (event.actionKey === 'edit') this.onEdit(event.row);
     else if (event.actionKey === 'delete') this.onDelete(event.row);
   }
 

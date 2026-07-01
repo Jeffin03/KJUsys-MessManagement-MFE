@@ -35,7 +35,7 @@
         </thead>
         <tbody>
             <tr *ngFor="let entry of entries; let last = last" [class.border-b]="!last"
-                [class.border-[#E5E7EB]]="!last">
+                [class.border-[#E5E7EB]]="!last" (click)="onEntryClick.emit(entry)" class="cursor-pointer hover:bg-[#F9FAFB] transition-colors">
                 <td class="px-6 py-3 font-semibold text-[#111827]">{{ entry.customer }}</td>
                 <td class="px-6 py-3 font-sans font-medium tracking-[-0.15px]" style="color:#4A5565; font-size:13px;">
                     {{ entry.roll_number }}

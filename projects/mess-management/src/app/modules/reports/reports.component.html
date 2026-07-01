@@ -6,5 +6,15 @@
     <div class="mb-5 w-full">
       <lib-tabs [tabs]="tabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-tabs>
     </div>
+
+    <div class="mb-5" *ngIf="activeSubTab !== 'student-detail'">
+      <lib-sub-tabs [tabs]="subTabs" [activeTabId]="activeSubTab" (tabChange)="onSubTabChange($event)"></lib-sub-tabs>
+    </div>
+
+    <app-student-search *ngIf="activeSubTab === 'student-search'" (viewStudent)="onViewStudent($event)"></app-student-search>
+    <app-analytics-dashboard *ngIf="activeSubTab === 'analytics'"></app-analytics-dashboard>
+    <app-audit-tools *ngIf="activeSubTab === 'audit'"></app-audit-tools>
+    <app-holiday-calendar *ngIf="activeSubTab === 'holidays'"></app-holiday-calendar>
+    <app-student-detail *ngIf="activeSubTab === 'student-detail'" [rollNumber]="studentRollNumber" (back)="backToSearch()"></app-student-detail>
   </div>
 </div>

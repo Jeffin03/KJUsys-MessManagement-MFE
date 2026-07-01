@@ -10,6 +10,7 @@ import { EditSubscriberModalComponent } from './components/edit-subscriber-modal
 
 import { Subscriber } from '../../shared/models/subscriber';
 import { SubscriberService } from './services/subscriber.service';
+import { QuickModalComponent } from '../../shared/components/quick-modal/quick-modal.component';
 import { NetworkService } from '../../shared/services/network.service';
 import { ConnectionMonitorService } from '../../shared/services/connection-monitor.service';
 import { SharedToastService } from '@libs/shared-toast';
@@ -28,7 +29,8 @@ import { MealSlotService, MealSlotWithCode } from '../../shared/services/meal-sl
     AddSubscriberModalComponent,
     EditSubscriberModalComponent,
     BreadcrumbsTitleComponent,
-    ButtonComponent
+    ButtonComponent,
+    QuickModalComponent
   ],
   templateUrl: './subscriber-management.component.html',
   styleUrls: ['./subscriber-management.component.css']
@@ -83,6 +85,8 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   showAddModal = false;
   showCardModal = false;
   showEditModal = false;
+  showQuickModal = false;
+  quickModalRollNumber: string | null = null;
 
   subscriberFormData: any = null;
   editSubscriberData: any = null;
@@ -401,6 +405,11 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
       this.fetchInitialData();
       this.cdr.detectChanges();
     }
+  }
+
+  openQuickModal(sub: Subscriber): void {
+    this.quickModalRollNumber = sub.roll_number;
+    this.showQuickModal = true;
   }
 
   openEditModal(sub: Subscriber): void {
