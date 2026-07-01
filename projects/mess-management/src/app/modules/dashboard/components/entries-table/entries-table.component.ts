@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MealEntry } from '../../../../shared/models/dashboard.models';
 import { EmptyStateComponent } from '@libs/shared-ui';
@@ -11,6 +11,7 @@ import { EmptyStateComponent } from '@libs/shared-ui';
 })
 export class EntriesTableComponent implements OnChanges {
   @Input() entries: MealEntry[] = [];
+  @Output() onEntryClick = new EventEmitter<MealEntry>();
 
   constructor(private cdr: ChangeDetectorRef) {}
 

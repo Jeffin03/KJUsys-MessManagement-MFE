@@ -67,7 +67,14 @@ The frontend is a **Webpack Module Federation remote** (port 4201) that exposes 
 
 ### 3. Reports Module (`/kjusys/reports`)
 
-- **ReportsComponent** — Placeholder shell with breadcrumbs and tabs. Report features (date range reports, exports) are consumed via API but UI is pending.
+| Feature | Component | Description |
+|---|---|---|
+| **Student Explorer** | `StudentSearchComponent` | Search students by roll number or name with debounced input, paginated results table with Active/Paused/Lapsed status badges, and "View Report" action to drill into student detail |
+| **Student Detail** | `StudentDetailComponent` | Full student profile: overview cards (plan, status, card, attendance), subscription history with timeline, tap activity log, change log, and pause compensation card showing taps-during-pause with conditional styling. Accessed inline below the sub-tab bar via `@Input() rollNumber` with a back button. |
+| **Analytics Dashboard** | `AnalyticsDashboardComponent` | Daily overview with total taps, active/paused/expired subscriber counts, and meal distribution bread chart showing real tap-to-subscriber ratios per meal slot. Optional date range filter queries historical tap data. |
+| **Holiday Calendar** | `HolidayCalendarComponent` | Calendar view of mess holidays fetched from backend, with date formatting via Angular `date` pipe. |
+| **Audit Tools** | `AuditToolsComponent` | Three sub-tabs: **Pause Audit** — table of paused subscriptions showing tap activity during pause periods; **Anomalies** — irregular tap events (blocked card taps, unsubscribed meal taps); **Change Log** — subscription modification history. |
+| **Quick Modal** | `QuickModalComponent` | Shared floating-action-button modal for quick student lookup from any page. Uses `Router.navigate()` with queryParams, fetches and displays student overview (name, roll, plan, status, card, attendance, date range).
 
 ---
 
@@ -143,11 +150,21 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 
 | Method | Endpoint | Service | Purpose |
 |---|---|---|---|
-| GET | `/reports/today` | — | Today's report (not yet wired) |
-| GET | `/reports/exports` | — | List exports |
-| GET | `/reports/exports/:date` | — | Download export by date |
-| POST | `/reports/export/trigger` | — | Trigger export |
-| GET | `/reports/range?from=&to=` | — | Report by date range |
+| GET | `/reports/today` | `DashboardService` | Today's meal report with per-meal breakdown |
+| GET | `/reports/analytics?from=&to=` | `ReportsService` | Analytics aggregate: total taps, active/paused/expired subscriber counts, meal distribution with tapCount/subscriberCount per slot. Optional date range filters tap data; subscriber counts are current snapshot. |
+| GET | `/reports/holidays` | `ReportsService` | All mess holiday records |
+| GET | `/reports/students?search=` | `ReportsService` | Search students by roll number or name (regex), returns student list with subscription status and raw document data |
+| GET | `/reports/students/:rollNumber/overview` | `ReportsService` | Single student overview: profile, subscription details, card status, total taps, attendance rate |
+| GET | `/reports/students/:rollNumber/taps?meal=&from=&to=` | `ReportsService` | Student tap history with optional meal/date filters |
+| GET | `/reports/students/:rollNumber/attendance` | `ReportsService` | Student attendance summary per meal slot |
+| GET | `/reports/students/:rollNumber/changelog` | `ReportsService` | Subscription modification history for a student |
+| GET | `/reports/students/:rollNumber/history` | `ReportsService` | Complete subscription history records |
+| GET | `/reports/pause-audit` | `ReportsService` | Pause audit: all paused subscriptions with tapsDuringPause count and compensatedDays |
+| GET | `/reports/anomalies` | `ReportsService` | Irregular tap events: blocked-card taps, unsubscribed-meal taps, lapsed-student taps |
+| GET | `/reports/changelog` | `ReportsService` | Global change log across all subscriptions |
+| GET | `/reports/exports` | — | List export records |
+| GET | `/reports/exports/:date` | — | Download export Excel file by date |
+| POST | `/reports/export/trigger` | — | Manual export trigger |
 
 ### Settings
 
@@ -172,6 +189,7 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 | `ConfigLoaderService` | `environments/` | Dynamic backend URL resolution at bootstrap: applies cached/localhost URL immediately, then fetches GitHub Gist asynchronously in background and probes server |
 | `NetworkService` | `shared/services/` | Browser online/offline monitoring with Wi-Fi alerts |
 | `NetworkInterceptor` | `shared/services/` | HTTP interceptor: detects 502-504/status 0 as server-down |
+| `ReportsService` | `modules/reports/services/` | All reports API calls: student search/overview/taps/attendance/changelog/history, analytics dashboard, holidays, pause audit, anomalies, global changelog. Maps backend snake_case responses to camelCase models and performs nested array extraction. |
 
 ---
 
@@ -216,7 +234,18 @@ AppComponent
 │   │       └── SubscriberCardModalComponent
 │   │
 │   └── [Route: /kjusys/reports]
-│       └── ReportsComponent (placeholder)
+│       └── ReportsComponent
+│           ├── StudentSearchComponent (sub-tab: student-search)
+│           │   └── StudentDetailComponent (inline when detail active)
+│           ├── AnalyticsDashboardComponent (sub-tab: analytics)
+│           ├── HolidayCalendarComponent (sub-tab: holidays)
+│           └── AuditToolsComponent (sub-tab: audit)
+│               ├── Pause Audit (sub-sub-tab: pause-audit)
+│               ├── Anomalies (sub-sub-tab: anomalies)
+│               └── Change Log (sub-sub-tab: changelog)
+│
+└── [Global]
+    └── QuickModalComponent (floating action button + modal)
 ```
 
 ---
@@ -242,7 +271,8 @@ Exposed in `webpack.config.js` and registered in `mf.manifest.json`:
 | `/login` | `SharedAuthComponent` (from `@libs/shared-auth`) | Login page |
 | `/kjusys/dashboard` | `DashboardModule` (lazy) | `DashboardComponent` |
 | `/kjusys/subscriber-management` | `SubscriberManagementModule` (lazy) | `SubscriberManagementComponent` |
-| `/kjusys/reports` | `ReportsModule` (lazy) | `ReportsComponent` |
+| `/kjusys/reports` | `ReportsModule` (lazy) | `ReportsComponent` (sub-tabs: student-search, analytics, holidays, audit; student detail shown inline via `activeSubTab === 'student-detail'`) |
+| Deep-link via `?student=<rollNumber>` query param | ReportsModule | Opens QuickModal with student overview from any route |
 
 ---
 

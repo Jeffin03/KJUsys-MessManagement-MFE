@@ -1,0 +1,284 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
+import { environment } from '../../../../environments/environment';
+import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
+import {
+  TapRecord, AttendanceDay, HolidayRecord, ChangelogEntry,
+  StudentOverview, DailyAnalytics,
+  ReportsResponse, PaginatedResponse
+} from '../models/reports.models';
+
+function extractId(rawId: any): string {
+  if (!rawId) return '';
+  if (typeof rawId === 'string') return rawId;
+  if (typeof rawId === 'object' && rawId.$oid) return rawId.$oid;
+  return String(rawId);
+}
+
+function formatMealLabel(meal: string): string {
+  return meal.charAt(0) + meal.slice(1).toLowerCase();
+}
+
+@Injectable({ providedIn: 'root' })
+export class ReportsService {
+  private baseUrl = environment.baseUrl;
+
+  constructor(private http: HttpClient) {}
+
+  private extractData<T>(response: ReportsResponse<T>): T {
+    return response.responseData.data;
+  }
+
+  getStudentTaps(rollNumber: string, from?: string, to?: string): Observable<TapRecord[]> {
+    let params = new HttpParams();
+    if (from) params = params.set('from', from);
+    if (to) params = params.set('to', to);
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_TAPS(rollNumber)}`, { params })
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        const raw = data && data.taps ? data.taps : [];
+        return raw.map((t: any) => ({
+          id: extractId(t._id),
+          rollNumber: t.roll_number || '',
+          mealSlot: t.meal ? formatMealLabel(t.meal) : '',
+          tapTimestamp: t.tap_DateTime || 0,
+          date: t.tap_Date || 0,
+        }));
+      }));
+  }
+
+  getStudentAttendance(rollNumber: string, from?: string, to?: string): Observable<AttendanceDay[]> {
+    let params = new HttpParams();
+    if (from) params = params.set('from', from);
+    if (to) params = params.set('to', to);
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_ATTENDANCE(rollNumber)}`, { params })
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        const records = data && data.records ? data.records : [];
+
+        const dayMap = new Map<string, { slots: { slotName: string; status: string }[] }>();
+        records.forEach((rec: any) => {
+          const dayKey = rec.date || '';
+          if (!dayMap.has(dayKey)) dayMap.set(dayKey, { slots: [] });
+          dayMap.get(dayKey)!.slots.push({
+            slotName: rec.mealSlot ? formatMealLabel(rec.mealSlot) : '',
+            status: rec.status || 'absent',
+          });
+        });
+
+        const result: AttendanceDay[] = [];
+        dayMap.forEach((day, date) => {
+          const statuses = day.slots.map(s => s.status);
+          let overall: AttendanceDay['overall'] = 'absent';
+          if (statuses.every(s => s === 'holiday')) overall = 'holiday';
+          else if (statuses.every(s => s === 'paused')) overall = 'paused';
+          else if (statuses.some(s => s === 'present')) {
+            overall = statuses.every(s => s === 'present' || s === 'holiday') ? 'present' : 'partial';
+          }
+
+          result.push({
+            date,
+            mealSlots: day.slots.map(s => ({
+              slotName: s.slotName,
+              startTime: '',
+              endTime: '',
+              tapped: s.status === 'present',
+              tapTime: s.status === 'present' ? 'Tapped' : undefined,
+              isHoliday: s.status === 'holiday',
+              isPaused: s.status === 'paused',
+              isSubscriptionActive: s.status !== 'paused',
+            })),
+            overall,
+          });
+        });
+
+        return result.sort((a, b) => b.date.localeCompare(a.date));
+      }));
+  }
+
+  getStudentChangelog(rollNumber: string, limit?: number): Observable<ChangelogEntry[]> {
+    let params = new HttpParams();
+    if (limit) params = params.set('limit', limit.toString());
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_CHANGELOG(rollNumber)}`, { params })
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        const raw = data && data.logs ? data.logs : [];
+        return raw.map((l: any) => ({
+          id: extractId(l._id),
+          rollNumber: l.roll_number || '',
+          action: l.action || '',
+          description: l.reason || (l.newValue ? 'Details updated' : ''),
+          timestamp: l.timestamp || 0,
+          changedBy: l.changedBy || 'system',
+        }));
+      }));
+  }
+
+  getStudentPauseComp(rollNumber: string): Observable<any> {
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_PAUSE_COMP(rollNumber)}`)
+      .pipe(map(r => this.extractData(r)));
+  }
+
+  getStudentSubscriptionHistory(rollNumber: string): Observable<any[]> {
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_SUBSCRIPTION_HISTORY(rollNumber)}`)
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        const raw = data && data.records ? data.records : [];
+        return raw.map((e: any) => ({
+          timestamp: e.timestamp || 0,
+          action: e.action || '',
+          reason: e.reason || '',
+          details: e.details || {},
+        }));
+      }));
+  }
+
+  getStudentOverview(rollNumber: string): Observable<StudentOverview> {
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(rollNumber)}`)
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        const student = data && data.student ? data.student : data;
+        const sub = student.subscription || {};
+
+        const status = (() => {
+          if (sub.pauseStart_Date && sub.pauseEnd_Date) {
+            const now = Date.now();
+            if (now >= sub.pauseStart_Date && now <= sub.pauseEnd_Date) return 'paused';
+          }
+          if (sub.end_Date && Date.now() > sub.end_Date) return 'expired';
+          return sub.active ? 'active' : 'expired';
+        })();
+
+        const daysRemaining = sub.end_Date
+          ? Math.max(0, Math.round((sub.end_Date - Date.now()) / 86400000))
+          : 0;
+
+        const pausedDays = (sub.pauseStart_Date && sub.pauseEnd_Date)
+          ? Math.max(0, Math.round((sub.pauseEnd_Date - sub.pauseStart_Date) / 86400000))
+          : 0;
+
+        const meals: string[] = sub.meals || [];
+        const mealSlots = meals.map(formatMealLabel);
+
+        return {
+          rollNumber: student.roll_number || '',
+          name: student.name || '',
+          cardStatus: student.card_blocked ? 'Blocked' : 'Active',
+          subscription: {
+            currentPlan: mealSlots.join(' + ') || 'None',
+            startDate: sub.start_Date || 0,
+            endDate: sub.end_Date || 0,
+            status,
+            daysRemaining,
+            totalDays: sub.duration_days || 0,
+            pausedDays,
+            mealSlots,
+          },
+          totalTaps: 0,
+          attendanceRate: 0,
+        };
+      }));
+  }
+
+  getChangelog(paramsMap: {
+    action?: string; roll_number?: string; from?: string; to?: string; page?: number; size?: number;
+  }): Observable<PaginatedResponse<ChangelogEntry>> {
+    let params = new HttpParams();
+    Object.entries(paramsMap).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params = params.set(k, v.toString());
+    });
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.CHANGELOG}`, { params })
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        const raw = data && data.logs ? data.logs : [];
+        const mapped = raw.map((l: any) => ({
+          id: extractId(l._id),
+          rollNumber: l.roll_number || '',
+          action: l.action || '',
+          description: l.reason || (l.newValue ? 'Details updated' : ''),
+          timestamp: l.timestamp || 0,
+          changedBy: l.changedBy || 'system',
+        }));
+        return {
+          data: mapped,
+          total: data?.total || mapped.length,
+          page: data?.page || 0,
+          size: data?.size || mapped.length,
+          totalPages: data?.totalPages || 1,
+        };
+      }));
+  }
+
+  getHolidays(): Observable<HolidayRecord[]> {
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.HOLIDAYS_LIST}`)
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        const raw = data && data.holidays ? data.holidays : [];
+        return raw.map((h: any) => ({
+          id: extractId(h._id),
+          date: h.date_Date || 0,
+          reason: h.reason || '',
+        }));
+      }));
+  }
+
+  createHoliday(dateMillis: number, reason: string): Observable<any> {
+    return this.http
+      .post<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_HOLIDAY}`, { date_Date: dateMillis, reason })
+      .pipe(map(r => this.extractData(r)));
+  }
+
+  deleteHoliday(id: string): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}${API_ENDPOINTS.HOLIDAY_BY_ID(id)}`);
+  }
+
+  getPauseAudit(): Observable<any[]> {
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.REPORTS_PAUSE_AUDIT}`)
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        return data && data.audit ? data.audit : [];
+      }));
+  }
+
+  getAnomalies(hours: number = 48): Observable<any[]> {
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.REPORTS_ANOMALIES}?hours=${hours}`)
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        return data && data.anomalies ? data.anomalies : [];
+      }));
+  }
+
+  getAnalyticsDashboard(from?: string, to?: string): Observable<DailyAnalytics> {
+    let params = '';
+    if (from && to) params = `?from=${from}&to=${to}`;
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.REPORTS_ANALYTICS}${params}`)
+      .pipe(map(r => {
+        const raw = this.extractData(r);
+        const dist = raw?.mealDistribution || [];
+        return {
+          totalTaps: raw?.totalTaps || 0,
+          totalActiveSubscribers: raw?.totalActiveSubscribers || 0,
+          pausedCount: raw?.pausedCount || 0,
+          expiredCount: raw?.expiredCount || 0,
+          mealDistribution: dist.map((m: any) => ({
+            slotName: formatMealLabel(m.slotName),
+            tapCount: m.tapCount || 0,
+            subscriberCount: m.subscriberCount || 0,
+          })),
+        };
+      }));
+  }
+}

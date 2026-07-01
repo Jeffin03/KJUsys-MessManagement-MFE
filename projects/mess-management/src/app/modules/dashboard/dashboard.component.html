@@ -66,10 +66,13 @@
 
       <!-- Bottom Row: Table + Hardware -->
       <div class="flex gap-4">
-        <app-entries-table class="flex-1 min-w-0" [entries]="recentEntries"></app-entries-table>
+        <app-entries-table class="flex-1 min-w-0" [entries]="recentEntries" (onEntryClick)="onEntryClick($event)"></app-entries-table>
         <app-hardware-status [hardware]="hardware" [uptimeSeconds]="uptimeSeconds" [responseTimeMs]="responseTimeMs" [isRefreshing]="isHardwareRefreshing" (refreshRequested)="onHardwareRefreshRequested()" (settingsRequested)="onHardwareSettingsRequested()"></app-hardware-status>
       </div>
     </div>
   </div>
+
+  <app-quick-modal [visible]="showQuickModal" [rollNumber]="quickModalRollNumber" (close)="showQuickModal = false"></app-quick-modal>
+
   <app-hardware-settings-modal [isOpen]="hardwareSettingsOpen" (close)="hardwareSettingsOpen = false"></app-hardware-settings-modal>
 

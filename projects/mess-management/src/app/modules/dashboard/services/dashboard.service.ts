@@ -100,11 +100,22 @@ export class DashboardService {
             return bTime - aTime;
           });
 
+          function formatTapTime(ts: any): string {
+            if (!ts) return '--:--';
+            if (typeof ts === 'object' && ts?.$numberLong) ts = Number(ts.$numberLong);
+            const num = typeof ts === 'number' ? ts : Number(ts);
+            if (!isNaN(num)) {
+              const d = new Date(num);
+              if (!isNaN(d.getTime())) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            return '--:--';
+          }
+
           return sortedTaps.map(t => ({
             customer: t.name,
             roll_number: t.roll_number || 'N/A',
             mealSlot: t.meal.charAt(0) + t.meal.slice(1).toLowerCase() as any,
-            time: new Date(t.tap_DateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: formatTapTime(t.tap_DateTime),
             status: 'Allowed' as 'Allowed' | 'Not Subscribed'
           }));
         }),

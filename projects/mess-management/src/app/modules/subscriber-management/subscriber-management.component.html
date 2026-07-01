@@ -19,6 +19,7 @@
       (addSubscriber)="openAddModal()"
       (editSubscriber)="openEditModal($event)"
       (deleteSubscriber)="requestDeleteSubscriber($event)"
+      (viewSubscriber)="openQuickModal($event)"
       (searchChange)="onSearchChange($event)"
       (mealSlotChange)="onMealSlotChange($event)"
       (statusChange)="onStatusChange($event)"
@@ -42,6 +43,8 @@
 <app-edit-subscriber-modal [hidden]="!showEditModal" [isOpen]="showEditModal" [subscriber]="editSubscriberData"
   (close)="closeEditModal()" (update)="updateSubscriber($event)">
 </app-edit-subscriber-modal>
+
+<app-quick-modal [visible]="showQuickModal" [rollNumber]="quickModalRollNumber" (close)="showQuickModal = false"></app-quick-modal>
 
 <!-- Delete Confirmation Popup -->
 <div *ngIf="showDeleteConfirmPopup" class="fixed z-[100] flex items-center justify-center inset-0" style="background:rgba(0,0,0,.15);">
