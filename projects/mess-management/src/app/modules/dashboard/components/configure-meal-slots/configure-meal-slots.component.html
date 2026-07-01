@@ -97,6 +97,7 @@
                                 <div>
                                     <p class="text-sm font-bold text-[#111827]">{{ slot.name }} <span class="text-[#86868B] font-medium">[{{ slot.code }}]</span></p>
                                     <p class="text-xs text-[#6B7280]">{{ slot.timeRange }}</p>
+                                    <p class="text-[10px] text-[#9CA3AF] mt-0.5">{{ (slot.daysAvailable.length ? slot.daysAvailable : ['weekday','weekend','holiday']).join(', ') }}</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
@@ -372,8 +373,38 @@
                             </div>
                         </div>
 
+                        <!-- Row 3: Available Days -->
+                        <div class="grid grid-cols-1 gap-6 mt-8">
+                            <div class="relative">
+                                <label class="block text-[10px] font-medium text-[#1D1D1F] mb-1.5">Available Days</label>
+                                <div (click)="toggleDaysDropdown($event); $event.stopPropagation()"
+                                    class="w-full px-4 h-11 rounded-xl border border-gray-300 bg-white flex items-center justify-between cursor-pointer">
+                                    <span class="text-xs" [style.color]="newSlot.daysAvailable.length ? '#414D63' : '#86868B'">
+                                        {{ newSlot.daysAvailable.length ? newSlot.daysAvailable.join(', ') : 'Select days' }}
+                                    </span>
+                                    <img src="assets/Down.svg" class="w-4 h-4" />
+                                </div>
+                                <div *ngIf="showDaysDropdown" (click)="$event.stopPropagation()"
+                                    class="absolute z-50 w-full mt-1 rounded-2xl overflow-hidden bg-white border border-[#E5E7EB] shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
+                                    <div *ngFor="let day of daysAvailableOptions"
+                                        (click)="toggleDayOption(day)"
+                                        class="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50">
+                                        <span class="w-[18px] h-[18px] rounded flex items-center justify-center"
+                                            [class.bg-blue-600]="isDaySelected(day)"
+                                            [class.border]="!isDaySelected(day)"
+                                            [class.border-gray-300]="!isDaySelected(day)">
+                                            <svg *ngIf="isDaySelected(day)" width="11" height="9" viewBox="0 0 11 9" fill="none">
+                                                <path d="M1 4.5L4 7.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </span>
+                                        <span class="text-xs text-[#414D63] capitalize">{{ day }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Add / Update Slot -->
-                        <div class="flex justify-end mt-24 gap-3">
+                        <div class="flex justify-end mt-8 gap-3">
                             <lib-button *ngIf="isEditing" type="secondary" label="Cancel" (onClick)="cancelEdit()"></lib-button>
                             <button (click)="addSlot()"
                                 class="px-6 py-3 rounded-xl border border-[#2563EB] bg-[#EEF4FF] text-[#2563EB] text-sm font-normal transition-all">

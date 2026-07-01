@@ -11,7 +11,8 @@ export interface SubscriberFormValue {
     startDate: string;
     endDate: string;
     status: string;
-    [key: string]: boolean | string;
+    selectedMeals: string[];
+    dayPreference: string;
   };
   pauseEndDate: string;
   pauseStartDate: string;
@@ -149,7 +150,7 @@ export class SubscriberFormService {
   }
 
   initializeForm(mealSlots: MealSlotWithCode[]): SubscriberFormValue {
-    const form: SubscriberFormValue = {
+    return {
       firstName: '',
       lastName: '',
       email: '',
@@ -157,18 +158,14 @@ export class SubscriberFormService {
       mealSlot: {
         startDate: '',
         endDate: '',
-        status: 'Active'
+        status: 'Active',
+        selectedMeals: [],
+        dayPreference: 'all'
       },
       pauseEndDate: '',
       pauseStartDate: '',
       pauseReason: ''
     };
-
-    mealSlots.forEach(slot => {
-      form.mealSlot[slot.name.toLowerCase()] = false;
-    });
-
-    return form;
   }
 
   populateForm(subscriber: Subscriber, mealSlots: MealSlotWithCode[]): SubscriberFormValue {
@@ -181,13 +178,14 @@ export class SubscriberFormService {
     form.email = subscriber.email || '';
     form.roll_number = subscriber.roll_number !== 'N/A' ? subscriber.roll_number : '';
 
-    (subscriber.mealNames || []).forEach(mealName => {
-      const slot = mealSlots.find(s => s.name.toLowerCase() === mealName.toLowerCase());
-      if (slot) {
-        form.mealSlot[slot.name.toLowerCase()] = true;
-      }
-    });
+    form.mealSlot.selectedMeals = (subscriber.mealNames || [])
+      .map(mealName => {
+        const slot = mealSlots.find(s => s.name.toLowerCase() === mealName.toLowerCase());
+        return slot ? slot.name.toLowerCase() : '';
+      })
+      .filter(Boolean);
 
+    form.mealSlot.dayPreference = (subscriber as any).dayPreference || 'all';
     form.mealSlot.status = subscriber.status || 'Active';
 
     if (subscriber.status === 'Paused') {
@@ -233,12 +231,10 @@ export class SubscriberFormService {
     form.mealSlot.startDate = '';
     form.mealSlot.endDate = '';
     form.mealSlot.status = 'Active';
+    form.mealSlot.selectedMeals = [];
+    form.mealSlot.dayPreference = 'all';
     form.pauseEndDate = '';
     form.pauseStartDate = '';
     form.pauseReason = '';
-
-    mealSlots.forEach(slot => {
-      form.mealSlot[slot.name.toLowerCase()] = false;
-    });
   }
 }

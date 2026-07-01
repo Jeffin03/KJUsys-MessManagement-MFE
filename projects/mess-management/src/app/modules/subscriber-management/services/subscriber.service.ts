@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
 import { map, shareReplay, tap, switchMap } from 'rxjs/operators';
 import { Subscriber } from '../../../shared/models/subscriber';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
@@ -50,6 +50,18 @@ export class SubscriberService {
     private http: HttpClient,
     private mealSlotService: MealSlotService
   ) { }
+
+  private countHolidaysInRange(startTs: number, endTs: number): Observable<number> {
+    return this.http.get(`${this.baseUrl}${API_ENDPOINTS.HOLIDAYS_LIST}`).pipe(
+      map((res: any) => {
+        const holidays = res?.responseData?.data?.holidays || [];
+        return holidays.filter((h: any) => {
+          const hDate = Number(h.date_Date);
+          return hDate >= startTs && hDate <= endTs;
+        }).length;
+      })
+    );
+  }
 
   private mapToSubscriber(student: BackendStudent): Subscriber {
     // Convert timestamp to date string (e.g., '10 Jan 26')
@@ -213,12 +225,7 @@ export class SubscriberService {
   }
 
   createSubscriber(formData: any): Observable<any> {
-    const meals: string[] = [];
-    Object.keys(formData.mealSlot).forEach(key => {
-      if (!['startDate', 'endDate', 'status'].includes(key) && formData.mealSlot[key]) {
-        meals.push(key.toUpperCase());
-      }
-    });
+    const meals: string[] = (formData.mealSlot.selectedMeals || []).map((name: string) => name.toUpperCase());
 
     // Convert 'DD/MM/YY' to timestamp
     const parseDate = (dateStr: string) => {
@@ -229,31 +236,42 @@ export class SubscriberService {
 
     const startDateTs = parseDate(formData.mealSlot.startDate);
     const endDateTs = parseDate(formData.mealSlot.endDate);
-    const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
+    const rawDurationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
 
     const pauseStartTs = formData.pauseStartDate ? parseDate(formData.pauseStartDate) : null;
     const pauseEndTs = formData.pauseEndDate ? parseDate(formData.pauseEndDate) : null;
 
-    const payload: any = {
-      roll_number: formData.roll_number,
-      name: `${formData.firstName} ${formData.lastName}`.trim(),
-      email: formData.email,
-      subscription: {
-        meals: meals,
-        start_Date: startDateTs,
-        end_Date: endDateTs,
-        active: formData.mealSlot.status !== 'Paused',
-        duration_days: durationDays,
-        pauseStart_Date: pauseStartTs,
-        pauseEnd_Date: pauseEndTs
-      }
-    };
+    // Fetch holidays and adjust duration to skip holidays
+    const holidayCheck$ = startDateTs && endDateTs ? this.countHolidaysInRange(startDateTs, endDateTs) : of(0);
 
-    if (formData.pauseReason) {
-      payload.pauseReason = formData.pauseReason;
-    }
+    return holidayCheck$.pipe(
+      switchMap((holidayCount: number) => {
+        const adjustedDuration = rawDurationDays + holidayCount;
+        const adjustedEndTs = endDateTs + holidayCount * 24 * 60 * 60 * 1000;
 
-    return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
+        const payload: any = {
+          roll_number: formData.roll_number,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          email: formData.email,
+          dayPreference: formData.mealSlot.dayPreference || 'all',
+          subscription: {
+            meals: meals,
+            start_Date: startDateTs,
+            end_Date: adjustedEndTs,
+            active: formData.mealSlot.status !== 'Paused',
+            duration_days: adjustedDuration,
+            pauseStart_Date: pauseStartTs,
+            pauseEnd_Date: pauseEndTs
+          }
+        };
+
+        if (formData.pauseReason) {
+          payload.pauseReason = formData.pauseReason;
+        }
+
+        return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENTS}`, payload);
+      })
+    );
   }
 
   updateSubscriber(roll_number: string, formData: any): Observable<any> {
@@ -262,13 +280,7 @@ export class SubscriberService {
       switchMap((existingRes: ApiResponse<{ student: any }>) => {
         const existingStudent = existingRes.responseData?.data?.student;
 
-        // Dynamic meal slots - same logic as createSubscriber
-        const meals: string[] = [];
-        Object.keys(formData.mealSlot).forEach(key => {
-          if (!['startDate', 'endDate', 'status'].includes(key) && formData.mealSlot[key]) {
-            meals.push(key.toUpperCase());
-          }
-        });
+        const meals: string[] = (formData.mealSlot.selectedMeals || []).map((name: string) => name.toUpperCase());
 
         // Convert 'DD/MM/YY' to timestamp
         const parseDate = (dateStr: string) => {
@@ -279,7 +291,7 @@ export class SubscriberService {
 
         const startDateTs = parseDate(formData.mealSlot.startDate);
         const endDateTs = parseDate(formData.mealSlot.endDate);
-        const durationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
+        const rawDurationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
 
         // Prepare subscription object with existing values as defaults
         const subscription: any = {
@@ -287,7 +299,7 @@ export class SubscriberService {
           start_Date: startDateTs,
           end_Date: endDateTs,
           active: formData.mealSlot.status !== 'Paused',
-          duration_days: durationDays
+          duration_days: rawDurationDays
         };
 
         // Handle pause dates by comparing existing and form data
@@ -330,19 +342,31 @@ export class SubscriberService {
           subscription.active = true;
         }
 
-        const payload: any = {
-          roll_number: formData.roll_number,
-          name: `${formData.firstName} ${formData.lastName}`.trim(),
-          email: formData.email,
-          subscription: subscription
-        };
+        // Adjust for holidays: fetch holidays and extend end date
+        const holidayCheck$ = startDateTs && endDateTs ? this.countHolidaysInRange(startDateTs, endDateTs) : of(0);
 
-        if (formData.pauseReason) {
-          payload.pauseReason = formData.pauseReason;
-        }
+        return holidayCheck$.pipe(
+          switchMap((holidayCount: number) => {
+            subscription.duration_days = (subscription.duration_days || rawDurationDays) + holidayCount;
+            if (subscription.end_Date) {
+              subscription.end_Date += holidayCount * 24 * 60 * 60 * 1000;
+            }
 
-        // Use roll_number for the endpoint (backend expects roll_number, not MongoDB _id)
-        return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`, payload);
+            const payload: any = {
+              roll_number: formData.roll_number,
+              name: `${formData.firstName} ${formData.lastName}`.trim(),
+              email: formData.email,
+              dayPreference: formData.mealSlot.dayPreference || 'all',
+              subscription: subscription
+            };
+
+            if (formData.pauseReason) {
+              payload.pauseReason = formData.pauseReason;
+            }
+
+            return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`, payload);
+          })
+        );
       })
     );
   }

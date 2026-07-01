@@ -46,7 +46,7 @@ The frontend is a **Webpack Module Federation remote** (port 4201) that exposes 
 | **Stats Overview** | `StatsBarComponent` | 4 stat cards: Total Subscribers, Active Subscriptions, Total Meals Served Today, Absent Today |
 | **Meal Slot Status** | `MealSlotsComponent` | Live/Upcoming/Closed meal slots with animated counters, real-time updates via WebSocket |
 | **Configure Meal Slots** | `ConfigureMealSlotsComponent` | Modal with 3 sub-tabs: |
-| | | **Meal Slots** — Add/edit/delete meal schedules with time pickers, overlap validation |
+| | | **Meal Slots** — Add/edit/delete meal schedules with time pickers, overlap validation; each slot has an "Available Days" multi-select (weekday / weekend / holiday) so owners can decide which day types a meal runs on |
 | | | **Display Panel** — LCD message templates per tap scenario with variable substitution (`"name"`, `"rollno"`, `"meal"`, `"status"`) and device test |
 | | | **Token Customization** — Receipt/token layout configuration with printer test |
 | **Recent Tap Activity** | `EntriesTableComponent` | Table of recent RFID taps (Subscriber, Roll Number, Meal Slot, Time, Status) |
@@ -59,9 +59,9 @@ The frontend is a **Webpack Module Federation remote** (port 4201) that exposes 
 |---|---|---|
 | **Subscriber Stats** | `SubscriberStatsComponent` | Total, Active, Paused, Lapsed counts |
 | **Subscriber Table** | `SubscriberTableComponent` | Paginated, searchable, filterable table with columns: Subscriber, Roll Number, Meal Plan, Status (colored badge), Joined Date (with expiry warning for subscribers expiring within 7 days). Custom filter panel with checkbox selections for meal slots and status, plus radio selection for expiry range (7/15/30 days). Export to CSV. |
-| **Add Subscriber** | `AddSubscriberModalComponent` | Form with name, email, roll number, meal slot multi-select, start/end dates, status dropdown, pause start/end dates, pause reason |
+| **Add Subscriber** | `AddSubscriberModalComponent` | Form with name, email, roll number, meal slot multi-select (via `<lib-dropdown-lib>`), day preference dropdown (All Days / Weekdays Only / Weekends Only), start/end dates, status dropdown, pause start/end dates, pause reason |
 | **Edit Subscriber** | `EditSubscriberModalComponent` | Pre-populated form for editing existing subscribers |
-| **Subscriber Form** | `SubscriberFormComponent` | Reusable form with custom-built date pickers, validation, conditional pause start/end date fields, pause reason input |
+| **Subscriber Form** | `SubscriberFormComponent` | Reusable form with `<lib-dropdown-lib>` multi-select for meal slots, day preference dropdown, custom-built date pickers, validation, conditional pause start/end date fields, pause reason input. On save, the subscription end date is automatically extended to skip any holidays within the subscription period. |
 | **ID Card Preview** | `SubscriberCardPreviewComponent` | Front/back card design with Mess Pass branding, roll number, terms & conditions |
 | **Card Modal** | `SubscriberCardModalComponent` | Post-creation preview of subscriber's ID card |
 | **Student Detail** | `StudentDetailComponent` | Full student profile: overview cards (plan, status, card, attendance), subscription history with timeline, tap activity log, change log, and pause compensation card showing taps-during-pause with conditional styling. Accessed inline via the table "View" action or deep-linked from the quick modal with `?student=X` query param. |
@@ -110,7 +110,8 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 | POST | `/schedule` | `MealSlotService` / `DashboardService` | Create meal schedule |
 | PUT | `/schedule/:id` | `MealSlotService` / `DashboardService` | Update meal schedule |
 | DELETE | `/schedule/:id` | `MealSlotService` / `DashboardService` | Delete meal schedule |
-| POST | `/schedule/holiday` | — | Mark holiday (not yet wired in UI) |
+| POST | `/schedule/holiday` | `ReportsService` | Create holiday record |
+| DELETE | `/schedule/holiday/:id` | `ReportsService` | Delete holiday record |
 
 ### Taps
 
@@ -151,7 +152,7 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 |---|---|---|---|
 | GET | `/reports/today` | `DashboardService` | Today's meal report with per-meal breakdown |
 | GET | `/reports/analytics?from=&to=` | `ReportsService` | Analytics aggregate: total taps, active/paused/expired subscriber counts, meal distribution with tapCount/subscriberCount per slot. Optional date range filters tap data; subscriber counts are current snapshot. |
-| GET | `/reports/holidays` | `ReportsService` | All mess holiday records |
+| GET | `/schedule/holidays` | `ReportsService` | All mess holiday records (used by HolidayCalendarComponent and for holiday-aware subscription duration) |
 | GET | `/reports/students?search=` | `ReportsService` | Search students by roll number or name (regex), returns student list with subscription status and raw document data |
 | GET | `/reports/students/:rollNumber/overview` | `ReportsService` | Single student overview: profile, subscription details, card status, total taps, attendance rate |
 | GET | `/reports/students/:rollNumber/taps?meal=&from=&to=` | `ReportsService` | Student tap history with optional meal/date filters |
@@ -172,9 +173,9 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 | Service | Location | Purpose |
 |---|---|---|
 | `DashboardService` | `modules/dashboard/services/` | Fetches schedules, taps, hardware status, display configs |
-| `SubscriberService` | `modules/subscriber-management/services/` | Full subscriber CRUD with backend mapping |
+| `SubscriberService` | `modules/subscriber-management/services/` | Full subscriber CRUD with backend mapping. On create/update, fetches holidays from `/schedule/holidays` and extends `end_Date` / `duration_days` by the number of holidays in the subscription range (holiday countdown skip). Sends `dayPreference` in the payload. |
 | `MealSlotService` | `shared/services/` | Cached meal slot CRUD with `BehaviorSubject` + 5-min stale time |
-| `SubscriberFormService` | `shared/services/` | Form validation, date parsing (DD/MM/YY ↔ timestamp), meal plan ↔ codes mapping, pause start/end date and pause reason validation |
+| `SubscriberFormService` | `shared/services/` | Form validation, date parsing (DD/MM/YY ↔ timestamp), meal plan ↔ codes mapping, pause start/end date and pause reason validation. Manages `selectedMeals: string[]` and `dayPreference: 'all' | 'weekday' | 'weekend'` on the form value. |
 | `HardwareManagementService` | `shared/services/` | All hardware lifecycle operations |
 | `WebsocketService` | `shared/services/` | Raw WebSocket connection with auto-reconnect |
 | `ConnectionMonitorService` | `shared/services/` | Server health polling, server-down alerts with retry |
@@ -207,8 +208,8 @@ AppComponent
 │   ├── [Route: /kjusys/dashboard]
 │   │   └── DashboardComponent
 │   │       ├── StatsBarComponent (4 stat cards)
-│   │       ├── MealSlotsComponent (live slot grid)
-│   │       │   └── ConfigureMealSlotsComponent (modal)
+│   │       ├── MealSlotsComponent (live slot grid, min 3 / max 4 cols)
+│   │       │   └── ConfigureMealSlotsComponent (modal + day-type multi-select)
 │   │       ├── EntriesTableComponent (recent taps)
 │   │       ├── HardwareStatusComponent (devices + server stats)
 │   │       │   └── HardwareSettingsModalComponent (full device mgmt)
@@ -342,6 +343,7 @@ interface Subscriber {
   pauseReason?: string;
   expiryWarning?: string;  // "expiry in N days" for active subs within 7 days
   mealNames?: string[];
+  dayPreference?: string;  // 'all' | 'weekday' | 'weekend'
 }
 ```
 
@@ -394,6 +396,26 @@ Located in `prod-server/`:
 ---
 
 ## Changelog
+
+### 2026-07-02 — Meal slot day-types, subscriber dropdowns, holiday countdown skip
+
+**Meal slots — Available Days:**
+- Added "Available Days" multi-select to ConfigureMealSlotsComponent (weekday / weekend / holiday)
+- Each meal slot now stores which day types it runs on; the schedule payload only includes selected day types
+- Dashboard grid changed from fixed `grid-cols-4` to `grid-cols-3 xl:grid-cols-4` (min 3, max 4 columns)
+
+**Subscriber form — Dropdowns:**
+- Replaced checkbox list with `<lib-dropdown-lib>` multi-select for meal slots
+- Added day preference dropdown (All Days / Weekdays Only / Weekends Only) side by side with meal slots
+- `SubscriberFormValue.mealSlot` restructured: removed dynamic `[key: string]: boolean` in favour of `selectedMeals: string[]` + `dayPreference: string`
+- Payload now includes `dayPreference` on create/update
+
+**Holiday countdown skip:**
+- `SubscriberService.createSubscriber()` and `updateSubscriber()` now fetch holidays from `/schedule/holidays` and extend `end_Date` / `duration_days` by the number of holidays in the range — subscriptions automatically skip holiday dates in the countdown
+
+**Modal height & scrolling:**
+- Add/Edit subscriber modals set to `h-[800px]` with `flex flex-col` layout (fixed header/footer, scrollable form body)
+- `dropdown-lib` scroll listener fixed: no longer closes the dropdown when scrolling within an `overflow-y-auto` parent that contains it
 
 ### 2026-07-02 — Endpoint & CDR cleanup
 
