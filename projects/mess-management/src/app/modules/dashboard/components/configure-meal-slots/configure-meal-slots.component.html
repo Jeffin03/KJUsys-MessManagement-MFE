@@ -56,7 +56,7 @@
     <!-- Modal: outer clips corners, inner scrolls -->
     <div
         class="relative w-full max-w-2xl mx-4 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] flex flex-col bg-white"
-        style="height:700px; max-height:90vh;">
+        style="height:800px; max-height:90vh;">
 
         <!-- Fixed Header -->
         <div class="px-7 pt-5 bg-white border-b border-[#E5E7EB] flex-shrink-0">
@@ -612,59 +612,135 @@
 
                     <div class="grid grid-cols-2 gap-6">
                         <!-- Left Form -->
-                        <div class="rounded-xl border border-[#F5F5F7] bg-[#FAFAFC] p-5 flex flex-col gap-6 min-h-[480px]">
-                            <div>
-                                <label class="block text-[13px] font-medium text-[#111827] mb-2">Section 1</label>
-                                <input [(ngModel)]="tokenConfig.section1" placeholder="e.g. Mentora Mess"
-                                    class="w-full px-4 h-11 rounded-xl border border-[#E5E7EB] bg-white text-[#111827] placeholder:text-[#86868B] placeholder:font-normal outline-none text-[13px] focus:border-[#155DFC] focus:ring-1 focus:ring-[#155DFC]">
+                        <div class="rounded-xl border border-[#F5F5F7] bg-[#FAFAFC] p-5 flex flex-col gap-4">
+                            <div *ngFor="let section of tokenConfig.sections; let i = index; let first = first; let last = last"
+                                class="rounded-lg border bg-white overflow-hidden transition-all duration-300"
+                                [class.border-blue-500]="section.expanded || highlightedIndex === i"
+                                [class.ring-1]="section.expanded || highlightedIndex === i"
+                                [class.ring-blue-500]="section.expanded || highlightedIndex === i"
+                                [class.border-[#E5E7EB]]="!section.expanded && highlightedIndex !== i">
+                                <!-- Accordion Header -->
+                                <div class="flex items-center gap-2 px-4 py-3 cursor-pointer select-none hover:bg-[#F9FAFB] transition-colors"
+                                    (click)="toggleSection(i)">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        class="text-[#9CA3AF] transition-transform duration-200"
+                                        [class.rotate-90]="section.expanded">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                    <span class="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">Section {{ i + 1 }}</span>
+                                    <div class="flex-1"></div>
+                                    <button type="button"
+                                        class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-[#F3F4F6] disabled:opacity-30 transition-colors"
+                                        [disabled]="first"
+                                        title="Move up"
+                                        (click)="$event.stopPropagation(); moveSection(i, -1)">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#6B7280]"><polyline points="18 15 12 9 6 15"/></svg>
+                                    </button>
+                                    <button type="button"
+                                        class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-[#F3F4F6] disabled:opacity-30 transition-colors"
+                                        [disabled]="last"
+                                        title="Move down"
+                                        (click)="$event.stopPropagation(); moveSection(i, 1)">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#6B7280]"><polyline points="6 9 12 15 18 9"/></svg>
+                                    </button>
+                                    <button type="button"
+                                        class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-[#FEE2E2] transition-colors"
+                                        title="Delete section"
+                                        (click)="$event.stopPropagation(); removeSection(i)">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#EF4444]"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                    </button>
+                                </div>
+                                <!-- Accordion Body -->
+                                <div *ngIf="section.expanded" class="flex flex-col border-t border-[#E5E7EB]">
+                                    <textarea [(ngModel)]="section.text" placeholder='e.g. Name: "name"\nToken: "token"'
+                                        (input)="onDisplayInput($event, 'tokenConfig.sections.' + i + '.text')"
+                                        (keydown)="onDisplayKeydown($event, 'tokenConfig.sections.' + i + '.text')"
+                                        (blur)="onDisplayBlur()"
+                                        rows="2"
+                                        class="w-full px-3 py-3 border-0 bg-white text-[#111827] placeholder:text-[#86868B] outline-none text-[13px] focus:ring-0 resize-none overflow-y-auto leading-relaxed max-h-[108px]"></textarea>
+                                    <div class="flex-shrink-0 flex items-center gap-1 flex-wrap px-3 py-2 bg-white border-t border-[#F0F0F0]">
+                                        <button type="button"
+                                            class="flex items-center justify-center w-8 h-8 rounded-md text-[13px] font-bold transition-colors"
+                                            [class.bg-[#DBEAFE] text-[#1D4ED8]]="section.bold"
+                                            [class.bg-[#F3F4F6] text-[#6B7280]]="!section.bold"
+                                            title="Bold"
+                                            (click)="toggleBold(i)">B</button>
+                                        <button type="button"
+                                            class="flex items-center justify-center w-8 h-8 rounded-md text-[13px] font-serif italic transition-colors"
+                                            [class.bg-[#DBEAFE] text-[#1D4ED8]]="section.italic"
+                                            [class.bg-[#F3F4F6] text-[#6B7280]]="!section.italic"
+                                            title="Italic"
+                                            (click)="toggleItalic(i)">I</button>
+                                        <button type="button"
+                                            class="flex items-center justify-center w-8 h-8 rounded-md text-[15px] font-semibold bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB] transition-colors"
+                                            [disabled]="section.fontSize <= 8"
+                                            title="Decrease font size"
+                                            (click)="adjustFontSize(i, -2)">A-</button>
+                                        <span class="text-[11px] font-mono text-[#6B7280] w-6 text-center">{{ section.fontSize }}</span>
+                                        <button type="button"
+                                            class="flex items-center justify-center w-8 h-8 rounded-md text-[15px] font-semibold bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB] transition-colors"
+                                            [disabled]="section.fontSize >= 28"
+                                            title="Increase font size"
+                                            (click)="adjustFontSize(i, 2)">A+</button>
+                                        <button type="button"
+                                            class="flex items-center justify-center w-8 h-8 rounded-md transition-colors"
+                                            [class.bg-[#DBEAFE] text-[#1D4ED8]]="section.dividerAfter"
+                                            [class.bg-[#F3F4F6] text-[#6B7280]]="!section.dividerAfter"
+                                            title="Toggle divider below"
+                                            (click)="toggleDividerAfter(i)">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                                        </button>
+                                        <div class="w-px h-6 bg-[#E5E7EB] mx-1"></div>
+                                        <button type="button"
+                                            class="flex items-center justify-center w-8 h-8 rounded-md transition-colors"
+                                            [class.bg-[#DBEAFE] text-[#1D4ED8]]="section.align === 'left'"
+                                            [class.bg-[#F3F4F6] text-[#6B7280]]="section.align !== 'left'"
+                                            title="Align left"
+                                            (click)="setAlign(i, 'left')">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="10" x2="15" y2="10"/><line x1="3" y1="14" x2="19" y2="14"/><line x1="3" y1="18" x2="13" y2="18"/></svg>
+                                        </button>
+                                        <button type="button"
+                                            class="flex items-center justify-center w-8 h-8 rounded-md transition-colors"
+                                            [class.bg-[#DBEAFE] text-[#1D4ED8]]="section.align === 'center'"
+                                            [class.bg-[#F3F4F6] text-[#6B7280]]="section.align !== 'center'"
+                                            title="Align center"
+                                            (click)="setAlign(i, 'center')">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="5" y1="18" x2="19" y2="18"/></svg>
+                                        </button>
+                                        <button type="button"
+                                            class="flex items-center justify-center w-8 h-8 rounded-md transition-colors"
+                                            [class.bg-[#DBEAFE] text-[#1D4ED8]]="section.align === 'right'"
+                                            [class.bg-[#F3F4F6] text-[#6B7280]]="section.align !== 'right'"
+                                            title="Align right"
+                                            (click)="setAlign(i, 'right')">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="10" x2="21" y2="10"/><line x1="5" y1="14" x2="21" y2="14"/><line x1="11" y1="18" x2="21" y2="18"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-[13px] font-medium text-[#111827] mb-2">Section 2</label>
-                                <input [(ngModel)]="tokenConfig.section2" placeholder='e.g. Name: "name"'
-                                    (input)="onDisplayInput($event, 'tokenConfig.section2')"
-                                    (keydown)="onDisplayKeydown($event, 'tokenConfig.section2')"
-                                    (blur)="onDisplayBlur()"
-                                    class="w-full px-4 h-11 rounded-xl border border-[#E5E7EB] bg-white text-[#111827] placeholder:text-[#86868B] placeholder:font-normal outline-none text-[13px] focus:border-[#155DFC] focus:ring-1 focus:ring-[#155DFC]">
-                            </div>
-                            <div>
-                                <label class="block text-[13px] font-medium text-[#111827] mb-2">Section 3</label>
-                                <input [(ngModel)]="tokenConfig.section3" placeholder="e.g. Thank you. Enjoy your meal!"
-                                    class="w-full px-4 h-11 rounded-xl border border-[#E5E7EB] bg-white text-[#111827] placeholder:text-[#86868B] placeholder:font-normal outline-none text-[13px] focus:border-[#155DFC] focus:ring-1 focus:ring-[#155DFC]">
-                            </div>
+                            <button type="button" (click)="addSection()"
+                                title="Add section"
+                                class="flex items-center justify-center gap-2 w-full h-11 rounded-xl border-2 border-dashed border-[#D1D5DB] bg-white text-[#6B7280] text-[13px] font-semibold hover:border-[#155DFC] hover:text-[#155DFC] transition-colors flex-none">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add Section
+                            </button>
                         </div>
 
-                        <!-- Right Preview -->
+                        <!-- Right Preview (sticky) -->
                         <div
-                            class="rounded-xl border border-[#F5F5F7] bg-[#FAFAFC] p-6 flex items-center justify-center">
+                            class="rounded-xl border border-[#F5F5F7] bg-[#FAFAFC] p-6 flex items-start justify-center sticky top-0 self-start">
                             <div
-                                class="bg-white border border-[#E5E7EB] w-full max-w-[280px] p-6 shadow-sm flex flex-col font-ubuntu">
-                                <!-- Section 1 -->
-                                <div class="text-center font-bold text-lg text-black mb-3">{{ substituteTokenVars(tokenConfig.section1, 'Mentora Mess') }}</div>
-
-                                <div class="w-full border-t border-dashed border-black mb-4"></div>
-
-                                <!-- Section 2 -->
-                                <div class="text-[15px] text-black mb-4">{{ substituteTokenVars(tokenConfig.section2, 'Name: Alfie') }}
-                                </div>
-
-                                <div class="w-full border-t border-dashed border-black mb-4"></div>
-
-                                <!-- Static Info -->
-                                <div class="flex justify-between text-[13px] text-black mb-5">
-                                    <span>Date: 16/06/26</span>
-                                    <span>Time: 09:02:23</span>
-                                </div>
-
-                                <!-- Bold Static Info -->
-                                <div class="flex items-center justify-between font-bold text-[15px] text-black mb-4">
-                                    <span>Token No. : 13</span>
-                                    <span>Breakfast</span>
-                                </div>
-
-                                <div class="w-full border-t border-dashed border-black mb-4"></div>
-
-                                <!-- Section 3 -->
-                                <div class="text-center text-[15px] text-black">{{ substituteTokenVars(tokenConfig.section3, 'Thank You. Enjoy our meal!') }}</div>
+                                class="bg-white border border-[#E5E7EB] w-full max-w-[280px] p-6 shadow-sm flex flex-col font-ubuntu overflow-hidden">
+                                <ng-container *ngFor="let section of tokenConfig.sections; let i = index; let last = last">
+                                    <div [class]="sectionStyle(section)"
+                                        [style.fontSize.px]="section.fontSize"
+                                        [class.font-bold]="section.bold"
+                                        [class.italic]="section.italic"
+                                        class="whitespace-pre-wrap leading-snug mb-3">
+                                        {{ substituteTokenVars(section.text, '[empty]') }}
+                                    </div>
+                                    <div *ngIf="section.dividerAfter" class="w-full border-t border-dashed border-black mb-3"></div>
+                                </ng-container>
                             </div>
                         </div>
                     </div>
