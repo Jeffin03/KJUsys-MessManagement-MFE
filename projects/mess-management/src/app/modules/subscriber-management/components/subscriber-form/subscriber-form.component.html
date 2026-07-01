@@ -46,24 +46,32 @@
 
     <!-- Meal Slot Box -->
     <div class="border border-gray-200 rounded-[10px] px-5 pt-[18px] pb-5 bg-gray-50">
-        <div class="text-xs font-semibold mb-3.5" style="color:#1D1D1F;">Meal Slots</div>
-
-        <!-- Checkboxes -->
-        <div class="flex flex-col gap-2.5 mb-[22px]">
-            <label *ngFor="let slot of mealSlots" class="flex items-center gap-[9px] select-none">
-                <span class="cursor-pointer shrink-0" (click)="form.mealSlot[slot.name.toLowerCase()] = !form.mealSlot[slot.name.toLowerCase()]; validateForm()">
-                    <span *ngIf="form.mealSlot[slot.name.toLowerCase()]"
-                        class="w-[18px] h-[18px] rounded bg-blue-600 flex items-center justify-center">
-                        <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
-                            <path d="M1 4.5L4 7.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
-                    </span>
-                    <span *ngIf="!form.mealSlot[slot.name.toLowerCase()]"
-                        class="w-[18px] h-[18px] border-[1.5px] border-gray-300 rounded inline-block box-border"></span>
-                </span>
-                <span class="text-xs" style="color:#101828;">{{ slot.name }}</span>
-            </label>
+        <div class="grid grid-cols-2 gap-4 mb-[22px]">
+            <div>
+                <lib-dropdown-lib
+                    label="Meal Slots"
+                    placeholder="Select meal slots"
+                    [singleSelection]="false"
+                    [data]="mealSlots"
+                    idField="name"
+                    textField="name"
+                    [selectedItems]="selectedMealSlotItems"
+                    (selectionChange)="onMealSlotsChange($event)">
+                </lib-dropdown-lib>
+                <p *ngIf="mealSlotsError" class="mt-1 text-[10px]" style="color:#C70036;">{{ mealSlotsError }}</p>
+            </div>
+            <div>
+                <lib-dropdown-lib
+                    label="Days"
+                    placeholder="Select days"
+                    [singleSelection]="true"
+                    [data]="dayOptions"
+                    idField="id"
+                    textField="label"
+                    [selectedItems]="selectedDayItem"
+                    (selectionChange)="onDayPreferenceChange($event)">
+                </lib-dropdown-lib>
+            </div>
         </div>
 
         <!-- Date + Status Row -->

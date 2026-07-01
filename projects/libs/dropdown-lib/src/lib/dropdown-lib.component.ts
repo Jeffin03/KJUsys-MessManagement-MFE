@@ -85,8 +85,10 @@ export class DropdownLibComponent implements OnInit, OnChanges, OnDestroy {
       if (this.isOpen) {
         const target = event.target as HTMLElement;
         if (this.eRef.nativeElement.contains(target)) return;
+        const scrollableParent = target.closest('.overflow-y-auto, .overflow-auto');
+        if (scrollableParent && this.eRef.nativeElement.contains(scrollableParent)) return;
         this.isOpen = false;
-        this.cdr.detectChanges(); // Ensure fast close render
+        this.cdr.detectChanges();
       }
     };
     window.addEventListener('scroll', this.scrollListener, true);

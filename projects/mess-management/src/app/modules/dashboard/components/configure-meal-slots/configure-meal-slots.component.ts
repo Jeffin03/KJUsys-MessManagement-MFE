@@ -25,6 +25,7 @@ interface MealSlotConfig {
   status: 'Closed' | 'Live' | 'Upcoming';
   start24: string;
   end24: string;
+  daysAvailable: string[];
 }
 
 @Component({
@@ -607,6 +608,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     this.showStartPicker = false;
     this.showEndPicker = false;
     this.showStatusDropdown = false;
+    this.showDaysDropdown = false;
   }
 
   slots: MealSlotConfig[] = [];
@@ -616,6 +618,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     code: '',
     icon: '',
     status: '',
+    daysAvailable: [] as string[],
     startHour: null as any,
     startMin: null as any,
     endHour: null as any,
@@ -627,11 +630,13 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   iconOptions = ['default', 'breakfast', 'lunch', 'snacks', 'dinner'];
   statusOptions = ['Closed', 'Live', 'Upcoming'];
+  daysAvailableOptions = ['weekday', 'weekend', 'holiday'];
 
   showStartPicker = false;
   showEndPicker = false;
   showIconDropdown = false;
   showStatusDropdown = false;
+  showDaysDropdown = false;
 
   close() { this.closed.emit(); }
 
@@ -733,6 +738,26 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       this.newSlot.endMin = 0;
       this.endTimeSet = true;
     }
+  }
+
+  toggleDaysDropdown(event: MouseEvent) {
+    event.stopPropagation();
+    const wasOpen = this.showDaysDropdown;
+    this.closeAllDropdowns();
+    this.showDaysDropdown = !wasOpen;
+  }
+
+  toggleDayOption(day: string) {
+    const idx = this.newSlot.daysAvailable.indexOf(day);
+    if (idx >= 0) {
+      this.newSlot.daysAvailable.splice(idx, 1);
+    } else {
+      this.newSlot.daysAvailable.push(day);
+    }
+  }
+
+  isDaySelected(day: string): boolean {
+    return this.newSlot.daysAvailable.includes(day);
   }
 
   stopProp(event: MouseEvent) { event.stopPropagation(); }
@@ -924,17 +949,19 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       return;
     }
 
+    const days = this.newSlot.daysAvailable.length > 0 ? this.newSlot.daysAvailable : ['weekday', 'weekend', 'holiday'];
     const code = this.newSlot.code.trim().toUpperCase();
+    const schedule: any = {};
+    if (days.includes('weekday')) schedule.weekday = { start: s24, end: e24 };
+    if (days.includes('weekend')) schedule.weekend = { start: s24, end: e24 };
+    if (days.includes('holiday')) schedule.holiday = { start: s24, end: e24 };
+
     const payload = {
       meal: this.newSlot.name.toUpperCase(),
       code,
       icon: this.newSlot.icon,
       active: true,
-      schedule: {
-        weekday: { start: s24, end: e24 },
-        weekend: { start: s24, end: e24 },
-        holiday: { start: s24, end: e24 }
-      }
+      schedule
     };
 
     const currentIndex = this.editIndex;
@@ -952,7 +979,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
             timeRange: `${this.formatTime(this.newSlot.startHour, this.newSlot.startMin)} - ${this.formatTime(this.newSlot.endHour, this.newSlot.endMin)}`,
             status,
             start24: s24,
-            end24: e24
+            end24: e24,
+            daysAvailable: [...days]
           };
           this.resetForm();
           this.isEditing = false;
@@ -981,7 +1009,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
             timeRange: `${this.formatTime(this.newSlot.startHour, this.newSlot.startMin)} - ${this.formatTime(this.newSlot.endHour, this.newSlot.endMin)}`,
             status,
             start24: s24,
-            end24: e24
+            end24: e24,
+            daysAvailable: [...days]
           });
           this.resetForm();
           this.cdr.detectChanges();
@@ -1007,6 +1036,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       code: '',
       icon: '',
       status: '',
+      daysAvailable: [],
       startHour: null as any,
       startMin: null as any,
       endHour: null as any,
@@ -1029,6 +1059,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     this.newSlot.code = slot.code;
     this.newSlot.icon = slot.icon;
     this.newSlot.status = slot.status;
+    this.newSlot.daysAvailable = slot.daysAvailable ? [...slot.daysAvailable] : ['weekday', 'weekend', 'holiday'];
     // Parse timeRange back to hour/min
     const start24 = slot.start24;
     const end24 = slot.end24;
@@ -1076,8 +1107,12 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
         next: (res: ApiResponse<{ schedules: BackendSchedule[] }>) => {
           const rawSchedules = res.responseData?.data?.schedules || [];
           this.slots = rawSchedules.map((s: any) => {
-            const start24 = s.schedule?.weekday?.start || '00:00';
-            const end24 = s.schedule?.weekday?.end || '00:00';
+            const daysAvailable: string[] = [];
+            if (s.schedule?.weekday?.start) daysAvailable.push('weekday');
+            if (s.schedule?.weekend?.start) daysAvailable.push('weekend');
+            if (s.schedule?.holiday?.start) daysAvailable.push('holiday');
+            const start24 = s.schedule?.weekday?.start || s.schedule?.weekend?.start || s.schedule?.holiday?.start || '00:00';
+            const end24 = s.schedule?.weekday?.end || s.schedule?.weekend?.end || s.schedule?.holiday?.end || '00:00';
             return {
               id: s._id.$oid,
               name: s.meal.charAt(0).toUpperCase() + s.meal.slice(1).toLowerCase(),
@@ -1086,7 +1121,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
               timeRange: `${start24} - ${end24}`,
               status: this.computeStatus(start24, end24),
               start24,
-              end24
+              end24,
+              daysAvailable
             } as MealSlotConfig;
           }).sort((a: MealSlotConfig, b: MealSlotConfig) => this.toMins(a.start24) - this.toMins(b.start24));
           // Seed the meal preview substitution from the first slot

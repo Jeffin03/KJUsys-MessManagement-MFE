@@ -12,13 +12,14 @@ import {
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DropdownLibModule } from '@libs/dropdown-lib';
 import { MealSlotWithCode } from '../../../../shared/services/meal-slot.service';
 import { SubscriberFormService, SubscriberFormValue, ValidationErrors } from '../../../../shared/services/subscriber-form.service';
 
 @Component({
   selector: 'app-subscriber-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DropdownLibModule],
   templateUrl: './subscriber-form.component.html',
   styleUrls: ['./subscriber-form.component.css']
 })
@@ -54,7 +55,9 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     mealSlot: {
       startDate: '',
       endDate: '',
-      status: 'Active'
+      status: 'Active',
+      selectedMeals: [],
+      dayPreference: 'all'
     },
     pauseEndDate: '',
     pauseStartDate: '',
@@ -71,6 +74,7 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     pauseReason: ''
   };
 
+  mealSlotsError = '';
   dateError = '';
   showStatus = false;
 
@@ -93,6 +97,30 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   ];
 
   weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  dayOptions = [
+    { id: 'all', label: 'All Days' },
+    { id: 'weekday', label: 'Weekdays Only' },
+    { id: 'weekend', label: 'Weekends Only' }
+  ];
+
+  get selectedMealSlotItems(): any[] {
+    return this.mealSlots.filter(s => this.form.mealSlot.selectedMeals.includes(s.name.toLowerCase()));
+  }
+
+  get selectedDayItem(): any[] {
+    return this.dayOptions.filter(d => d.id === this.form.mealSlot.dayPreference);
+  }
+
+  onMealSlotsChange(selected: any[]): void {
+    this.form.mealSlot.selectedMeals = selected.map(s => s.name.toLowerCase());
+    this.validateForm();
+  }
+
+  onDayPreferenceChange(selected: any[]): void {
+    this.form.mealSlot.dayPreference = selected.length > 0 ? selected[0].id : 'all';
+    this.validateForm();
+  }
 
   constructor(private formService: SubscriberFormService, private cdr: ChangeDetectorRef) {}
 
@@ -145,8 +173,9 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
 
   validateForm(): boolean {
     this.errors = this.formService.validateForm(this.form);
+    this.mealSlotsError = !this.form.mealSlot.selectedMeals.length ? 'At least one meal slot must be selected' : '';
     this.dateError = this.formService.validateDates(this.form.mealSlot.startDate, this.form.mealSlot.endDate) || '';
-    const isValid = !Object.values(this.errors).some(e => e) && !this.dateError;
+    const isValid = !Object.values(this.errors).some(e => e) && !this.dateError && !this.mealSlotsError;
     this.formValidChange.emit(isValid);
     return isValid;
   }
