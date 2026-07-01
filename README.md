@@ -64,13 +64,12 @@ The frontend is a **Webpack Module Federation remote** (port 4201) that exposes 
 | **Subscriber Form** | `SubscriberFormComponent` | Reusable form with custom-built date pickers, validation, conditional pause start/end date fields, pause reason input |
 | **ID Card Preview** | `SubscriberCardPreviewComponent` | Front/back card design with Mess Pass branding, roll number, terms & conditions |
 | **Card Modal** | `SubscriberCardModalComponent` | Post-creation preview of subscriber's ID card |
+| **Student Detail** | `StudentDetailComponent` | Full student profile: overview cards (plan, status, card, attendance), subscription history with timeline, tap activity log, change log, and pause compensation card showing taps-during-pause with conditional styling. Accessed inline via the table "View" action or deep-linked from the quick modal with `?student=X` query param. |
 
 ### 3. Reports Module (`/kjusys/reports`)
 
 | Feature | Component | Description |
 |---|---|---|
-| **Student Explorer** | `StudentSearchComponent` | Search students by roll number or name with debounced input, paginated results table with Active/Paused/Lapsed status badges, and "View Report" action to drill into student detail |
-| **Student Detail** | `StudentDetailComponent` | Full student profile: overview cards (plan, status, card, attendance), subscription history with timeline, tap activity log, change log, and pause compensation card showing taps-during-pause with conditional styling. Accessed inline below the sub-tab bar via `@Input() rollNumber` with a back button. |
 | **Analytics Dashboard** | `AnalyticsDashboardComponent` | Daily overview with total taps, active/paused/expired subscriber counts, and meal distribution bread chart showing real tap-to-subscriber ratios per meal slot. Optional date range filter queries historical tap data. |
 | **Holiday Calendar** | `HolidayCalendarComponent` | Calendar view of mess holidays fetched from backend, with date formatting via Angular `date` pipe. |
 | **Audit Tools** | `AuditToolsComponent` | Three sub-tabs: **Pause Audit** — table of paused subscriptions showing tap activity during pause periods; **Anomalies** — irregular tap events (blocked card taps, unsubscribed meal taps); **Change Log** — subscription modification history. |
@@ -226,6 +225,7 @@ AppComponent
 │   │   └── SubscriberManagementComponent
 │   │       ├── SubscriberStatsComponent (counts)
 │   │       ├── SubscriberTableComponent (table + filters + pagination)
+│   │       │   └── StudentDetailComponent (inline when "View" is clicked)
 │   │       ├── AddSubscriberModalComponent
 │   │       │   └── SubscriberFormComponent
 │   │       ├── EditSubscriberModalComponent
@@ -235,8 +235,6 @@ AppComponent
 │   │
 │   └── [Route: /kjusys/reports]
 │       └── ReportsComponent
-│           ├── StudentSearchComponent (sub-tab: student-search)
-│           │   └── StudentDetailComponent (inline when detail active)
 │           ├── AnalyticsDashboardComponent (sub-tab: analytics)
 │           ├── HolidayCalendarComponent (sub-tab: holidays)
 │           └── AuditToolsComponent (sub-tab: audit)
@@ -271,8 +269,8 @@ Exposed in `webpack.config.js` and registered in `mf.manifest.json`:
 | `/login` | `SharedAuthComponent` (from `@libs/shared-auth`) | Login page |
 | `/kjusys/dashboard` | `DashboardModule` (lazy) | `DashboardComponent` |
 | `/kjusys/subscriber-management` | `SubscriberManagementModule` (lazy) | `SubscriberManagementComponent` |
-| `/kjusys/reports` | `ReportsModule` (lazy) | `ReportsComponent` (sub-tabs: student-search, analytics, holidays, audit; student detail shown inline via `activeSubTab === 'student-detail'`) |
-| Deep-link via `?student=<rollNumber>` query param | ReportsModule | Opens QuickModal with student overview from any route |
+| `/kjusys/reports` | `ReportsModule` (lazy) | `ReportsComponent` (sub-tabs: analytics, audit, holidays) |
+| Deep-link via `?student=<rollNumber>` query param | SubscriberManagementModule | Opens `StudentDetailComponent` inline from any route |
 
 ---
 

@@ -70,7 +70,7 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
   ];
 
   primaryActions: PrimaryAction[] = [
-    { type: 'view', theme: 'secondary', label: 'View' },
+    { type: 'view', theme: 'secondary', label: 'View Student Details' },
     { type: 'edit', theme: 'secondary', label: 'Edit' },
     { type: 'delete', theme: 'alert', label: 'Delete' },
   ];

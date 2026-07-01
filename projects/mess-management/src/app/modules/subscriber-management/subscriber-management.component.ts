@@ -420,7 +420,11 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   }
 
   openQuickModal(sub: Subscriber): void {
-    this.selectedStudentRollNumber = sub.roll_number;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { student: sub.roll_number },
+      queryParamsHandling: 'merge'
+    });
   }
 
   openEditModal(sub: Subscriber): void {
