@@ -91,6 +91,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   showQuickModal = false;
   quickModalRollNumber: string | null = null;
   selectedStudentRollNumber: string | null = null;
+  detailRefreshKey = 0;
 
   subscriberFormData: any = null;
   editSubscriberData: any = null;
@@ -401,6 +402,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
           console.log('Successfully updated subscriber:', res);
           this.showEditModal = false;
           this.editSubscriberData = null;
+          this.detailRefreshKey++;
           this.fetchInitialData();
           this.cdr.detectChanges();
         },

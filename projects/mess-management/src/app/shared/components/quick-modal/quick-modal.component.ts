@@ -151,11 +151,61 @@ export class QuickModalComponent implements OnChanges {
             ? new Date(sub.end_Date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
             : '--',
         };
+
+        // Fetch attendance data to compute rate
         this.loading = false;
         this.cdr.detectChanges();
+        this.loadAttendance();
       },
       error: err => {
         this.error = 'Failed to load student details.';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private loadAttendance() {
+    if (!this.rollNumber) return;
+    const from = new Date();
+    from.setMonth(from.getMonth() - 6);
+    const to = new Date();
+    to.setDate(to.getDate() + 1);
+
+    const params = new URLSearchParams({
+      from: from.getTime().toString(),
+      to: to.getTime().toString()
+    });
+
+    this.http.get<any>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_ATTENDANCE(this.rollNumber)}?${params}`).subscribe({
+      next: res => {
+        const data = res?.responseData?.data;
+        const records: any[] = data?.records || [];
+
+        const dayMap = new Map<string, { statuses: string[] }>();
+        for (const rec of records) {
+          const dayKey = rec.date || '';
+          if (!dayMap.has(dayKey)) dayMap.set(dayKey, { statuses: [] });
+          dayMap.get(dayKey)!.statuses.push(rec.status || 'absent');
+        }
+
+        let totalTaps = 0;
+        let totalExpected = 0;
+        for (const entry of dayMap.values()) {
+          for (const status of entry.statuses) {
+            if (status === 'holiday' || status === 'paused') continue;
+            totalExpected++;
+            if (status === 'present') totalTaps++;
+          }
+        }
+
+        if (this.student) {
+          this.student.attendanceRate = totalExpected > 0 ? Math.round(totalTaps / totalExpected * 100) : 0;
+        }
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
         this.loading = false;
         this.cdr.detectChanges();
       }

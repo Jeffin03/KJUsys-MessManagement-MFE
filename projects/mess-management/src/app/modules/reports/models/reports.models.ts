@@ -62,6 +62,7 @@ export interface StudentSubscriptionSummary {
 export interface StudentOverview {
   rollNumber: string;
   name: string;
+  email?: string;
   cardStatus: string;
   subscription: StudentSubscriptionSummary;
   totalTaps: number;

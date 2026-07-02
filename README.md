@@ -397,6 +397,46 @@ Located in `prod-server/`:
 
 ## Changelog
 
+### 2026-07-02 — Student detail revamp, attendance pipeline, pause tracking
+
+**Student detail component — complete revamp:**
+- Replaced inline template (`template: \`...\``) with full standalone 476-line HTML file using TailwindCSS layout
+- Introduced 5-tab layout: **Overview**, **Attendance** (table), **Subscription History** (timeline + pause periods), **Activity Log** (changelog with filter chips), **Compensation / Pause**
+- Added weekly and yearly **GitHub-style heatmap** with color-coded cells (`present` → green, `partial` → light green, `absent` → grey, `holiday` → blue, `paused` → amber)
+- Month labels and day-of-week axis rendered above the heatmap grid
+- **Day tap detail drill-down**: clicking a heatmap cell shows per-meal breakdown (tapped/untapped/holiday/paused with timestamps) in a detail panel
+- **Subscription timeline** — milestone view with icon + color-coded entries for CREATED, RENEWED, MODIFIED, PAUSE_STARTED, PAUSE_ENDED, PAUSE_EXTENDED, DELETED
+- **Pause periods** tab — lists all pause periods with active/completed status badges, compensated days, taps-during-pause with conditional styling
+- **Activity log** — changelog entries displayed with action filter chips (All / Created / Renewed / Modified / Pause Started / Pause Ended / Pause Extended) for quick filtering
+- **Empty states** — `<lib-empty-state>` component shown when tabs have no data (loading, no attendance, no history, no activity)
+- Expiry countdown shown in overview for subscriptions expiring within 7 days
+- `@Input() refreshTrigger` — incremented by parent after successful edit to force full data reload (`loadAllData()` → overview, attendance, changelog, subscription history, pause compensation)
+- `ChangeDetectorRef.detectChanges()` on all async callbacks to ensure template updates
+
+**Quick modal — attendance rate:**
+- Added `loadAttendance()` method fetching last 6 months of attendance data from `/reports/students/:rollNumber/attendance`
+- Reads `status` field from attendance records (present/absent/holiday/paused), skips holidays and pauses, computes `attendanceRate = totalPresent / totalExpected × 100`
+- Replaces the previously hardcoded `attendanceRate: 0`
+
+**Reports service — changelog description:**
+- `getStudentChangelog()` now generates human-readable descriptions:
+  - Meal diffs: `"Added: BREAKFAST | Removed: DINNER"` when meals array changes
+  - Pause started: `"Paused: 2/7/26 → 21/7/26"` with pause date range
+  - Pause ended: `"Subscription auto-resumed after pause period ended"`
+  - Pause extended: `"Pause extended: 21/7/26 → 28/7/26"` with date range
+  - Falls back to `l.reason` if provided
+
+**Pause activity tracking (PAUSE_STARTED / PAUSE_ENDED / PAUSE_EXTENDED):**
+- Added constants `ACTION_COLORS` and `ACTIVITY_COLORS` with badge colors/icons for all action types including pause events
+- `buildMilestones()` renders timeline entries for all pause actions
+- `getMilestoneIcon()` returns appropriate icons (`play` for resumed, `clock` for extended, `pause` for started)
+- `milestoneColor()` maps short action names to full constants via `shortToFull` lookup table
+- HTML filter chips include `PAUSE_STARTED`, `PAUSE_ENDED`, `PAUSE_EXTENDED`
+
+**Subscriber management:**
+- Added `detailRefreshKey` counter — incremented after successful `updateSubscriber()` to trigger `StudentDetailComponent` data reload via `refreshTrigger` input binding
+- `StudentOverview` model: added `email` field
+
 ### 2026-07-02 — Meal slot day-types, subscriber dropdowns, holiday countdown skip
 
 **Meal slots — Available Days:**

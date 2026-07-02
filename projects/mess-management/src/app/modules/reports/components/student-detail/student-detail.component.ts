@@ -1,234 +1,181 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { TabsModule } from '@libs/tabs';
-import { ButtonComponent } from '@libs/shared-ui';
+import { ButtonComponent, EmptyStateComponent } from '@libs/shared-ui';
 import { TableModule } from '@libs/table';
 import { ReportsService } from '../../services/reports.service';
 import { StudentOverview, AttendanceDay, ChangelogEntry } from '../../models/reports.models';
 import type { TableColumn } from '@libs/table';
 
-interface TabItem { id: string; label: string; subtitle?: string; count?: number; }
+// ── Interfaces ──────────────────────────────────────────────────────────────────
+
+interface HeatmapCell {
+  dateStr: string;
+  day: number;
+  month: number;
+  year: number;
+  overall?: string;
+  count?: number;
+  total?: number;
+}
+
+type WeekRow = (HeatmapCell | null)[];
+
+interface ActivityEntry {
+  id: string;
+  action: string;
+  description: string;
+  timestamp: number;
+  timeAgo: string;
+  previousValue?: any;
+  newValue?: any;
+  expanded: boolean;
+}
+
+interface SubscriptionMilestone {
+  date: number;
+  action: string;
+  title: string;
+  details: string;
+}
+
+interface PausePeriodEntry {
+  pauseStart: number;
+  pauseEnd: number;
+  reason: string;
+  status: string;
+  compensatedDays: number;
+  tapsDuringPause: number;
+}
+
+interface DayTapDetail {
+  date: string;
+  dateLabel: string;
+  meals: {
+    slotName: string;
+    tapped: boolean;
+    tapTime?: string;
+    isHoliday: boolean;
+    isPaused: boolean;
+    isSubscriptionActive: boolean;
+  }[];
+}
+
+// ── Constants ───────────────────────────────────────────────────────────────────
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const HEATMAP_COLORS: Record<string, string> = {
+  'present': '#216E39',
+  'partial': '#9BE9A8',
+  'absent': '#EBEDF0',
+  'holiday': '#93C5FD',
+  'paused': '#FCD34D',
+};
+
+const ACTION_COLORS: Record<string, { bg: string; text: string; icon: string }> = {
+  SUBSCRIPTION_CREATED:   { bg: '#DCFCE7', text: '#1D9F00', icon: 'plus' },
+  SUBSCRIPTION_RENEWED:   { bg: '#DCFCE7', text: '#1D9F00', icon: 'refresh' },
+  SUBSCRIPTION_MODIFIED:  { bg: '#DBEAFE', text: '#155DFC', icon: 'edit' },
+  SUBSCRIPTION_DELETED:   { bg: '#FFF1F2', text: '#C70036', icon: 'trash' },
+  PAUSE_STARTED:          { bg: '#FEF3C7', text: '#FE9A00', icon: 'pause' },
+  PAUSE_ENDED:          { bg: '#DCFCE7', text: '#1D9F00', icon: 'play' },
+  PAUSE_EXTENDED:         { bg: '#FEF3C7', text: '#FE9A00', icon: 'clock' },
+  CARD_BLOCKED:           { bg: '#FFF1F2', text: '#C70036', icon: 'lock' },
+  CARD_UNBLOCKED:         { bg: '#DCFCE7', text: '#1D9F00', icon: 'unlock' },
+};
+
+const ACTIVITY_COLORS: Record<string, { bg: string; text: string }> = {
+  SUBSCRIPTION_CREATED:   { bg: '#DCFCE7', text: '#1D9F00' },
+  SUBSCRIPTION_MODIFIED:  { bg: '#DBEAFE', text: '#155DFC' },
+  SUBSCRIPTION_RENEWED:   { bg: '#DCFCE7', text: '#1D9F00' },
+  SUBSCRIPTION_DELETED:   { bg: '#FFF1F2', text: '#C70036' },
+  PAUSE_STARTED:          { bg: '#FEF3C7', text: '#FE9A00' },
+  PAUSE_ENDED:          { bg: '#DCFCE7', text: '#1D9F00' },
+  PAUSE_EXTENDED:         { bg: '#FEF3C7', text: '#FE9A00' },
+  CARD_BLOCKED:           { bg: '#FFF1F2', text: '#C70036' },
+  CARD_UNBLOCKED:         { bg: '#DCFCE7', text: '#1D9F00' },
+};
+
+// ── Component ───────────────────────────────────────────────────────────────────
 
 @Component({
   selector: 'app-student-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, TabsModule, ButtonComponent, TableModule],
+  imports: [CommonModule, RouterModule, FormsModule, TabsModule, ButtonComponent, EmptyStateComponent, TableModule],
   providers: [ReportsService],
-  template: `
-    <div class="flex flex-col gap-6">
-      <div class="flex items-center gap-3">
-        <button (click)="goBack()" class="w-8 h-8 rounded-lg border border-[#E5E7EB] bg-[#FAFAFB] flex items-center justify-center hover:bg-gray-100 transition-colors">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-          </svg>
-        </button>
-        <div *ngIf="overview">
-          <span class="text-sm font-semibold text-[#111827]">{{ overview.name }}</span>
-          <span class="text-[10px] text-[#6B7280] ml-2">{{ overview.rollNumber }}</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-4 gap-5">
-        <div class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-5 pt-5 pb-6">
-          <div class="flex items-center gap-2 mb-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-            <span class="text-xs font-medium text-[#6B7280]">Plan</span>
-          </div>
-          <span class="text-xl font-bold text-[#111827]">{{ overview?.subscription?.currentPlan || '--' }}</span>
-        </div>
-        <div class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-5 pt-5 pb-6">
-          <div class="flex items-center gap-2 mb-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            <span class="text-xs font-medium text-[#6B7280]">Status</span>
-          </div>
-          <span class="text-xl font-bold"
-            [class.text-[#155DFC]]="overview?.subscription?.status === 'active'"
-            [class.text-[#FE9A00]]="overview?.subscription?.status === 'paused'"
-            [class.text-[#C70036]]="overview?.subscription?.status === 'expired'">
-            {{ (overview?.subscription?.status || '--') | titlecase }}
-          </span>
-        </div>
-        <div class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-5 pt-5 pb-6">
-          <div class="flex items-center gap-2 mb-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-            <span class="text-xs font-medium text-[#6B7280]">Attendance</span>
-          </div>
-          <span class="text-xl font-bold text-[#111827]">{{ overview?.attendanceRate || 0 }}%</span>
-        </div>
-        <div class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-5 pt-5 pb-6">
-          <div class="flex items-center gap-2 mb-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            <span class="text-xs font-medium text-[#6B7280]">Card Status</span>
-          </div>
-          <span class="text-xl font-bold text-[#111827]">{{ overview?.cardStatus || '--' }}</span>
-        </div>
-      </div>
-
-      <div class="flex flex-col bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden">
-        <div class="border-b border-[#E5E7EB] px-6 py-4">
-          <lib-tabs [tabs]="tabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-tabs>
-        </div>
-
-        <div class="p-6">
-          <div *ngIf="activeTab === 'overview'" class="grid grid-cols-2 gap-x-16 gap-y-5 text-sm">
-            <div><span class="text-[#6B7280]">Start Date:</span> <span class="font-medium text-[#111827] ml-2">{{ fmtDate(overview?.subscription?.startDate) }}</span></div>
-            <div><span class="text-[#6B7280]">End Date:</span> <span class="font-medium text-[#111827] ml-2">{{ fmtDate(overview?.subscription?.endDate) }}</span></div>
-            <div><span class="text-[#6B7280]">Days Remaining:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.subscription?.daysRemaining }}</span></div>
-            <div><span class="text-[#6B7280]">Paused Days:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.subscription?.pausedDays }}</span></div>
-            <div><span class="text-[#6B7280]">Total Taps:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.totalTaps || 0 }}</span></div>
-            <div><span class="text-[#6B7280]">Meal Slots:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.subscription?.mealSlots?.join(', ') || '--' }}</span></div>
-          </div>
-
-          <div *ngIf="activeTab === 'attendance'">
-            <lib-table
-              [columns]="attendanceColumns"
-              [data]="attendanceData"
-              [loading]="attendanceLoading"
-              [showToolbar]="false"
-              [stickyActions]="false"
-              [clientPagination]="true"
-              [pagination]="{ currentPage: 1, itemsPerPage: 30, totalItems: attendanceData.length, totalPages: 1 }"
-            ></lib-table>
-          </div>
-
-          <div *ngIf="activeTab === 'activity'">
-            <lib-table
-              [columns]="activityColumns"
-              [data]="activityData"
-              [loading]="activityLoading"
-              [showToolbar]="false"
-              [stickyActions]="false"
-              [clientPagination]="true"
-              [pagination]="{ currentPage: 1, itemsPerPage: 20, totalItems: activityData.length, totalPages: 1 }"
-            ></lib-table>
-          </div>
-
-          <div *ngIf="activeTab === 'pause-comp'">
-            <div *ngIf="pauseCompLoading" class="text-xs text-[#6B7280] text-center py-8">Loading...</div>
-            <div *ngIf="!pauseCompLoading && pauseCompError" class="text-xs text-[#C70036] text-center py-8">{{ pauseCompError }}</div>
-            <div *ngIf="!pauseCompLoading && !pauseCompError && !pauseCompData?.hasPause" class="text-xs text-[#6B7280] text-center py-8">
-              No pause records found for this student.
-            </div>
-            <div *ngIf="!pauseCompLoading && !pauseCompError && pauseCompData?.hasPause" class="grid grid-cols-2 gap-x-16 gap-y-5 text-sm">
-              <div><span class="text-[#6B7280]">Status:</span>
-                <span class="font-medium ml-2" [class.text-[#FE9A00]]="pauseCompData?.status === 'active'" [class.text-[#007A55]]="pauseCompData?.status === 'completed'">
-                  {{ pauseCompData?.status === 'active' ? 'Currently Paused' : 'Completed' }}
-                </span>
-              </div>
-              <div><span class="text-[#6B7280]">Reason:</span> <span class="font-medium text-[#111827] ml-2">{{ pauseCompData?.reason }}</span></div>
-              <div><span class="text-[#6B7280]">Pause Start:</span> <span class="font-medium text-[#111827] ml-2">{{ pauseCompData?.pauseStart | date:'dd/MM/yy' }}</span></div>
-              <div><span class="text-[#6B7280]">Pause End:</span> <span class="font-medium text-[#111827] ml-2">{{ pauseCompData?.pauseEnd | date:'dd/MM/yy' }}</span></div>
-              <div><span class="text-[#6B7280]">Compensated Days:</span> <span class="font-medium text-[#111827] ml-2">{{ pauseCompData?.compensatedDays }}</span></div>
-              <div><span class="text-[#6B7280]">Taps During Pause:</span>
-                <span class="font-medium ml-2" [class.text-[#007A55]]="!pauseCompData?.tapsDuringPause" [class.text-[#C70036]]="pauseCompData?.tapsDuringPause">
-                  {{ pauseCompData?.tapsDuringPause }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div *ngIf="activeTab === 'history'">
-            <lib-table
-              [columns]="historyColumns"
-              [data]="historyData"
-              [loading]="historyLoading"
-              [showToolbar]="false"
-              [stickyActions]="false"
-              [clientPagination]="true"
-              [pagination]="{ currentPage: 1, itemsPerPage: 20, totalItems: historyData.length, totalPages: 1 }"
-            ></lib-table>
-            <div *ngIf="!historyLoading && historyData.length === 0" class="text-xs text-[#6B7280] text-center py-6">
-              No subscription history found.
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
+  templateUrl: './student-detail.component.html',
 })
 export class StudentDetailComponent implements OnChanges {
   @Input() rollNumber = '';
+  @Input() refreshTrigger = 0;
   @Output() back = new EventEmitter<void>();
 
-  overview: StudentOverview | null = null;
-
-  fmtDate(millis: any): string {
-    return millis ? new Date(millis).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '--';
-  }
-
-  tabs: TabItem[] = [
+  // ── Tab state ───────────────────────────────────────────────────────────────
+  tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'attendance', label: 'Attendance' },
-    { id: 'activity', label: 'Activity Log' },
-    { id: 'pause-comp', label: 'Pause & Comp' },
-    { id: 'history', label: 'Subscription History' },
+    { id: 'activity-history', label: 'Activity & History' },
   ];
   activeTab = 'overview';
 
+  // ── API data ────────────────────────────────────────────────────────────────
+  overview: StudentOverview | null = null;
   attendanceData: AttendanceDay[] = [];
-  attendanceLoading = false;
-  attendanceColumns: TableColumn[] = [
-    { key: 'date', label: 'DATE', sortable: true, minWidth: '120px' },
-    { key: 'overall', label: 'STATUS', type: 'badge', minWidth: '100px',
-      colorMap: {
-        'present': { bg: '#DCFCE7', text: '#1D9F00' },
-        'partial': { bg: '#FEF3C7', text: '#BB4D00' },
-        'absent': { bg: '#FFF1F2', text: '#C70036' },
-        'holiday': { bg: '#F3F4F6', text: '#6B7280' },
-        'paused': { bg: '#FEF3C7', text: '#FE9A00' },
-      }
-    },
-    { key: 'mealDetails', label: 'MEALS', minWidth: '200px' },
-  ];
-
+  changelogData: ChangelogEntry[] = [];
+  subscriptionHistory: any[] = [];
   pauseCompData: any = null;
-  pauseCompLoading = false;
-  pauseCompError = '';
 
-  activityData: ChangelogEntry[] = [];
-  activityLoading = false;
-  historyData: any[] = [];
+  // ── Loading states ──────────────────────────────────────────────────────────
+  overviewLoading = false;
+  attendanceLoading = false;
+  changelogLoading = false;
   historyLoading = false;
-  historyColumns: TableColumn[] = [
-    { key: 'timestamp', label: 'DATE', sortable: true, minWidth: '140px' },
-    { key: 'action', label: 'EVENT', type: 'badge', minWidth: '160px',
-      colorMap: {
-        'SUBSCRIPTION_CREATED': { bg: '#DCFCE7', text: '#1D9F00' },
-        'SUBSCRIPTION_MODIFIED': { bg: '#DBEAFE', text: '#155DFC' },
-        'SUBSCRIPTION_RENEWED': { bg: '#DCFCE7', text: '#1D9F00' },
-        'SUBSCRIPTION_DELETED': { bg: '#FFF1F2', text: '#C70036' },
-        'PAUSE_STARTED': { bg: '#FEF3C7', text: '#FE9A00' },
-        'CARD_BLOCKED': { bg: '#FFF1F2', text: '#C70036' },
-        'CARD_UNBLOCKED': { bg: '#DCFCE7', text: '#1D9F00' },
-      }
-    },
-    { key: 'description', label: 'DETAILS', minWidth: '300px' },
-  ];
+  pauseLoading = false;
+  activityFilterLoading = false;
+
+  // ── Overview: Student Profile ──────────────────────────────────────────────
+  // (uses overview property directly)
+
+  // ── Overview: Weekly heatmap ───────────────────────────────────────────────
+  weeklyHeatmapCells: (HeatmapCell | null)[] = [];
+  selectedDayTap: DayTapDetail | null = null;
+
+  // ── Overview: Recent activity ──────────────────────────────────────────────
+  recentActivity: ActivityEntry[] = [];
+
+  // ── Attendance: Heatmap ────────────────────────────────────────────────────
+  heatmapView: 'yearly' | 'monthly' | 'weekly' = 'yearly';
+  heatmapYear = new Date().getFullYear();
+  heatmapMonth = new Date().getMonth();
+  heatmapWeeks: WeekRow[] = [];
+  heatmapMonthLabels: { col: number; label: string }[] = [];
+  heatmapColWidth = 22;
+  attendanceSummary: { present: number; partial: number; absent: number; holiday: number; paused: number } | null = null;
+
+  // ── Activity & History ─────────────────────────────────────────────────────
+  activityEntries: ActivityEntry[] = [];
+  activityFilter: string | null = null;
+  milestones: SubscriptionMilestone[] = [];
+  pausePeriods: PausePeriodEntry[] = [];
+  pauseSummary = { totalPeriods: 0, totalDaysPaused: 0, totalCompDays: 0 };
 
   activityColumns: TableColumn[] = [
     { key: 'timestamp', label: 'TIME', sortable: true, minWidth: '140px' },
-    { key: 'action', label: 'ACTION', type: 'badge', minWidth: '150px',
-      colorMap: {
-        'SUBSCRIPTION_CREATED': { bg: '#DCFCE7', text: '#1D9F00' },
-        'SUBSCRIPTION_MODIFIED': { bg: '#DBEAFE', text: '#155DFC' },
-        'SUBSCRIPTION_DELETED': { bg: '#FFF1F2', text: '#C70036' },
-        'SUBSCRIPTION_RENEWED': { bg: '#DCFCE7', text: '#1D9F00' },
-        'PAUSE_STARTED': { bg: '#FEF3C7', text: '#FE9A00' },
-        'CARD_BLOCKED': { bg: '#FFF1F2', text: '#C70036' },
-        'CARD_UNBLOCKED': { bg: '#DCFCE7', text: '#1D9F00' },
-      }
-    },
+    { key: 'action', label: 'ACTION', type: 'badge', minWidth: '150px', colorMap: ACTIVITY_COLORS },
     { key: 'description', label: 'DESCRIPTION', minWidth: '250px' },
   ];
+
+  historyColumns: TableColumn[] = [
+    { key: 'timestamp', label: 'DATE', sortable: true, minWidth: '140px' },
+    { key: 'action', label: 'EVENT', type: 'badge', minWidth: '160px', colorMap: ACTIVITY_COLORS },
+    { key: 'description', label: 'DETAILS', minWidth: '300px' },
+  ];
+
+  // ── Browse state ───────────────────────────────────────────────────────────
+  browsingDay: DayTapDetail | null = null;
 
   constructor(
     private reportsService: ReportsService,
@@ -238,71 +185,115 @@ export class StudentDetailComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges) {
     if (changes['rollNumber'] && this.rollNumber) {
       this.activeTab = 'overview';
-      this.overview = null;
-      this.pauseCompData = null;
-      this.pauseCompError = '';
-      this.loadOverview();
-      this.loadAttendance();
-      this.loadActivity();
+      this.resetAllData();
+      this.loadAllData();
+    } else if (changes['refreshTrigger'] && this.rollNumber) {
+      this.loadAllData();
     }
   }
 
+  // ── Reset ──────────────────────────────────────────────────────────────────
+  private resetAllData() {
+    this.overview = null;
+    this.attendanceData = [];
+    this.changelogData = [];
+    this.subscriptionHistory = [];
+    this.pauseCompData = null;
+    this.recentActivity = [];
+    this.weeklyHeatmapCells = [];
+    this.selectedDayTap = null;
+    this.heatmapWeeks = [];
+    this.heatmapMonthLabels = [];
+    this.attendanceSummary = null;
+    this.activityEntries = [];
+    this.milestones = [];
+    this.pausePeriods = [];
+    this.pauseSummary = { totalPeriods: 0, totalDaysPaused: 0, totalCompDays: 0 };
+    this.browsingDay = null;
+    this.activityFilter = null;
+  }
+
+  private loadAllData() {
+    this.loadOverview();
+    // Fetch attendance for past 6 months + future to cover all historic data
+    const from = new Date();
+    from.setMonth(from.getMonth() - 6);
+    const to = new Date();
+    to.setDate(to.getDate() + 1);
+    this.loadAttendance(from.getTime().toString(), to.getTime().toString());
+    this.loadChangelog();
+    this.loadSubscriptionHistory();
+    this.loadPauseComp();
+  }
+
+  // ── Data loaders ───────────────────────────────────────────────────────────
+
   private loadOverview() {
+    this.overviewLoading = true;
     this.reportsService.getStudentOverview(this.rollNumber).subscribe({
-      next: data => { this.overview = data; this.cdr.detectChanges(); },
-      error: () => {}
+      next: data => {
+        this.overview = data;
+        this.overviewLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.overviewLoading = false; this.cdr.detectChanges(); }
     });
   }
 
-  private loadAttendance() {
+  private loadAttendance(from?: string, to?: string) {
     this.attendanceLoading = true;
-    this.reportsService.getStudentAttendance(this.rollNumber).subscribe({
+    this.reportsService.getStudentAttendance(this.rollNumber, from, to).subscribe({
       next: data => {
-        this.attendanceData = data.map(d => ({
-          ...d,
-          overall: d.overall,
-          mealDetails: d.mealSlots.filter(s => !s.isHoliday).map(s =>
-            `${s.slotName}: ${s.tapped ? '\u2713' : '\u2717'}`
-          ).join(', ')
-        }));
+        this.attendanceData = data;
         this.attendanceLoading = false;
+        this.buildWeeklyHeatmap();
+        this.buildYearlyHeatmap();
+        this.computeAttendanceSummary();
+        this.setDefaultSelectedDay();
+        this.computeOverviewStats();
         this.cdr.detectChanges();
       },
       error: () => { this.attendanceLoading = false; this.cdr.detectChanges(); }
     });
   }
 
-  private loadActivity() {
-    this.activityLoading = true;
-    this.reportsService.getStudentChangelog(this.rollNumber, 50).subscribe({
+  private computeOverviewStats() {
+    if (!this.overview) return;
+    let totalTaps = 0;
+    let totalExpected = 0;
+    for (const day of this.attendanceData) {
+      for (const meal of day.mealSlots) {
+        if (meal.isHoliday || meal.isPaused) continue;
+        totalExpected++;
+        if (meal.tapped) totalTaps++;
+      }
+    }
+    this.overview.attendanceRate = totalExpected > 0 ? Math.round(totalTaps / totalExpected * 100) : 0;
+    this.overview.totalTaps = totalTaps;
+  }
+
+  private loadChangelog() {
+    this.changelogLoading = true;
+    this.reportsService.getStudentChangelog(this.rollNumber, 100).subscribe({
       next: data => {
-        this.activityData = data.map(e => ({
-          ...e,
-          timestamp: e.timestamp ? new Date(e.timestamp).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '',
-        }));
-        this.activityLoading = false;
+        this.changelogData = data;
+        this.changelogLoading = false;
+        this.buildRecentActivity();
+        this.buildActivityEntries();
         this.cdr.detectChanges();
       },
-      error: () => { this.activityLoading = false; this.cdr.detectChanges(); }
+      error: () => { this.changelogLoading = false; this.cdr.detectChanges(); }
     });
   }
 
-  onTabChange(tabId: string) {
-    this.activeTab = tabId;
-    if (tabId === 'pause-comp') this.loadPauseComp();
-    if (tabId === 'history') this.loadHistory();
-  }
-
-  private loadHistory() {
+  private loadSubscriptionHistory() {
     this.historyLoading = true;
     this.reportsService.getStudentSubscriptionHistory(this.rollNumber).subscribe({
       next: data => {
-        this.historyData = data.map((e: any) => ({
-          timestamp: e.timestamp ? new Date(e.timestamp).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '',
-          action: e.action,
-          description: e.reason || (e.action === 'PAUSE_STARTED' ? 'Subscription paused' : 'Subscription ' + (e.action.toLowerCase())),
-        }));
+        this.subscriptionHistory = data;
         this.historyLoading = false;
+        this.buildMilestones();
+        this.buildPausePeriods();
         this.cdr.detectChanges();
       },
       error: () => { this.historyLoading = false; this.cdr.detectChanges(); }
@@ -310,23 +301,506 @@ export class StudentDetailComponent implements OnChanges {
   }
 
   private loadPauseComp() {
-    this.pauseCompLoading = true;
-    this.pauseCompError = '';
+    this.pauseLoading = true;
     this.reportsService.getStudentPauseComp(this.rollNumber).subscribe({
       next: data => {
         this.pauseCompData = data;
-        this.pauseCompLoading = false;
+        this.pauseLoading = false;
         this.cdr.detectChanges();
       },
-      error: err => {
-        this.pauseCompError = 'Failed to load pause details.';
-        this.pauseCompLoading = false;
-        this.cdr.detectChanges();
-      }
+      error: () => { this.pauseLoading = false; this.cdr.detectChanges(); }
     });
+  }
+
+  // ── Heatmap builders ───────────────────────────────────────────────────────
+
+  private buildWeeklyHeatmap() {
+    const cells: (HeatmapCell | null)[] = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const ds = this.toDateStr(d);
+      const match = this.attendanceData.find(a => a.date === ds);
+      cells.push(match ? {
+        dateStr: ds,
+        day: d.getDate(),
+        month: d.getMonth(),
+        year: d.getFullYear(),
+        overall: match.overall,
+        count: match.mealSlots.filter(m => m.tapped).length,
+        total: match.mealSlots.filter(m => !m.isHoliday).length,
+      } : {
+        dateStr: ds,
+        day: d.getDate(),
+        month: d.getMonth(),
+        year: d.getFullYear(),
+      });
+    }
+    this.weeklyHeatmapCells = cells;
+  }
+
+  private buildYearlyHeatmap() {
+    const year = this.heatmapYear;
+    const firstDay = new Date(year, 0, 1);
+    const lastDay = new Date(year, 11, 31);
+
+    const start = new Date(firstDay);
+    start.setDate(start.getDate() - start.getDay()); // first Sunday on or before Jan 1
+
+    const COL_WIDTH = 22; // cell (20px w-5) + gap-0.5 (2px)
+
+    const weeks: WeekRow[] = [[], [], [], [], [], [], []];
+    const monthLabels: { col: number; label: string }[] = [];
+
+    let current = new Date(start);
+    let col = 0;
+    const seenMonths = new Set<number>();
+
+    while (current <= lastDay || col % 7 !== 0) {
+      for (let row = 0; row < 7; row++) {
+        const cellDate = new Date(start);
+        cellDate.setDate(start.getDate() + col * 7 + row);
+
+        if (cellDate >= firstDay && cellDate <= lastDay) {
+          const ds = this.toDateStr(cellDate);
+          const match = this.attendanceData.find(a => a.date === ds);
+          weeks[row].push(match ? {
+            dateStr: ds,
+            day: cellDate.getDate(),
+            month: cellDate.getMonth(),
+            year: cellDate.getFullYear(),
+            overall: match.overall,
+            count: match.mealSlots.filter(m => m.tapped).length,
+            total: match.mealSlots.filter(m => !m.isHoliday).length,
+          } : {
+            dateStr: ds,
+            day: cellDate.getDate(),
+            month: cellDate.getMonth(),
+            year: cellDate.getFullYear(),
+          });
+
+          if (cellDate.getDate() <= 7 && !seenMonths.has(cellDate.getMonth())) {
+            seenMonths.add(cellDate.getMonth());
+            monthLabels.push({ col, label: MONTH_LABELS[cellDate.getMonth()] });
+          }
+        } else {
+          weeks[row].push(null);
+        }
+      }
+      col++;
+      if (current > lastDay && col % 7 === 0) break;
+      current.setDate(current.getDate() + 7);
+    }
+
+    this.heatmapWeeks = weeks;
+    this.heatmapMonthLabels = monthLabels;
+    this.heatmapColWidth = COL_WIDTH;
+  }
+
+  private buildMonthlyHeatmap() {
+    const year = this.heatmapYear;
+    const month = this.heatmapMonth;
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    const start = new Date(firstDay);
+    start.setDate(start.getDate() - start.getDay());
+
+    const weeks: WeekRow[] = [[], [], [], [], [], [], []];
+
+    let current = new Date(start);
+    let col = 0;
+
+    while (current <= lastDay) {
+      for (let row = 0; row < 7; row++) {
+        const cellDate = new Date(start);
+        cellDate.setDate(start.getDate() + col * 7 + row);
+
+        if (cellDate >= firstDay && cellDate <= lastDay) {
+          const ds = this.toDateStr(cellDate);
+          const match = this.attendanceData.find(a => a.date === ds);
+          weeks[row].push(match ? {
+            dateStr: ds,
+            day: cellDate.getDate(),
+            month: cellDate.getMonth(),
+            year: cellDate.getFullYear(),
+            overall: match.overall,
+          } : {
+            dateStr: ds,
+            day: cellDate.getDate(),
+            month: cellDate.getMonth(),
+            year: cellDate.getFullYear(),
+          });
+        } else {
+          weeks[row].push(null);
+        }
+      }
+      col++;
+      current.setDate(current.getDate() + 7);
+    }
+
+    this.heatmapWeeks = weeks;
+    this.heatmapMonthLabels = [];
+  }
+
+  private computeAttendanceSummary() {
+    let present = 0, partial = 0, absent = 0, holiday = 0, paused = 0;
+    for (const day of this.attendanceData) {
+      switch (day.overall) {
+        case 'present': present++; break;
+        case 'partial': partial++; break;
+        case 'absent': absent++; break;
+        case 'holiday': holiday++; break;
+        case 'paused': paused++; break;
+      }
+    }
+    this.attendanceSummary = { present, partial, absent, holiday, paused };
+  }
+
+  private setDefaultSelectedDay() {
+    const today = this.toDateStr(new Date());
+    const match = this.attendanceData.find(a => a.date === today)
+      || this.attendanceData[0];
+    if (match) {
+      this.selectedDayTap = this.toDayTapDetail(match);
+      this.browsingDay = this.selectedDayTap;
+    }
+  }
+
+  // ── Activity builders ──────────────────────────────────────────────────────
+
+  private buildRecentActivity() {
+    this.recentActivity = this.changelogData.slice(0, 10).map(e => ({
+      id: e.id,
+      action: e.action,
+      description: e.description,
+      timestamp: typeof e.timestamp === 'string' ? new Date(e.timestamp).getTime() : e.timestamp,
+      timeAgo: this.timeAgo(typeof e.timestamp === 'string' ? new Date(e.timestamp).getTime() : e.timestamp),
+      previousValue: (e as any).previousValue,
+      newValue: (e as any).newValue,
+      expanded: false,
+    }));
+  }
+
+  private buildActivityEntries() {
+    this.activityEntries = this.changelogData.map(e => ({
+      id: e.id,
+      action: e.action,
+      description: e.description,
+      timestamp: typeof e.timestamp === 'string' ? new Date(e.timestamp).getTime() : e.timestamp,
+      timeAgo: this.formatTimestamp(typeof e.timestamp === 'string' ? new Date(e.timestamp).getTime() : e.timestamp),
+      previousValue: (e as any).previousValue,
+      newValue: (e as any).newValue,
+      expanded: false,
+    }));
+  }
+
+  private buildMilestones() {
+    this.milestones = this.subscriptionHistory.map((e: any) => {
+      let title = '';
+      let details = '';
+      const d = e.details || {};
+
+      switch (e.action) {
+        case 'CREATED':
+          title = 'Subscription Created';
+          details = `Plan: ${d.plan || 'N/A'} | ${d.durationDays || 0} days | ${this.fmtDate(d.startDate)} → ${this.fmtDate(d.endDate)}`;
+          break;
+        case 'RENEWED':
+          title = 'Subscription Renewed';
+          details = `${d.durationDays || 0} days | ${this.fmtDate(d.previousEndDate)} → ${this.fmtDate(d.newEndDate)}`;
+          break;
+        case 'MODIFIED':
+          title = 'Subscription Modified';
+          details = e.reason || 'Details updated';
+          break;
+        case 'PAUSE_STARTED':
+          title = 'Pause Started';
+          details = `${e.reason || 'No reason'} | ${this.fmtDate(d.pauseStartDate)} → ${this.fmtDate(d.pauseEndDate)}`;
+          break;
+        case 'PAUSE_ENDED':
+          title = 'Pause Resumed';
+          details = e.reason || 'Subscription auto-resumed after pause period ended';
+          break;
+        case 'PAUSE_EXTENDED':
+          title = 'Pause Extended';
+          details = e.reason || 'Pause duration extended';
+          break;
+        case 'DELETED':
+          title = 'Subscription Deleted';
+          details = e.reason || '';
+          break;
+        default:
+          title = e.action;
+          details = e.reason || '';
+      }
+
+      return {
+        date: e.timestamp || 0,
+        action: e.action,
+        title,
+        details,
+      };
+    });
+  }
+
+  private buildPausePeriods() {
+    const periods: PausePeriodEntry[] = [];
+    for (const event of this.subscriptionHistory) {
+      if (event.action === 'PAUSE_STARTED' && event.details?.pauseStartDate && event.details?.pauseEndDate) {
+        const start = event.details.pauseStartDate;
+        const end = event.details.pauseEndDate;
+        const now = Date.now();
+        const isActive = now >= start && now <= end;
+        const days = Math.max(1, Math.round((end - start) / 86400000));
+        periods.push({
+          pauseStart: start,
+          pauseEnd: end,
+          reason: event.reason || 'Paused',
+          status: isActive ? 'active' : 'completed',
+          compensatedDays: days,
+          tapsDuringPause: 0,
+        });
+      }
+    }
+
+    // Also include current pause from student doc if not already in history
+    if (this.overview?.subscription) {
+      const sub = this.overview.subscription as any;
+      if (sub.pauseStart_Date && sub.pauseEnd_Date) {
+        const exists = periods.some(p => p.pauseStart === sub.pauseStart_Date && p.pauseEnd === sub.pauseEnd_Date);
+        if (!exists) {
+          const now = Date.now();
+          const isActive = now >= sub.pauseStart_Date && now <= sub.pauseEnd_Date;
+          const days = Math.max(1, Math.round((sub.pauseEnd_Date - sub.pauseStart_Date) / 86400000));
+          periods.push({
+            pauseStart: sub.pauseStart_Date,
+            pauseEnd: sub.pauseEnd_Date,
+            reason: 'Paused',
+            status: isActive ? 'active' : 'completed',
+            compensatedDays: days,
+            tapsDuringPause: 0,
+          });
+        }
+      }
+    }
+
+    periods.sort((a, b) => b.pauseStart - a.pauseStart);
+    this.pausePeriods = periods;
+
+    this.pauseSummary = {
+      totalPeriods: periods.length,
+      totalDaysPaused: periods.reduce((s, p) => s + Math.round((p.pauseEnd - p.pauseStart) / 86400000), 0),
+      totalCompDays: periods.reduce((s, p) => s + p.compensatedDays, 0),
+    };
+  }
+
+  // ── UI actions ─────────────────────────────────────────────────────────────
+
+  onTabChange(tabId: string) {
+    this.activeTab = tabId;
+    if (tabId === 'attendance') {
+      this.refreshHeatmap();
+    }
+  }
+
+  onHeatmapViewChange(view: 'yearly' | 'monthly' | 'weekly') {
+    this.heatmapView = view;
+    this.refreshHeatmap();
+  }
+
+  onHeatmapYearChange(dir: number) {
+    this.heatmapYear += dir;
+    this.refreshHeatmap();
+  }
+
+  onHeatmapMonthChange(dir: number) {
+    this.heatmapMonth += dir;
+    if (this.heatmapMonth < 0) { this.heatmapMonth = 11; this.heatmapYear--; }
+    if (this.heatmapMonth > 11) { this.heatmapMonth = 0; this.heatmapYear++; }
+    this.refreshHeatmap();
+  }
+
+  private refreshHeatmap() {
+    if (this.heatmapView === 'yearly') {
+      this.buildYearlyHeatmap();
+    } else if (this.heatmapView === 'monthly') {
+      this.buildMonthlyHeatmap();
+    }
+    this.cdr.detectChanges();
+  }
+
+  onCellClick(cell: HeatmapCell | null) {
+    if (!cell) return;
+    const match = this.attendanceData.find(a => a.date === cell.dateStr);
+    if (match) {
+      this.selectedDayTap = this.toDayTapDetail(match);
+    }
+  }
+
+  onActivityFilterChip(action: string | null) {
+    this.activityFilter = action;
+  }
+
+  get filteredActivityEntries(): ActivityEntry[] {
+    if (!this.activityFilter) return this.activityEntries;
+    return this.activityEntries.filter(e => e.action === this.activityFilter);
+  }
+
+  getFilteredActivityData(): any[] {
+    const entries = this.filteredActivityEntries;
+    return entries.map(e => ({
+      timestamp: this.formatTimestamp(e.timestamp),
+      action: e.action,
+      description: e.description,
+    }));
+  }
+
+  toggleActivityExpand(entry: ActivityEntry) {
+    entry.expanded = !entry.expanded;
+  }
+
+  toggleActivityRowExpand(entry: ActivityEntry) {
+    entry.expanded = !entry.expanded;
   }
 
   goBack() {
     this.back.emit();
   }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  fmtDate(millis: any): string {
+    if (!millis) return '--';
+    const d = new Date(millis);
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  fmtDateTime(millis: any): string {
+    if (!millis) return '--';
+    const d = new Date(millis);
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  private formatTimestamp(ts: number): string {
+    return new Date(ts).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  private timeAgo(ts: number): string {
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    return this.fmtDate(ts);
+  }
+
+  private toDateStr(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  private toDayTapDetail(day: AttendanceDay): DayTapDetail {
+    return {
+      date: day.date,
+      dateLabel: day.date ? this.fmtDate(new Date(day.date).getTime()) : '',
+      meals: day.mealSlots.map(m => ({
+        slotName: m.slotName,
+        tapped: m.tapped,
+        tapTime: m.tapTime,
+        isHoliday: m.isHoliday,
+        isPaused: m.isPaused,
+        isSubscriptionActive: m.isSubscriptionActive,
+      })),
+    };
+  }
+
+  getHeatmapColor(overall?: string): string {
+    return HEATMAP_COLORS[overall || 'absent'] || HEATMAP_COLORS['absent'];
+  }
+
+  actionColor(action: string): { bg: string; text: string; icon: string } {
+    return ACTION_COLORS[action] || { bg: '#F3F4F6', text: '#6B7280', icon: 'circle' };
+  }
+
+  cellTitle(cell: HeatmapCell | null): string {
+    if (!cell) return '';
+    return `${cell.dateStr}: ${cell.overall || 'no data'}`;
+  }
+
+  getMilestoneIcon(action: string): string {
+    switch (action) {
+      case 'CREATED': return 'plus';
+      case 'RENEWED': return 'refresh';
+      case 'MODIFIED': return 'edit';
+      case 'PAUSE_STARTED': return 'pause';
+      case 'PAUSE_ENDED': return 'play';
+      case 'PAUSE_EXTENDED': return 'clock';
+      case 'DELETED': return 'trash';
+      default: return 'circle';
+    }
+  }
+
+  milestoneColor(action: string): { bg: string; text: string; icon: string } {
+    const shortToFull: Record<string, string> = {
+      'CREATED': 'SUBSCRIPTION_CREATED',
+      'RENEWED': 'SUBSCRIPTION_RENEWED',
+      'MODIFIED': 'SUBSCRIPTION_MODIFIED',
+      'PAUSE_STARTED': 'PAUSE_STARTED',
+      'PAUSE_ENDED': 'PAUSE_ENDED',
+      'PAUSE_EXTENDED': 'PAUSE_EXTENDED',
+      'DELETED': 'SUBSCRIPTION_DELETED',
+    };
+    return this.actionColor(shortToFull[action] || action);
+  }
+
+  getMilestoneText(action: string): string {
+    return ACTION_COLORS[action]?.text || '#6B7280';
+  }
+
+  statusColor(status: string): string {
+    switch (status) {
+      case 'active': return '#155DFC';
+      case 'paused': return '#FE9A00';
+      case 'expired': return '#C70036';
+      case 'completed': return '#007A55';
+      default: return '#6B7280';
+    }
+  }
+
+  getDayAttendClass(overall?: string): string {
+    if (!overall) return 'bg-[#EBEDF0]';
+    switch (overall) {
+      case 'present': return 'bg-[#216E39]';
+      case 'partial': return 'bg-[#9BE9A8]';
+      case 'absent': return 'bg-[#EBEDF0]';
+      case 'holiday': return 'bg-[#BBDEFB]';
+      case 'paused': return 'bg-[#FEF3C7]';
+      default: return 'bg-[#EBEDF0]';
+    }
+  }
+
+  getSeverityColor(count: number, total: number): string {
+    if (total === 0) return '#EBEDF0';
+    const pct = count / total;
+    if (pct === 1) return '#216E39';
+    if (pct >= 0.75) return '#30A14E';
+    if (pct >= 0.5) return '#40C463';
+    if (pct >= 0.25) return '#9BE9A8';
+    return '#EBEDF0';
+  }
+
+  pauseDurationDays(p: PausePeriodEntry): number {
+    return Math.round((p.pauseEnd - p.pauseStart) / 86400000);
+  }
+
+  getActionLabel(action: string): string {
+    return action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  readonly dayLabels = DAY_LABELS;
+  readonly monthLabels = MONTH_LABELS;
 }
