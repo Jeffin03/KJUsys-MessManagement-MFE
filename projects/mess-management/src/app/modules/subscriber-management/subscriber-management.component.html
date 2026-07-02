@@ -9,7 +9,7 @@
       <lib-tabs [tabs]="tabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-tabs>
     </div>
     <!-- Student Detail -->
-    <app-student-detail *ngIf="selectedStudentRollNumber" [rollNumber]="selectedStudentRollNumber" (back)="backFromStudentDetail()"></app-student-detail>
+    <app-student-detail *ngIf="selectedStudentRollNumber" [rollNumber]="selectedStudentRollNumber" [refreshTrigger]="detailRefreshKey" (back)="backFromStudentDetail()"></app-student-detail>
 
     <!-- Stats -->
     <app-subscriber-stats *ngIf="!selectedStudentRollNumber" [stats]="stats"></app-subscriber-stats>

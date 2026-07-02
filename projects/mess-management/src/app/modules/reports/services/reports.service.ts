@@ -107,14 +107,47 @@ export class ReportsService {
       .pipe(map(r => {
         const data = this.extractData(r);
         const raw = data && data.logs ? data.logs : [];
-        return raw.map((l: any) => ({
-          id: extractId(l._id),
-          rollNumber: l.roll_number || '',
-          action: l.action || '',
-          description: l.reason || (l.newValue ? 'Details updated' : ''),
-          timestamp: l.timestamp || 0,
-          changedBy: l.changedBy || 'system',
-        }));
+        return raw.map((l: any) => {
+          const prevMeals = l.previousValue?.meals;
+          const newMeals = l.newValue?.meals;
+          let description = l.reason || 'Details updated';
+          if (!l.reason) {
+            if (l.action === 'PAUSE_STARTED') {
+              const ps = l.newValue?.pauseStart_Date;
+              const pe = l.newValue?.pauseEnd_Date;
+              if (ps && pe) {
+                description = `Paused: ${new Date(ps).toLocaleDateString()} → ${new Date(pe).toLocaleDateString()}`;
+              } else {
+                description = 'Subscription paused';
+              }
+            } else if (l.action === 'PAUSE_ENDED') {
+              description = 'Subscription auto-resumed after pause period ended';
+            } else if (l.action === 'PAUSE_EXTENDED') {
+              const prevEnd = l.previousValue?.pauseEnd_Date;
+              const newEnd = l.newValue?.pauseEnd_Date;
+              if (prevEnd && newEnd) {
+                description = `Pause extended: ${new Date(prevEnd).toLocaleDateString()} → ${new Date(newEnd).toLocaleDateString()}`;
+              } else {
+                description = 'Pause duration extended';
+              }
+            } else if (Array.isArray(prevMeals) && Array.isArray(newMeals)) {
+              const added = newMeals.filter((m: string) => !prevMeals.includes(m));
+              const removed = prevMeals.filter((m: string) => !newMeals.includes(m));
+              const parts: string[] = [];
+              if (added.length) parts.push(`Added: ${added.join(', ')}`);
+              if (removed.length) parts.push(`Removed: ${removed.join(', ')}`);
+              if (parts.length) description = parts.join(' | ');
+            }
+          }
+          return {
+            id: extractId(l._id),
+            rollNumber: l.roll_number || '',
+            action: l.action || '',
+            description,
+            timestamp: l.timestamp || 0,
+            changedBy: l.changedBy || 'system',
+          };
+        });
       }));
   }
 
@@ -170,6 +203,7 @@ export class ReportsService {
         return {
           rollNumber: student.roll_number || '',
           name: student.name || '',
+          email: student.email || '',
           cardStatus: student.card_blocked ? 'Blocked' : 'Active',
           subscription: {
             currentPlan: mealSlots.join(' + ') || 'None',
