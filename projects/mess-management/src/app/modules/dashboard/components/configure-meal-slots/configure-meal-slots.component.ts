@@ -28,6 +28,17 @@ interface MealSlotConfig {
   daysAvailable: string[];
 }
 
+const DEFAULT_TOKEN_SECTIONS: ({
+  text: string; bold: boolean; italic: boolean; fontSize: number;
+  align: 'left' | 'center' | 'right'; dividerAfter?: boolean;
+})[] = [
+  { text: 'Mentora Mess', bold: true, italic: false, fontSize: 16, align: 'center', dividerAfter: true },
+  { text: 'Name: "name"', bold: false, italic: false, fontSize: 14, align: 'left', dividerAfter: true },
+  { text: 'Date: "date"      Time: "time"\n', bold: false, italic: false, fontSize: 12, align: 'left' },
+  { text: 'Token No: "token"      "meal"', bold: true, italic: false, fontSize: 14, align: 'left', dividerAfter: true },
+  { text: 'Thank You. Enjoy your Meal!', bold: false, italic: true, fontSize: 14, align: 'center' }
+];
+
 @Component({
   selector: 'app-configure-meal-slots',
   standalone: true,
@@ -530,31 +541,34 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
               line2: defaultConfig.notSubscribed?.line2 || '' 
             }
           };
-            if (defaultConfig.tokenConfig) {
-            if (defaultConfig.tokenConfig.sections) {
-              this.tokenConfig.sections = defaultConfig.tokenConfig.sections.map((s, idx) => ({
-                text: s.text || '',
-                bold: !!s.bold,
-                italic: !!s.italic,
-                fontSize: (s as any).fontSize || 14,
-                align: ((s as any).align as 'left' | 'center' | 'right') || 'center',
-                dividerAfter: !!(s as any).dividerAfter,
-                expanded: idx === 0
-              }));
-            } else {
-              // Legacy flat format migration
-              const old = defaultConfig.tokenConfig as any;
-              this.tokenConfig.sections = [];
-              if (old.section1) this.tokenConfig.sections.push({ text: old.section1, bold: false, italic: false, fontSize: 16, align: 'center', expanded: true });
-              if (old.section2) this.tokenConfig.sections.push({ text: old.section2, bold: false, italic: false, fontSize: 14, align: 'left', expanded: false });
-              if (old.section3) this.tokenConfig.sections.push({ text: old.section3, bold: false, italic: false, fontSize: 14, align: 'center', expanded: false });
-            }
+          if (defaultConfig.tokenConfig?.sections?.length) {
+            this.tokenConfig.sections = defaultConfig.tokenConfig.sections.map((s, idx) => ({
+              text: s.text || '',
+              bold: !!s.bold,
+              italic: !!s.italic,
+              fontSize: (s as any).fontSize || 14,
+              align: ((s as any).align as 'left' | 'center' | 'right') || 'center',
+              dividerAfter: !!(s as any).dividerAfter,
+              expanded: idx === 0
+            }));
+          } else {
+            // Legacy flat format or fallback to code defaults
+            const old = defaultConfig.tokenConfig as any;
+            const legacy: any[] = [];
+            if (old?.section1) legacy.push({ text: old.section1, bold: false, italic: false, fontSize: 16, align: 'center', expanded: true });
+            if (old?.section2) legacy.push({ text: old.section2, bold: false, italic: false, fontSize: 14, align: 'left', expanded: false });
+            if (old?.section3) legacy.push({ text: old.section3, bold: false, italic: false, fontSize: 14, align: 'center', expanded: false });
+            this.tokenConfig.sections = legacy.length ? legacy : DEFAULT_TOKEN_SECTIONS.map((s, idx) => ({ ...s, expanded: idx === 0 }));
           }
+        } else {
+          this.tokenConfig.sections = DEFAULT_TOKEN_SECTIONS.map((s, idx) => ({ ...s, expanded: idx === 0 }));
         }
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load display configs:', err);
+        this.tokenConfig.sections = DEFAULT_TOKEN_SECTIONS.map((s, idx) => ({ ...s, expanded: idx === 0 }));
+        this.cdr.detectChanges();
       }
     });
   }
