@@ -7,6 +7,7 @@ import { SharedToastService } from '@libs/shared-toast';
 import { ButtonComponent } from '@libs/shared-ui';
 import { MealSlotService } from '../../../../shared/services/meal-slot.service';
 import { HardwareManagementService, HardwareDevice } from '../../../../shared/services/hardware-management.service';
+import { HolidayCalendarComponent } from '../../../reports/components/holiday-calendar/holiday-calendar.component';
 
 interface SuggestionItem {
   label: string;
@@ -42,7 +43,7 @@ const DEFAULT_TOKEN_SECTIONS: ({
 @Component({
   selector: 'app-configure-meal-slots',
   standalone: true,
-  imports: [CommonModule, FormsModule, SubTabsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, SubTabsModule, ButtonComponent, HolidayCalendarComponent],
   templateUrl: './configure-meal-slots.component.html',
   styleUrls: ['./configure-meal-slots.component.css']
 })
@@ -71,16 +72,17 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   editIndex: number | null = null;
   isEditing = false;
 
-  activeTab: 'mealSlots' | 'displayPanel' | 'tokenCustomization' = 'mealSlots';
+  activeTab: 'mealSlots' | 'displayPanel' | 'tokenCustomization' | 'holidayConfig' = 'mealSlots';
 
   subTabs: SubTabItem[] = [
     { id: 'mealSlots', label: 'Meal slots' },
+    { id: 'holidayConfig', label: 'Holiday Config' },
     { id: 'displayPanel', label: 'Display Panel' },
     { id: 'tokenCustomization', label: 'Token Customization' }
   ];
 
   onTabChange(tabId: string) {
-    this.activeTab = tabId as 'mealSlots' | 'displayPanel' | 'tokenCustomization';
+    this.activeTab = tabId as 'mealSlots' | 'displayPanel' | 'tokenCustomization' | 'holidayConfig';
     const scrollContainer = this.elementRef.nativeElement.querySelector('.overflow-y-auto');
     if (scrollContainer) {
       scrollContainer.scrollTo({ top: 0, behavior: 'instant' });

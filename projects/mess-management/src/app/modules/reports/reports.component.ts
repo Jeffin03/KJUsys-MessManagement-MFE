@@ -15,7 +15,6 @@ export class ReportsComponent {
   subTabs: SubTabItem[] = [
     { id: 'analytics', label: 'Analytics Dashboard' },
     { id: 'audit', label: 'Audit Tools' },
-    { id: 'holidays', label: 'Holiday Calendar' },
   ];
 
   breadcrumbs = [

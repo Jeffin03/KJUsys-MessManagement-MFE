@@ -7,7 +7,6 @@ import { ReportsModuleRoutingModule } from './reports-routing.module';
 import { ReportsComponent } from './reports.component';
 import { AnalyticsDashboardComponent } from './components/analytics/analytics-dashboard.component';
 import { AuditToolsComponent } from './components/audit/audit-tools.component';
-import { HolidayCalendarComponent } from './components/holiday-calendar/holiday-calendar.component';
 
 import { TabsModule } from '@libs/tabs';
 import { SubTabsModule } from '@libs/sub-tabs';
@@ -27,7 +26,6 @@ import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
     BreadcrumbsTitleComponent,
     AnalyticsDashboardComponent,
     AuditToolsComponent,
-    HolidayCalendarComponent,
   ]
 })
 export class ReportsModule { }

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, forkJoin } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map, shareReplay, tap, switchMap } from 'rxjs/operators';
 import { Subscriber } from '../../../shared/models/subscriber';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
@@ -51,6 +51,19 @@ export class SubscriberService {
     private mealSlotService: MealSlotService
   ) { }
 
+  /**
+   * Convert a date input to epoch millis. Accepts 'DD/MM/YY' (date-picker)
+   * or any format parsable by `new Date()` (ISO, etc.). Returns 0 if empty.
+   */
+  private parseDate(dateStr: string): number {
+    if (!dateStr) return 0;
+    if (dateStr.includes('/')) {
+      const [d, m, y] = dateStr.split('/');
+      return new Date(2000 + parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10)).getTime();
+    }
+    return new Date(dateStr).getTime() || 0;
+  }
+
   private countHolidaysInRange(startTs: number, endTs: number): Observable<number> {
     return this.http.get(`${this.baseUrl}${API_ENDPOINTS.HOLIDAYS_LIST}`).pipe(
       map((res: any) => {
@@ -87,18 +100,22 @@ export class SubscriberService {
       if (effectiveEndDate < now) {
         status = 'Lapsed';
       } else {
+        const pauseStart = student.subscription.pauseStart_Date;
         const pauseEnd = student.subscription.pauseEnd_Date;
+        const pauseStartDate = pauseStart ? new Date(pauseStart) : null;
         const pauseEndDate = pauseEnd ? new Date(pauseEnd) : null;
+        const isCurrentlyPaused = pauseStartDate && pauseEndDate &&
+          now >= pauseStartDate && now <= pauseEndDate;
         const pauseExpired = pauseEndDate && pauseEndDate <= now;
 
         if (pauseExpired) {
           status = 'Active';
-        } else if (student.subscription.is_Paused || pauseEndDate) {
+        } else if (isCurrentlyPaused || student.subscription.is_Paused) {
           status = 'Paused';
         } else if (student.subscription.active) {
           status = 'Active';
         } else {
-          status = 'Paused';
+          status = 'Active';
         }
       }
     }
@@ -227,19 +244,12 @@ export class SubscriberService {
   createSubscriber(formData: any): Observable<any> {
     const meals: string[] = (formData.mealSlot.selectedMeals || []).map((name: string) => name.toUpperCase());
 
-    // Convert 'DD/MM/YY' to timestamp
-    const parseDate = (dateStr: string) => {
-      if (!dateStr) return 0;
-      const [d, m, y] = dateStr.split('/');
-      return new Date(2000 + parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10)).getTime();
-    };
-
-    const startDateTs = parseDate(formData.mealSlot.startDate);
-    const endDateTs = parseDate(formData.mealSlot.endDate);
+    const startDateTs = this.parseDate(formData.mealSlot.startDate);
+    const endDateTs = this.parseDate(formData.mealSlot.endDate);
     const rawDurationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
 
-    const pauseStartTs = formData.pauseStartDate ? parseDate(formData.pauseStartDate) : null;
-    const pauseEndTs = formData.pauseEndDate ? parseDate(formData.pauseEndDate) : null;
+    const pauseStartTs = formData.pauseStartDate ? this.parseDate(formData.pauseStartDate) : null;
+    const pauseEndTs = formData.pauseEndDate ? this.parseDate(formData.pauseEndDate) : null;
 
     // Fetch holidays and adjust duration to skip holidays
     const holidayCheck$ = startDateTs && endDateTs ? this.countHolidaysInRange(startDateTs, endDateTs) : of(0);
@@ -258,7 +268,7 @@ export class SubscriberService {
             meals: meals,
             start_Date: startDateTs,
             end_Date: adjustedEndTs,
-            active: formData.mealSlot.status !== 'Paused',
+            active: true,
             duration_days: adjustedDuration,
             pauseStart_Date: pauseStartTs,
             pauseEnd_Date: pauseEndTs
@@ -283,14 +293,8 @@ export class SubscriberService {
         const meals: string[] = (formData.mealSlot.selectedMeals || []).map((name: string) => name.toUpperCase());
 
         // Convert 'DD/MM/YY' to timestamp
-        const parseDate = (dateStr: string) => {
-          if (!dateStr) return 0;
-          const [d, m, y] = dateStr.split('/');
-          return new Date(2000 + parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10)).getTime();
-        };
-
-        const startDateTs = parseDate(formData.mealSlot.startDate);
-        const endDateTs = parseDate(formData.mealSlot.endDate);
+        const startDateTs = this.parseDate(formData.mealSlot.startDate);
+        const endDateTs = this.parseDate(formData.mealSlot.endDate);
         const rawDurationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
 
         // Prepare subscription object with existing values as defaults
@@ -298,7 +302,7 @@ export class SubscriberService {
           meals: meals,
           start_Date: startDateTs,
           end_Date: endDateTs,
-          active: formData.mealSlot.status !== 'Paused',
+          active: true,
           duration_days: rawDurationDays
         };
 
@@ -310,8 +314,8 @@ export class SubscriberService {
         const formStatus = formData.mealSlot.status;
 
         // Parse form pause dates if provided
-        const formPauseEndTimestamp = formPauseEndDate ? parseDate(formPauseEndDate) : null;
-        const formPauseStartTimestamp = formPauseStartDate ? parseDate(formPauseStartDate) : null;
+        const formPauseEndTimestamp = formPauseEndDate ? this.parseDate(formPauseEndDate) : null;
+        const formPauseStartTimestamp = formPauseStartDate ? this.parseDate(formPauseStartDate) : null;
 
         // Determine what to do with pause dates:
         if (formStatus === 'Paused' && formPauseEndTimestamp !== null) {
@@ -372,8 +376,8 @@ export class SubscriberService {
   }
 
   pauseSubscription(roll_number: string, pauseEndDate: string): Observable<any> {
-    // Convert pauseEndDate to timestamp
-    const pauseEndTimestamp = new Date(pauseEndDate).getTime();
+    // Convert pauseEndDate to timestamp (handles both 'DD/MM/YY' and ISO formats)
+    const pauseEndTimestamp = this.parseDate(pauseEndDate);
 
     const payload = {
       pauseEndDate: pauseEndTimestamp
