@@ -400,6 +400,13 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
       this.subscriberService.updateSubscriber(this.editSubscriberData.roll_number, data).subscribe({
         next: (res) => {
           console.log('Successfully updated subscriber:', res);
+          const innerStatus = res.responseData?.data?.status;
+          if (innerStatus === 'ERROR') {
+            const message = res.responseData?.data?.message || 'Update failed. Please refresh and try again.';
+            this.toastService.error(message);
+          } else {
+            this.toastService.success('Subscriber updated successfully.');
+          }
           this.showEditModal = false;
           this.editSubscriberData = null;
           this.detailRefreshKey++;
@@ -408,9 +415,10 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Failed to update subscriber:', err);
+          const message = err.error?.responseData?.data?.message || 'Failed to update subscriber.';
+          this.toastService.error(message);
           this.showEditModal = false;
           this.editSubscriberData = null;
-          this.connectionMonitor.setServerDown(true);
           this.fetchInitialData();
           this.cdr.detectChanges();
         }
