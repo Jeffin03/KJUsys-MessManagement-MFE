@@ -112,7 +112,12 @@ export class ReportsService {
           const newMeals = l.newValue?.meals;
           let description = l.reason || 'Details updated';
           if (!l.reason) {
-            if (l.action === 'PAUSE_STARTED') {
+            if (l.action === 'HOLIDAY_MARKED') {
+              const count = l.newValue?.subscriptionsExtended ?? 0;
+              description = count > 0
+                ? `Holiday marked. ${count} subscription(s) extended by 1 day`
+                : 'Holiday marked';
+            } else if (l.action === 'PAUSE_STARTED') {
               const ps = l.newValue?.pauseStart_Date;
               const pe = l.newValue?.pauseEnd_Date;
               if (ps && pe) {
@@ -181,16 +186,20 @@ export class ReportsService {
         const sub = student.subscription || {};
 
         const status = (() => {
+          const now = Date.now();
           if (sub.pauseStart_Date && sub.pauseEnd_Date) {
-            const now = Date.now();
             if (now >= sub.pauseStart_Date && now <= sub.pauseEnd_Date) return 'paused';
           }
-          if (sub.end_Date && Date.now() > sub.end_Date) return 'expired';
+          if (sub.end_Date && now > sub.end_Date) return 'expired';
+          const hasEndedPause = sub.pauseStart_Date && sub.pauseEnd_Date && now > sub.pauseEnd_Date;
+          if (hasEndedPause) return 'active';
+          const hasFuturePause = sub.pauseStart_Date && sub.pauseEnd_Date && now < sub.pauseStart_Date;
+          if (hasFuturePause) return 'active';
           return sub.active ? 'active' : 'expired';
         })();
 
         const daysRemaining = sub.end_Date
-          ? Math.max(0, Math.round((sub.end_Date - Date.now()) / 86400000))
+          ? Math.max(0, Math.ceil(((sub.effective_End_Date || sub.end_Date) - Date.now()) / 86400000))
           : 0;
 
         const pausedDays = (sub.pauseStart_Date && sub.pauseEnd_Date)

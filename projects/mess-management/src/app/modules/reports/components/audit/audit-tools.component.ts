@@ -77,6 +77,8 @@ interface SubTabItem { id: string; label: string; count?: number; }
                 <option value="SUBSCRIPTION_RENEWED">Renewed</option>
                 <option value="SUBSCRIPTION_DELETED">Deleted</option>
                 <option value="PAUSE_STARTED">Pause Started</option>
+                <option value="PAUSE_EXTENDED">Pause Extended</option>
+                <option value="PAUSE_ENDED">Pause Ended</option>
                 <option value="CARD_BLOCKED">Card Blocked</option>
                 <option value="CARD_UNBLOCKED">Card Unblocked</option>
               </select>

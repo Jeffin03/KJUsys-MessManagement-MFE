@@ -77,17 +77,6 @@ export class WebsocketService {
         }
       });
     };
-
-    this.socket.onclose = (event) => {
-      console.log('WebSocket connection closed', event);
-      this.connectionStateSubject.next('closed');
-      // Reconnect after 5 seconds
-      setTimeout(() => this.connect(), 5000);
-    };
-
-    this.socket.onerror = (error) => {
-      console.error('WebSocket error', error);
-    };
   }
 
   disconnect(): void {

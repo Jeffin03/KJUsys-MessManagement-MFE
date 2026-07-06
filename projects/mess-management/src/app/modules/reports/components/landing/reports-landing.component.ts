@@ -36,16 +36,6 @@ import { CommonModule } from '@angular/common';
         </div>
         <span class="text-sm font-semibold text-[#111827]">Pause audits and change logs</span>
       </div>
-
-      <div (click)="navigate.emit('holidays')" class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-4 pt-[22px] pb-[39px] h-[127px] box-border cursor-pointer hover:shadow-md transition-shadow">
-        <div class="flex items-center gap-2 mb-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-          <span class="text-xs font-medium text-[#6B7280]">Holiday Calendar</span>
-        </div>
-        <span class="text-sm font-semibold text-[#111827]">Manage mess closure dates</span>
-      </div>
     </div>
   `
 })
