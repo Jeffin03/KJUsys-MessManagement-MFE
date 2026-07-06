@@ -47,7 +47,7 @@ interface PausePeriodEntry {
   reason: string;
   status: string;
   compensatedDays: number;
-  tapsDuringPause: number;
+  tapsDuringPause: number | null;
 }
 
 interface DayTapDetail {
@@ -306,6 +306,7 @@ export class StudentDetailComponent implements OnChanges {
       next: data => {
         this.pauseCompData = data;
         this.pauseLoading = false;
+        this.mergePauseCompData();
         this.cdr.detectChanges();
       },
       error: () => { this.pauseLoading = false; this.cdr.detectChanges(); }
@@ -560,7 +561,7 @@ export class StudentDetailComponent implements OnChanges {
           reason: event.reason || 'Paused',
           status: isActive ? 'active' : 'completed',
           compensatedDays: days,
-          tapsDuringPause: 0,
+          tapsDuringPause: null,
         });
       }
     }
@@ -580,7 +581,7 @@ export class StudentDetailComponent implements OnChanges {
             reason: 'Paused',
             status: isActive ? 'active' : 'completed',
             compensatedDays: days,
-            tapsDuringPause: 0,
+            tapsDuringPause: null,
           });
         }
       }
@@ -594,6 +595,17 @@ export class StudentDetailComponent implements OnChanges {
       totalDaysPaused: periods.reduce((s, p) => s + Math.round((p.pauseEnd - p.pauseStart) / 86400000), 0),
       totalCompDays: periods.reduce((s, p) => s + p.compensatedDays, 0),
     };
+    this.mergePauseCompData();
+  }
+
+  private mergePauseCompData() {
+    if (!this.pauseCompData || !this.pauseCompData.hasPause || this.pausePeriods.length === 0) return;
+    
+    // Match only on pauseStart to be resilient against pause extensions modifying the end date
+    const match = this.pausePeriods.find(p => p.pauseStart === this.pauseCompData.pauseStart);
+    if (match) {
+      match.tapsDuringPause = this.pauseCompData.tapsDuringPause;
+    }
   }
 
   // ── UI actions ─────────────────────────────────────────────────────────────
