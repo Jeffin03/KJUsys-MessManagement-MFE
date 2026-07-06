@@ -297,12 +297,14 @@ export class SubscriberService {
         const endDateTs = this.parseDate(formData.mealSlot.endDate);
         const rawDurationDays = startDateTs && endDateTs ? Math.round((endDateTs - startDateTs) / (1000 * 60 * 60 * 24)) : 30;
 
+        const formStatus = formData.mealSlot.status;
+
         // Prepare subscription object with existing values as defaults
         const subscription: any = {
           meals: meals,
           start_Date: startDateTs,
           end_Date: endDateTs,
-          active: true,
+          active: formStatus !== 'Paused',
           duration_days: rawDurationDays
         };
 
@@ -311,7 +313,6 @@ export class SubscriberService {
         const existingPauseEnd = existingStudent?.subscription?.pauseEnd_Date;
         const formPauseEndDate = formData.pauseEndDate;
         const formPauseStartDate = formData.pauseStartDate;
-        const formStatus = formData.mealSlot.status;
 
         // Parse form pause dates if provided
         const formPauseEndTimestamp = formPauseEndDate ? this.parseDate(formPauseEndDate) : null;
