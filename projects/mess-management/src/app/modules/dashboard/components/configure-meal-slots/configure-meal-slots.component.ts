@@ -7,7 +7,7 @@ import { SharedToastService } from '@libs/shared-toast';
 import { ButtonComponent } from '@libs/shared-ui';
 import { MealSlotService } from '../../../../shared/services/meal-slot.service';
 import { HardwareManagementService, HardwareDevice } from '../../../../shared/services/hardware-management.service';
-import { HolidayCalendarComponent } from '../../../reports/components/holiday-calendar/holiday-calendar.component';
+import { HolidayCalendarComponent } from './holiday-calendar.component';
 
 interface SuggestionItem {
   label: string;

@@ -6,6 +6,13 @@ import { MealSlot, MealEntry, HardwareDevice } from '../../../shared/models/dash
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
 import { environment } from '../../../../environments/environment';
 
+export interface HolidayRecord {
+  id: string;
+  date: string;
+  reason: string;
+  createdAt?: string;
+}
+
 export interface BackendSchedule {
   _id: { $oid: string };
   meal: string;
@@ -193,5 +200,28 @@ export class DashboardService {
 
   updateDisplayConfig(config: DisplayConfig): Observable<ApiResponse<any>> {
     return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.DISPLAY_CONFIG}`, config);
+  }
+
+  // ── Holidays ────────────────────────────────────────────────────────────
+
+  getHolidays(): Observable<HolidayRecord[]> {
+    return this.http.get<any>(`${this.baseUrl}${API_ENDPOINTS.HOLIDAYS_LIST}`)
+      .pipe(
+        map(res => {
+          const data = res.responseData?.data;
+          if (Array.isArray(data)) return data;
+          if (data?.holidays) return data.holidays;
+          if (data?.results) return data.results;
+          return [];
+        })
+      );
+  }
+
+  createHoliday(dateMillis: number, reason: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_HOLIDAY}`, { date: dateMillis, reason });
+  }
+
+  deleteHoliday(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}${API_ENDPOINTS.HOLIDAY_BY_ID(id)}`);
   }
 }

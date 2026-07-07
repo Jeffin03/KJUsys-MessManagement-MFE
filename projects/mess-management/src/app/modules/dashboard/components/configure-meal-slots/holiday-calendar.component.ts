@@ -2,8 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '@libs/shared-ui';
-import { ReportsService } from '../../services/reports.service';
-import { HolidayRecord } from '../../models/reports.models';
+import { DashboardService, HolidayRecord } from '../../services/dashboard.service';
 
 interface CalendarDay {
   date: Date | null;
@@ -14,7 +13,6 @@ interface CalendarDay {
   selector: 'app-holiday-calendar',
   standalone: true,
   imports: [CommonModule, FormsModule, ButtonComponent],
-  providers: [ReportsService],
   template: `
     <div class="flex flex-col gap-5">
 
@@ -244,13 +242,11 @@ interface CalendarDay {
       color: #155DFC;
     }
 
-    /* Holiday Fill */
     .cal-day-number.cal-has-holiday {
       background-color: #FEF3C7;
       color: #92400E;
     }
 
-    /* Range Background */
     .cal-range-bg {
       position: absolute;
       top: 0.5rem;
@@ -278,7 +274,6 @@ interface CalendarDay {
       border-bottom-right-radius: 4px;
     }
 
-    /* Animations */
     @keyframes fade-in {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -310,7 +305,7 @@ export class HolidayCalendarComponent implements OnInit {
   weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   constructor(
-    private reportsService: ReportsService,
+    private dashboardService: DashboardService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -318,11 +313,9 @@ export class HolidayCalendarComponent implements OnInit {
     this.loadHolidays();
   }
 
-  // ── Data ──────────────────────────────────────────────────────────────
-
   private loadHolidays() {
     this.loading = true;
-    this.reportsService.getHolidays().subscribe({
+    this.dashboardService.getHolidays().subscribe({
       next: data => {
         this.holidays = data;
         this.buildHolidayMap();
@@ -357,8 +350,6 @@ export class HolidayCalendarComponent implements OnInit {
     const [y, m, d] = key.split('-').map(Number);
     return new Date(y, m - 1, d);
   }
-
-  // ── Calendar Grid ─────────────────────────────────────────────────────
 
   get calendarDays(): CalendarDay[] {
     const year = this.calendarViewDate.getFullYear();
@@ -405,8 +396,6 @@ export class HolidayCalendarComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // ── Day State Checks ──────────────────────────────────────────────────
-
   hasHoliday(date: Date | null): boolean {
     if (!date) return false;
     return this.holidayMap.has(this.dateKey(date));
@@ -428,8 +417,6 @@ export class HolidayCalendarComponent implements OnInit {
            date.getMonth() === today.getMonth() &&
            date.getFullYear() === today.getFullYear();
   }
-
-  // ── Consecutive Range Detection ───────────────────────────────────────
 
   isRangeStart(date: Date): boolean {
     if (!this.hasHoliday(date)) return false;
@@ -458,16 +445,12 @@ export class HolidayCalendarComponent implements OnInit {
     return this.hasHoliday(prev) && !this.hasHoliday(next);
   }
 
-  // ── Selection ─────────────────────────────────────────────────────────
-
   selectDate(date: Date | null, event: Event) {
     event.stopPropagation();
     if (!date) return;
     this.selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     this.cdr.detectChanges();
   }
-
-  // ── Add Form ──────────────────────────────────────────────────────────
 
   openAddForm() {
     this.showAddForm = true;
@@ -486,7 +469,7 @@ export class HolidayCalendarComponent implements OnInit {
   saveHoliday() {
     if (!this.newHolidayDate || !this.newHolidayReason) return;
     const dateMillis = new Date(this.newHolidayDate).getTime();
-    this.reportsService.createHoliday(dateMillis, this.newHolidayReason).subscribe({
+    this.dashboardService.createHoliday(dateMillis, this.newHolidayReason).subscribe({
       next: () => {
         this.showAddForm = false;
         this.newHolidayDate = '';
@@ -499,10 +482,8 @@ export class HolidayCalendarComponent implements OnInit {
     });
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────
-
   deleteHoliday(id: string) {
-    this.reportsService.deleteHoliday(id).subscribe({
+    this.dashboardService.deleteHoliday(id).subscribe({
       next: () => this.loadHolidays(),
       error: () => {}
     });

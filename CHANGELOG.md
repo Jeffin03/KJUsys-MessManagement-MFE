@@ -15,6 +15,7 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ### Changed
 - **Reports module simplified**: Removed Holiday Config subtab, card, and component imports from Reports module. Reports module no longer manages holidays.
 - **Holiday calendar uses native date input**: Replaced `lib-date-picker` with native `<input type="date" lang="en-GB">` to avoid `position: fixed` dropdown clipping caused by the modal's `overflow: hidden`. Date format is `dd/mm/yyyy`.
+- **HolidayCalendarComponent decoupled from ReportsService**: Moved component from `reports/components/holiday-calendar/` into `dashboard/components/configure-meal-slots/` — colocated with its only consumer. Added `getHolidays()`, `createHoliday()`, `deleteHoliday()` methods to `DashboardService` to replace the `ReportsService` dependency. No cross-module coupling remains.
 
 ### Removed
 - **Client-side subscription re-adjustment**: Removed `reAdjustSubscriptionsForHoliday()` from `SubscriberService` and its invocation from `HolidayCalendarComponent`. This logic is now handled server-side.
