@@ -5,6 +5,8 @@ import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs'
 import { TableModule, TableColumn, PaginationConfig } from '@libs/table';
 import { ButtonComponent } from '@libs/shared-ui';
 import { SharedToastService } from '@libs/shared-toast';
+import { API_ENDPOINTS } from '../../../../shared/constants/api-endpoints';
+import { environment } from '../../../../../environments/environment';
 import { ReportsService } from '../../services/reports.service';
 import { DailyAnalytics, MealDistribution } from '../../models/reports.models';
 import { DashboardService } from '../../../dashboard/services/dashboard.service';
@@ -306,13 +308,18 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.generatingExport = true;
     this.exportSuccess = null;
     this.reportsService.triggerExport().subscribe({
-      next: (res) => {
+      next: () => {
         this.generatingExport = false;
-        const fileName = res?.file || res?.file_name || '';
-        this.exportSuccess = fileName
-          ? `Export generated: ${fileName}`
-          : 'Export generated successfully';
-        this.toast.success(this.exportSuccess);
+        this.showExportModal = false;
+        // Auto-download the generated export via the date-based endpoint
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const downloadUrl = `${environment.baseUrl}${API_ENDPOINTS.REPORTS_EXPORT_BY_DATE(String(today.getTime()))}`;
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `mess-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.click();
+        this.toast.success('Export generated and downloaded');
         this.cdr.detectChanges();
       },
       error: () => {
