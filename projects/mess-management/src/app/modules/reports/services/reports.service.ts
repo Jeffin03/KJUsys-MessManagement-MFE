@@ -303,6 +303,21 @@ export class ReportsService {
       }));
   }
 
+  triggerExport(): Observable<any> {
+    return this.http
+      .post<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.REPORTS_EXPORT_TRIGGER}`, {})
+      .pipe(map(r => this.extractData(r)));
+  }
+
+  listExports(): Observable<any[]> {
+    return this.http
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.REPORTS_EXPORTS}`)
+      .pipe(map(r => {
+        const data = this.extractData(r);
+        return data && data.exports ? data.exports : [];
+      }));
+  }
+
   getAnalyticsDashboard(from?: string, to?: string): Observable<DailyAnalytics> {
     let params = '';
     if (from && to) params = `?from=${from}&to=${to}`;

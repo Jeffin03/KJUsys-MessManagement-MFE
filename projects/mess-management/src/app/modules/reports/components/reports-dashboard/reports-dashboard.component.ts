@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 import { TableModule, TableColumn, PaginationConfig } from '@libs/table';
 import { ButtonComponent } from '@libs/shared-ui';
+import { SharedToastService } from '@libs/shared-toast';
 import { ReportsService } from '../../services/reports.service';
 import { DailyAnalytics, MealDistribution } from '../../models/reports.models';
 import { DashboardService } from '../../../dashboard/services/dashboard.service';
@@ -215,9 +216,12 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
 
   private subscriptions = new Subscription();
 
+  exportSuccess: string | null = null;
+
   constructor(
     private reportsService: ReportsService,
     private dashboardService: DashboardService,
+    private toast: SharedToastService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -280,18 +284,43 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   }
 
   onTableExport(format: string) {
-    // lib-table's built-in export handles this
-    console.log('Table export:', format);
+    if (this.tapData.length === 0) return;
+    const headers = this.tapColumns.map(c => c.label);
+    const rows = this.tapData.map(row =>
+      this.tapColumns.map(c => {
+        const val = (row as any)[c.key];
+        return val != null ? String(val).replace(/,/g, ' ') : '';
+      })
+    );
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tap-activity-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   onGenerateExport() {
     this.generatingExport = true;
-    // TODO: Wire up to backend export orchestrator (POST /reports/export/trigger)
-    setTimeout(() => {
-      this.generatingExport = false;
-      this.showExportModal = false;
-      this.cdr.detectChanges();
-    }, 1500);
+    this.exportSuccess = null;
+    this.reportsService.triggerExport().subscribe({
+      next: (res) => {
+        this.generatingExport = false;
+        const fileName = res?.file || res?.file_name || '';
+        this.exportSuccess = fileName
+          ? `Export generated: ${fileName}`
+          : 'Export generated successfully';
+        this.toast.success(this.exportSuccess);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.generatingExport = false;
+        this.toast.error('Export failed. Please try again.');
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   ngOnDestroy() {
