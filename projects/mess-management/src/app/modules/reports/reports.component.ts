@@ -10,11 +10,11 @@ import { SubTabItem } from '@libs/sub-tabs';
 })
 export class ReportsComponent {
 
-  activeSubTab = 'analytics';
+  activeSubTab = 'dashboard';
 
   subTabs: SubTabItem[] = [
-    { id: 'analytics', label: 'Analytics Dashboard' },
-    { id: 'audit', label: 'Audit Tools' },
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'audit', label: 'Audit' },
   ];
 
   breadcrumbs = [

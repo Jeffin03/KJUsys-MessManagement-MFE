@@ -5,15 +5,20 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ## [Unreleased]
 
 ### Added
-- **Holiday Config subtab in Dashboard**: Moved holiday calendar from Reports module into Dashboard > Configure Meal Slots as a new "Holiday Config" subtab, placed alongside existing "Meal Slots", "Display Panel", and "Token Customization" tabs.
-- **Calendar grid UI for holidays**: Redesigned `HolidayCalendarComponent` with a full calendar grid featuring month navigation, weekday headers, 7-column day grid, and consecutive holiday range highlighting.
-- **Add/Delete holidays from calendar**: Users can add holidays by selecting a date and providing a reason, and delete holidays from the selected date detail panel.
-- **Holiday subscription auto-extension (backend)**: When a holiday is created via `POST /schedule/holiday`, the backend now automatically extends `end_Date` by 1 day and increments `duration_days` by 1 for all active subscriptions that overlap the holiday date.
-- **Changelog integration for holiday subscriptions**: The `HOLIDAY_MARKED` changelog entry now includes `affectedSubscriptions` (list of roll numbers) and `subscriptionsExtended` (count) so admins can see which subscriptions were adjusted.
-- **Frontend changelog display**: `ReportsService.getStudentChangelog()` now renders a human-readable description for `HOLIDAY_MARKED` actions: *"Holiday marked. N subscription(s) extended by 1 day"*.
+- **Reports Dashboard** (`reports-dashboard`): New standalone component aggregated from the old analytics dashboard — KPI cards (meals served, active subscribers, absent, paused, anomalies), Today's Meal Utilization bars, Live Tap Activity table with client pagination, and Export Report modal.
+- **"View all" routing from dashboard entries-table**: Entries-table "View all" button now routes to `../reports` (Reports Dashboard) for full tap activity visibility.
+- **Changelog search (client-side)**: Backend `/changelog` endpoint does not support `roll_number` filter — switched to client-side filtering. Service fetches up to 500 entries, locally filters by roll number (case-insensitive partial match), action type, and date range. Table uses `[clientPagination]="true"`.
+- **New changelog action types**: `PAUSE_REQUESTED` (purple badge) and `PAUSE_AUTO_STARTED` (blue badge) added to the action filter dropdown and badge color map in the changelog component.
+- **`card_blocked` field** on `Subscriber` interface and `BackendStudent` mapping — supports the card-blocked status check in subscription audit.
+
+### Fixed
+- **Subscription audit — Check 2 (blocked card)**: Was reading `sub.cardStatus` instead of `sub.card_blocked`. Now correctly checks the `card_blocked` boolean.
+- **Subscription audit — Check 3 (unsubscribed meals)**: Was missing the meal-name vs schedule-name comparison. Now cross-references `mealNames` from the subscription against active schedule meals.
+- **Subscription audit — Check 4 (taps during pause)**: `pauseStartDate` was being compared as a raw timestamp string instead of parsed `dd/MM/yy` — added `stringToDate()` conversion for correct epoch comparison.
 
 ### Changed
-- **Reports module simplified**: Removed Holiday Config subtab, card, and component imports from Reports module. Reports module no longer manages holidays.
+- **Entries-table constrained**: Removed `min-h-[738px]` scrolling; replaced with `entries.slice(0, 15)` to cap display at 15 rows with `mb-3` spacing. No max-height or scroll on the table.
+- **Reports module simplified**: Removed `AnalyticsDashboardComponent` (replaced by ReportsDashboard). Removed Holiday Config subtab, card, and component imports from Reports module. Reports module no longer manages holidays.
 - **Holiday calendar uses native date input**: Replaced `lib-date-picker` with native `<input type="date" lang="en-GB">` to avoid `position: fixed` dropdown clipping caused by the modal's `overflow: hidden`. Date format is `dd/mm/yyyy`.
 - **HolidayCalendarComponent decoupled from ReportsService**: Moved component from `reports/components/holiday-calendar/` into `dashboard/components/configure-meal-slots/` — colocated with its only consumer. Added `getHolidays()`, `createHoliday()`, `deleteHoliday()` methods to `DashboardService` to replace the `ReportsService` dependency. No cross-module coupling remains.
 
