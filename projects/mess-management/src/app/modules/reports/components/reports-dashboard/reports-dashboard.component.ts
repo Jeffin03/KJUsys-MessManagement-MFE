@@ -121,43 +121,20 @@ interface MealBar {
         (click)="showExportModal = false">
         <div class="bg-white rounded-2xl p-6 w-[480px] shadow-xl" (click)="$event.stopPropagation()">
           <div class="flex items-center justify-between mb-5">
-            <span class="text-sm font-semibold text-[#111827]">Export Report</span>
+            <span class="text-sm font-semibold text-[#111827]">Export Full Report</span>
             <button (click)="showExportModal = false" class="text-[#6B7280] hover:text-[#111827] transition-colors">
               <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-[10px] font-medium text-[#111827] mb-1">Report Type</label>
-              <select [(ngModel)]="exportType"
-                class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
-                <option value="taps">Today's Tap Activity</option>
-                <option value="analytics">Analytics Summary</option>
-                <option value="audit">Audit Report</option>
-                <option value="full">Full Report</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-[10px] font-medium text-[#111827] mb-1">Format</label>
-              <div class="flex gap-4">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="format" [value]="'csv'" [(ngModel)]="exportFormat"
-                    class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                  <span class="text-xs text-[#111827]">CSV</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="format" [value]="'excel'" [(ngModel)]="exportFormat"
-                    class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                  <span class="text-xs text-[#111827]">Excel</span>
-                </label>
-              </div>
-            </div>
+          <div class="text-xs text-[#6B7280] leading-relaxed">
+            Generates a complete Excel report of all taps and transactions.
+            The file will be downloaded automatically.
           </div>
           <div class="flex justify-end gap-3 mt-6">
             <lib-button type="secondary" label="Cancel" (onClick)="showExportModal = false"></lib-button>
-            <lib-button type="primary" label="Generate" (onClick)="onGenerateExport()" [disabled]="generatingExport" [loading]="generatingExport"></lib-button>
+            <lib-button type="primary" label="Generate & Download" (onClick)="onGenerateExport()" [disabled]="generatingExport" [loading]="generatingExport"></lib-button>
           </div>
         </div>
       </div>
@@ -212,8 +189,6 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
 
   // Export modal
   showExportModal = false;
-  exportType = 'taps';
-  exportFormat = 'csv';
   generatingExport = false;
 
   private subscriptions = new Subscription();
