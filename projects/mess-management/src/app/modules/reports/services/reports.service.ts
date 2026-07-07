@@ -309,6 +309,20 @@ export class ReportsService {
       .pipe(map(r => this.extractData(r)));
   }
 
+  triggerFilteredExport(params: {
+    type: string;
+    format: string;
+    roll_number?: string;
+    from?: number;
+    to?: number;
+  }): Observable<Blob> {
+    return this.http.post(
+      `${this.baseUrl}${API_ENDPOINTS.REPORTS_EXPORT_TRIGGER}`,
+      params,
+      { responseType: 'blob' }
+    );
+  }
+
   listExports(): Observable<any[]> {
     return this.http
       .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.REPORTS_EXPORTS}`)

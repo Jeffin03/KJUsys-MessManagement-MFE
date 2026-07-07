@@ -10,6 +10,7 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Changelog search (client-side)**: Backend `/changelog` endpoint does not support `roll_number` filter — switched to client-side filtering. Service fetches up to 500 entries, locally filters by roll number (case-insensitive partial match), action type, and date range. Table uses `[clientPagination]="true"`.
 - **New changelog action types**: `PAUSE_REQUESTED` (purple badge) and `PAUSE_AUTO_STARTED` (blue badge) added to the action filter dropdown and badge color map in the changelog component.
 - **`card_blocked` field** on `Subscriber` interface and `BackendStudent` mapping — supports the card-blocked status check in subscription audit.
+- **Filtered export modal** with report type selector (Full Report, Tap Activity, Analytics, Audit, Paused), format (CSV, Excel), optional student roll number, and optional date range. Modal wires to `triggerFilteredExport()` which sends params to `POST /reports/export/trigger` and downloads the returned file blob. Quick path for Taps+CSV with no filters generates client-side.
 
 ### Fixed
 - **Subscription audit — Check 2 (blocked card)**: Was reading `sub.cardStatus` instead of `sub.card_blocked`. Now correctly checks the `card_blocked` boolean.

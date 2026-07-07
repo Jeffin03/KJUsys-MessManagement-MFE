@@ -5,8 +5,6 @@ import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs'
 import { TableModule, TableColumn, PaginationConfig } from '@libs/table';
 import { ButtonComponent } from '@libs/shared-ui';
 import { SharedToastService } from '@libs/shared-toast';
-import { API_ENDPOINTS } from '../../../../shared/constants/api-endpoints';
-import { environment } from '../../../../../environments/environment';
 import { ReportsService } from '../../services/reports.service';
 import { DailyAnalytics, MealDistribution } from '../../models/reports.models';
 import { DashboardService } from '../../../dashboard/services/dashboard.service';
@@ -119,18 +117,63 @@ interface MealBar {
       <div *ngIf="showExportModal"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
         (click)="showExportModal = false">
-        <div class="bg-white rounded-2xl p-6 w-[480px] shadow-xl" (click)="$event.stopPropagation()">
+        <div class="bg-white rounded-2xl p-6 w-[520px] shadow-xl" (click)="$event.stopPropagation()">
           <div class="flex items-center justify-between mb-5">
-            <span class="text-sm font-semibold text-[#111827]">Export Full Report</span>
+            <span class="text-sm font-semibold text-[#111827]">Export Report</span>
             <button (click)="showExportModal = false" class="text-[#6B7280] hover:text-[#111827] transition-colors">
               <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
-          <div class="text-xs text-[#6B7280] leading-relaxed">
-            Generates a complete Excel report of all taps and transactions.
-            The file will be downloaded automatically.
+          <div class="space-y-4">
+            <!-- Type -->
+            <div>
+              <label class="block text-[10px] font-medium text-[#6B7280] mb-1">REPORT TYPE</label>
+              <select [(ngModel)]="exportType"
+                class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+                <option value="full">Full Report</option>
+                <option value="taps">Tap Activity</option>
+                <option value="analytics">Analytics Summary</option>
+                <option value="audit">Audit Report</option>
+                <option value="paused">Paused Subscribers</option>
+              </select>
+            </div>
+            <!-- Format -->
+            <div>
+              <label class="block text-[10px] font-medium text-[#6B7280] mb-1">FORMAT</label>
+              <div class="flex gap-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="exportFormat" [value]="'csv'" [(ngModel)]="exportFormat"
+                    class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                  <span class="text-xs text-[#111827]">CSV</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="exportFormat" [value]="'xlsx'" [(ngModel)]="exportFormat"
+                    class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                  <span class="text-xs text-[#111827]">Excel</span>
+                </label>
+              </div>
+            </div>
+            <!-- Roll Number (optional) -->
+            <div>
+              <label class="block text-[10px] font-medium text-[#6B7280] mb-1">STUDENT ROLL NUMBER (OPTIONAL)</label>
+              <input type="text" [(ngModel)]="exportRollNumber" placeholder="e.g. KJUSY1234"
+                class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+            </div>
+            <!-- Date Range (optional) -->
+            <div class="flex gap-3">
+              <div class="flex-1">
+                <label class="block text-[10px] font-medium text-[#6B7280] mb-1">FROM (OPTIONAL)</label>
+                <input type="date" [(ngModel)]="exportFrom" lang="en-GB"
+                  class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+              </div>
+              <div class="flex-1">
+                <label class="block text-[10px] font-medium text-[#6B7280] mb-1">TO (OPTIONAL)</label>
+                <input type="date" [(ngModel)]="exportTo" lang="en-GB"
+                  class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
+              </div>
+            </div>
           </div>
           <div class="flex justify-end gap-3 mt-6">
             <lib-button type="secondary" label="Cancel" (onClick)="showExportModal = false"></lib-button>
@@ -190,6 +233,11 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   // Export modal
   showExportModal = false;
   generatingExport = false;
+  exportType = 'full';
+  exportFormat = 'xlsx';
+  exportRollNumber = '';
+  exportFrom = '';
+  exportTo = '';
 
   private subscriptions = new Subscription();
 
@@ -286,19 +334,34 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   onGenerateExport() {
     this.generatingExport = true;
     this.exportSuccess = null;
-    this.reportsService.triggerExport().subscribe({
-      next: () => {
+
+    // If taps + CSV with no filters, generate client-side (instant)
+    if (this.exportType === 'taps' && this.exportFormat === 'csv'
+        && !this.exportRollNumber && !this.exportFrom && !this.exportTo) {
+      this.onTableExport('csv');
+      this.generatingExport = false;
+      this.showExportModal = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const params: any = { type: this.exportType, format: this.exportFormat };
+    if (this.exportRollNumber) params.roll_number = this.exportRollNumber;
+    if (this.exportFrom) params.from = new Date(this.exportFrom).getTime();
+    if (this.exportTo) params.to = new Date(this.exportTo + 'T23:59:59').getTime();
+
+    this.reportsService.triggerFilteredExport(params).subscribe({
+      next: (blob) => {
         this.generatingExport = false;
         this.showExportModal = false;
-        // Auto-download the generated export via the date-based endpoint
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const downloadUrl = `${environment.baseUrl}${API_ENDPOINTS.REPORTS_EXPORT_BY_DATE(String(today.getTime()))}`;
+        const ext = this.exportFormat === 'csv' ? 'csv' : 'xlsx';
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = `mess-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.href = url;
+        a.download = `${this.exportType}-${new Date().toISOString().slice(0, 10)}.${ext}`;
         a.click();
-        this.toast.success('Export generated and downloaded');
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        this.toast.success('Export downloaded');
         this.cdr.detectChanges();
       },
       error: () => {
