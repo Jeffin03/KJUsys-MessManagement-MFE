@@ -286,6 +286,10 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   }
 
   onTableExport(format: string) {
+    if (format === 'excel') {
+      this.onGenerateExport();
+      return;
+    }
     if (this.tapData.length === 0) return;
     const headers = this.tapColumns.map(c => c.label);
     const rows = this.tapData.map(row =>
@@ -294,14 +298,14 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
         return val != null ? String(val).replace(/,/g, ' ') : '';
       })
     );
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `tap-activity-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
   onGenerateExport() {
