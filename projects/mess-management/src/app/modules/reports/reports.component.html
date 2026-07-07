@@ -11,7 +11,7 @@
       <lib-sub-tabs [tabs]="subTabs" [activeTabId]="activeSubTab" (tabChange)="onSubTabChange($event)"></lib-sub-tabs>
     </div>
 
-    <app-analytics-dashboard *ngIf="activeSubTab === 'analytics'"></app-analytics-dashboard>
+    <app-reports-dashboard *ngIf="activeSubTab === 'dashboard'"></app-reports-dashboard>
     <app-audit-tools *ngIf="activeSubTab === 'audit'"></app-audit-tools>
   </div>
 </div>

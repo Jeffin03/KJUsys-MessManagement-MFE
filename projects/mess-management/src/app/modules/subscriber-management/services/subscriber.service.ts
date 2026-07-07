@@ -13,6 +13,7 @@ export interface BackendStudent {
   roll_number: string;
   uid?: string;
   email: string;
+  card_blocked?: boolean;
   pauseReason?: string;
   subscription: {
     meals: string[];
@@ -180,6 +181,7 @@ export class SubscriberService {
       pauseEndDate: pauseEndDateString,
       pauseStartDate: pauseStartDateString,
       pauseReason: student.pauseReason,
+      card_blocked: student.card_blocked || false,
       expiryWarning: expiryWarning,
       mealNames: mealsArray
     };
