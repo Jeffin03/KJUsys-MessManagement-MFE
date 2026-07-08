@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, Chang
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TabsModule } from '@libs/tabs';
+import { SubTabsModule } from '@libs/sub-tabs';
 import { ButtonComponent, EmptyStateComponent } from '@libs/shared-ui';
 import { TableModule } from '@libs/table';
 import { ReportsService } from '../../services/reports.service';
@@ -11,17 +11,44 @@ import type { TableColumn } from '@libs/table';
 
 // ── Interfaces ──────────────────────────────────────────────────────────────────
 
-interface HeatmapCell {
+interface CalendarDay {
   dateStr: string;
   day: number;
   month: number;
   year: number;
   overall?: string;
-  count?: number;
-  total?: number;
+  name?: string;
+  meals: {
+    slotName: string;
+    tapped: boolean;
+    tapTime?: string;
+    isHoliday: boolean;
+    isPaused: boolean;
+  }[];
+  tappedCount: number;
+  totalMeals: number;
 }
 
-type WeekRow = (HeatmapCell | null)[];
+interface CalendarWeek {
+  days: (CalendarDay | null)[];
+}
+
+interface MealSegmentData {
+  key: string;
+  label: string;
+  count: number;
+  percent: number;
+  color: string;
+  dashLength: string;
+  dashOffset: number;
+}
+
+interface MealSummaryCard {
+  slotName: string;
+  total: number;
+  color: string;
+  segments: MealSegmentData[];
+}
 
 interface ActivityEntry {
   id: string;
@@ -68,11 +95,19 @@ interface DayTapDetail {
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const HEATMAP_COLORS: Record<string, string> = {
-  'present': '#216E39',
-  'partial': '#9BE9A8',
+  'present': '#1D9F00',
+  'partial': '#30A14E',
   'absent': '#EBEDF0',
-  'holiday': '#93C5FD',
-  'paused': '#FCD34D',
+  'holiday': '#3B82F6',
+  'paused': '#D97706',
+};
+
+const MEAL_SLOT_COLORS: Record<string, string> = {
+  'Breakfast': '#155DFC',
+  'Lunch': '#1D9F00',
+  'Dinner': '#7C3AED',
+  'Tea': '#EA580C',
+  'Snacks': '#0891B2',
 };
 
 const ACTION_COLORS: Record<string, { bg: string; text: string; icon: string }> = {
@@ -104,7 +139,7 @@ const ACTIVITY_COLORS: Record<string, { bg: string; text: string }> = {
 @Component({
   selector: 'app-student-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, TabsModule, ButtonComponent, EmptyStateComponent, TableModule],
+  imports: [CommonModule, RouterModule, FormsModule, SubTabsModule, ButtonComponent, EmptyStateComponent, TableModule],
   providers: [ReportsService],
   templateUrl: './student-detail.component.html',
 })
@@ -118,6 +153,7 @@ export class StudentDetailComponent implements OnChanges {
     { id: 'overview', label: 'Overview' },
     { id: 'attendance', label: 'Attendance' },
     { id: 'activity-history', label: 'Activity & History' },
+    { id: 'pause-comp', label: 'Pause & Comp' },
   ];
   activeTab = 'overview';
 
@@ -139,21 +175,72 @@ export class StudentDetailComponent implements OnChanges {
   // ── Overview: Student Profile ──────────────────────────────────────────────
   // (uses overview property directly)
 
-  // ── Overview: Weekly heatmap ───────────────────────────────────────────────
-  weeklyHeatmapCells: (HeatmapCell | null)[] = [];
+  // ── Overview: Weekly attendance cards ──────────────────────────────────────
+  weeklyDayCards: CalendarDay[] = [];
   selectedDayTap: DayTapDetail | null = null;
 
   // ── Overview: Recent activity ──────────────────────────────────────────────
   recentActivity: ActivityEntry[] = [];
 
-  // ── Attendance: Heatmap ────────────────────────────────────────────────────
-  heatmapView: 'yearly' | 'monthly' | 'weekly' = 'yearly';
-  heatmapYear = new Date().getFullYear();
-  heatmapMonth = new Date().getMonth();
-  heatmapWeeks: WeekRow[] = [];
-  heatmapMonthLabels: { col: number; label: string }[] = [];
-  heatmapColWidth = 22;
+  // ── Attendance: Calendar month grid ────────────────────────────────────────
+  calendarYear = new Date().getFullYear();
+  calendarMonth = new Date().getMonth();
+  calendarWeeks: CalendarWeek[] = [];
+  calendarDayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   attendanceSummary: { present: number; partial: number; absent: number; holiday: number; paused: number } | null = null;
+
+  // ── Attendance: Meal summary (circle-pie cards) ──────────────────────────
+  mealSummaryCards: MealSummaryCard[] = [];
+  yearlyMealSummaryCards: MealSummaryCard[] = [];
+
+  // ── Yearly Meal Events ────────────────────────────────────────────────────
+  selectedMealEvent: { slotName: string; status: string; statusLabel: string; color: string } | null = null;
+  mealEventDates: { date: string; day: string; dateLabel: string; reason?: string }[] = [];
+
+  onSelectMealEvent(slotName: string, status: string, statusLabel: string, color: string) {
+    this.selectedMealEvent = { slotName, status, statusLabel, color };
+    this.computeMealEventDates();
+  }
+
+  private computeMealEventDates() {
+    if (!this.selectedMealEvent) { this.mealEventDates = []; return; }
+    const { slotName, status } = this.selectedMealEvent;
+    const now = new Date();
+    const results: { date: string; day: string; dateLabel: string; reason?: string }[] = [];
+
+    for (const day of this.attendanceData) {
+      if (new Date(day.date).getFullYear() !== now.getFullYear()) continue;
+      for (const meal of day.mealSlots) {
+        if (meal.slotName !== slotName) continue;
+
+        let mealStatus: string;
+        let reason: string | undefined;
+        if (meal.isHoliday) {
+          mealStatus = 'holiday';
+          reason = this.holidayMap.get(day.date) || undefined;
+        } else if (meal.isPaused) {
+          mealStatus = 'paused';
+          const d = new Date(day.date).getTime();
+          const match = this.pausePeriods.find(p => d >= p.pauseStart && d <= p.pauseEnd);
+          reason = match?.reason || undefined;
+        } else {
+          mealStatus = meal.tapped ? 'present' : 'absent';
+        }
+
+        if (mealStatus === status) {
+          const d = new Date(day.date);
+          const dayLabel = DAY_LABELS[d.getDay() === 0 ? 6 : d.getDay() - 1];
+          results.push({
+            date: day.date,
+            day: dayLabel,
+            dateLabel: `${dayLabel}, ${d.getDate()} ${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`,
+            reason,
+          });
+        }
+      }
+    }
+    this.mealEventDates = results;
+  }
 
   // ── Activity & History ─────────────────────────────────────────────────────
   activityEntries: ActivityEntry[] = [];
@@ -161,6 +248,7 @@ export class StudentDetailComponent implements OnChanges {
   milestones: SubscriptionMilestone[] = [];
   pausePeriods: PausePeriodEntry[] = [];
   pauseSummary = { totalPeriods: 0, totalDaysPaused: 0, totalCompDays: 0 };
+  holidayMap = new Map<string, string>();
 
   activityColumns: TableColumn[] = [
     { key: 'timestamp', label: 'TIME', sortable: true, minWidth: '140px' },
@@ -200,10 +288,9 @@ export class StudentDetailComponent implements OnChanges {
     this.subscriptionHistory = [];
     this.pauseCompData = null;
     this.recentActivity = [];
-    this.weeklyHeatmapCells = [];
+    this.weeklyDayCards = [];
     this.selectedDayTap = null;
-    this.heatmapWeeks = [];
-    this.heatmapMonthLabels = [];
+    this.calendarWeeks = [];
     this.attendanceSummary = null;
     this.activityEntries = [];
     this.milestones = [];
@@ -211,6 +298,7 @@ export class StudentDetailComponent implements OnChanges {
     this.pauseSummary = { totalPeriods: 0, totalDaysPaused: 0, totalCompDays: 0 };
     this.browsingDay = null;
     this.activityFilter = null;
+    this.mealSummaryCards = [];
   }
 
   private loadAllData() {
@@ -224,6 +312,7 @@ export class StudentDetailComponent implements OnChanges {
     this.loadChangelog();
     this.loadSubscriptionHistory();
     this.loadPauseComp();
+    this.loadHolidays();
   }
 
   // ── Data loaders ───────────────────────────────────────────────────────────
@@ -246,8 +335,10 @@ export class StudentDetailComponent implements OnChanges {
       next: data => {
         this.attendanceData = data;
         this.attendanceLoading = false;
-        this.buildWeeklyHeatmap();
-        this.buildYearlyHeatmap();
+        this.buildWeeklyDayCards();
+        this.buildMonthCalendar();
+        this.buildMealSummary('weekly', this.mealSummaryCards);
+        this.buildMealSummary('yearly', this.yearlyMealSummaryCards);
         this.computeAttendanceSummary();
         this.setDefaultSelectedDay();
         this.computeOverviewStats();
@@ -313,136 +404,101 @@ export class StudentDetailComponent implements OnChanges {
     });
   }
 
+  private loadHolidays() {
+    this.reportsService.getHolidays().subscribe({
+      next: data => {
+        this.holidayMap.clear();
+        for (const h of data) {
+          const ds = this.toDateStr(new Date(h.date));
+          this.holidayMap.set(ds, h.reason);
+        }
+      },
+    });
+  }
+
   // ── Heatmap builders ───────────────────────────────────────────────────────
 
-  private buildWeeklyHeatmap() {
-    const cells: (HeatmapCell | null)[] = [];
+  private buildWeeklyDayCards() {
+    const cards: CalendarDay[] = [];
     const today = new Date();
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const ds = this.toDateStr(d);
       const match = this.attendanceData.find(a => a.date === ds);
-      cells.push(match ? {
+      const meals = match ? match.mealSlots.map(m => ({
+        slotName: m.slotName,
+        tapped: m.tapped,
+        tapTime: m.tapTime,
+        isHoliday: m.isHoliday,
+        isPaused: m.isPaused,
+      })) : [];
+      const tappedCount = meals.filter(m => m.tapped).length;
+      const totalMeals = meals.filter(m => !m.isHoliday).length;
+      cards.push({
         dateStr: ds,
         day: d.getDate(),
         month: d.getMonth(),
         year: d.getFullYear(),
-        overall: match.overall,
-        count: match.mealSlots.filter(m => m.tapped).length,
-        total: match.mealSlots.filter(m => !m.isHoliday).length,
-      } : {
-        dateStr: ds,
-        day: d.getDate(),
-        month: d.getMonth(),
-        year: d.getFullYear(),
+        overall: match?.overall,
+        name: dayNames[d.getDay()],
+        meals,
+        tappedCount,
+        totalMeals,
       });
     }
-    this.weeklyHeatmapCells = cells;
+    this.weeklyDayCards = cards;
   }
 
-  private buildYearlyHeatmap() {
-    const year = this.heatmapYear;
-    const firstDay = new Date(year, 0, 1);
-    const lastDay = new Date(year, 11, 31);
-
-    const start = new Date(firstDay);
-    start.setDate(start.getDate() - start.getDay()); // first Sunday on or before Jan 1
-
-    const COL_WIDTH = 22; // cell (20px w-5) + gap-0.5 (2px)
-
-    const weeks: WeekRow[] = [[], [], [], [], [], [], []];
-    const monthLabels: { col: number; label: string }[] = [];
-
-    let current = new Date(start);
-    let col = 0;
-    const seenMonths = new Set<number>();
-
-    while (current <= lastDay || col % 7 !== 0) {
-      for (let row = 0; row < 7; row++) {
-        const cellDate = new Date(start);
-        cellDate.setDate(start.getDate() + col * 7 + row);
-
-        if (cellDate >= firstDay && cellDate <= lastDay) {
-          const ds = this.toDateStr(cellDate);
-          const match = this.attendanceData.find(a => a.date === ds);
-          weeks[row].push(match ? {
-            dateStr: ds,
-            day: cellDate.getDate(),
-            month: cellDate.getMonth(),
-            year: cellDate.getFullYear(),
-            overall: match.overall,
-            count: match.mealSlots.filter(m => m.tapped).length,
-            total: match.mealSlots.filter(m => !m.isHoliday).length,
-          } : {
-            dateStr: ds,
-            day: cellDate.getDate(),
-            month: cellDate.getMonth(),
-            year: cellDate.getFullYear(),
-          });
-
-          if (cellDate.getDate() <= 7 && !seenMonths.has(cellDate.getMonth())) {
-            seenMonths.add(cellDate.getMonth());
-            monthLabels.push({ col, label: MONTH_LABELS[cellDate.getMonth()] });
-          }
-        } else {
-          weeks[row].push(null);
-        }
-      }
-      col++;
-      if (current > lastDay && col % 7 === 0) break;
-      current.setDate(current.getDate() + 7);
-    }
-
-    this.heatmapWeeks = weeks;
-    this.heatmapMonthLabels = monthLabels;
-    this.heatmapColWidth = COL_WIDTH;
-  }
-
-  private buildMonthlyHeatmap() {
-    const year = this.heatmapYear;
-    const month = this.heatmapMonth;
+  private buildMonthCalendar() {
+    const year = this.calendarYear;
+    const month = this.calendarMonth;
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
+    const totalDays = lastDay.getDate();
 
-    const start = new Date(firstDay);
-    start.setDate(start.getDate() - start.getDay());
+    // Monday-based day index (Mon=0, Sun=6)
+    const startPad = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+    const totalCells = Math.ceil((startPad + totalDays) / 7) * 7;
 
-    const weeks: WeekRow[] = [[], [], [], [], [], [], []];
+    const weeks: CalendarWeek[] = [];
+    let currentWeek: (CalendarDay | null)[] = [];
 
-    let current = new Date(start);
-    let col = 0;
+    for (let i = 0; i < totalCells; i++) {
+      const cellDate = new Date(year, month, i - startPad + 1);
 
-    while (current <= lastDay) {
-      for (let row = 0; row < 7; row++) {
-        const cellDate = new Date(start);
-        cellDate.setDate(start.getDate() + col * 7 + row);
-
-        if (cellDate >= firstDay && cellDate <= lastDay) {
-          const ds = this.toDateStr(cellDate);
-          const match = this.attendanceData.find(a => a.date === ds);
-          weeks[row].push(match ? {
-            dateStr: ds,
-            day: cellDate.getDate(),
-            month: cellDate.getMonth(),
-            year: cellDate.getFullYear(),
-            overall: match.overall,
-          } : {
-            dateStr: ds,
-            day: cellDate.getDate(),
-            month: cellDate.getMonth(),
-            year: cellDate.getFullYear(),
-          });
-        } else {
-          weeks[row].push(null);
-        }
+      if (i >= startPad && i < startPad + totalDays) {
+        const ds = this.toDateStr(cellDate);
+        const match = this.attendanceData.find(a => a.date === ds);
+        const meals = match ? match.mealSlots.map(m => ({
+          slotName: m.slotName,
+          tapped: m.tapped,
+          tapTime: m.tapTime,
+          isHoliday: m.isHoliday,
+          isPaused: m.isPaused,
+        })) : [];
+        currentWeek.push({
+          dateStr: ds,
+          day: cellDate.getDate(),
+          month: cellDate.getMonth(),
+          year: cellDate.getFullYear(),
+          overall: match?.overall,
+          meals,
+          tappedCount: meals.filter(m => m.tapped).length,
+          totalMeals: meals.filter(m => !m.isHoliday).length,
+        });
+      } else {
+        currentWeek.push(null);
       }
-      col++;
-      current.setDate(current.getDate() + 7);
+
+      if (currentWeek.length === 7) {
+        weeks.push({ days: currentWeek });
+        currentWeek = [];
+      }
     }
 
-    this.heatmapWeeks = weeks;
-    this.heatmapMonthLabels = [];
+    this.calendarWeeks = weeks;
   }
 
   private computeAttendanceSummary() {
@@ -457,6 +513,108 @@ export class StudentDetailComponent implements OnChanges {
       }
     }
     this.attendanceSummary = { present, partial, absent, holiday, paused };
+  }
+
+  private buildMealSummary(mode: 'weekly' | 'yearly', target: MealSummaryCard[]) {
+    const STATUS_CONFIG = mode === 'yearly'
+      ? [
+          { key: 'present', label: 'Present', color: '#1D9F00' },
+          { key: 'absent', label: 'Absent', color: '#D1D5DB' },
+          { key: 'holiday', label: 'Holiday', color: '#3B82F6' },
+          { key: 'paused', label: 'Paused', color: '#D97706' },
+        ]
+      : [
+          { key: 'present', label: 'Present', color: '#1D9F00' },
+          { key: 'partial', label: 'Partial', color: '#30A14E' },
+          { key: 'absent', label: 'Absent', color: '#D1D5DB' },
+          { key: 'holiday', label: 'Holiday', color: '#3B82F6' },
+          { key: 'paused', label: 'Paused', color: '#D97706' },
+        ];
+
+    const now = new Date();
+    const filterDay = (d: AttendanceDay) => {
+      const date = new Date(d.date);
+      if (mode === 'weekly') {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        return date >= startOfWeek && date <= endOfWeek;
+      }
+      return date.getFullYear() === now.getFullYear();
+    };
+
+    const filtered = this.attendanceData.filter(filterDay);
+    const slotTotals = new Map<string, number>();
+    const statusCounts = new Map<string, Map<string, number>>();
+
+    for (const day of filtered) {
+      for (const meal of day.mealSlots) {
+        const slot = meal.slotName;
+        slotTotals.set(slot, (slotTotals.get(slot) || 0) + 1);
+
+        let status: string;
+        if (meal.isHoliday) {
+          status = 'holiday';
+        } else if (meal.isPaused) {
+          status = 'paused';
+        } else if (mode === 'yearly') {
+          status = meal.tapped ? 'present' : 'absent';
+        } else if (!meal.tapped) {
+          status = 'absent';
+        } else if (day.overall === 'present') {
+          status = 'present';
+        } else {
+          status = 'partial';
+        }
+
+        if (!statusCounts.has(slot)) statusCounts.set(slot, new Map());
+        const counts = statusCounts.get(slot)!;
+        counts.set(status, (counts.get(status) || 0) + 1);
+      }
+    }
+
+    const C = 2 * Math.PI * 32;
+    const colors = ['#155DFC', '#1D9F00', '#7C3AED', '#EA580C', '#0891B2'];
+    let ci = 0;
+    const cards: MealSummaryCard[] = [];
+
+    for (const [slot, total] of slotTotals) {
+      const counts = statusCounts.get(slot)!;
+      let cumulativeOffset = 0;
+      const segments: MealSegmentData[] = [];
+
+      for (const cfg of STATUS_CONFIG) {
+        const count = counts.get(cfg.key) || 0;
+        if (count === 0) continue;
+
+        const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+        const arcLength = (count / total) * C;
+
+        segments.push({
+          key: cfg.key,
+          label: cfg.label,
+          count,
+          percent,
+          color: cfg.color,
+          dashLength: `${arcLength} ${C - arcLength}`,
+          dashOffset: -cumulativeOffset,
+        });
+
+        cumulativeOffset += arcLength;
+      }
+
+      if (segments.length === 0) continue;
+
+      cards.push({
+        slotName: slot,
+        total,
+        color: MEAL_SLOT_COLORS[slot] || colors[ci++ % colors.length],
+        segments,
+      });
+    }
+
+    target.splice(0, target.length, ...cards);
   }
 
   private setDefaultSelectedDay() {
@@ -517,6 +675,8 @@ export class StudentDetailComponent implements OnChanges {
           details = e.reason || 'Details updated';
           break;
         case 'PAUSE_STARTED':
+        case 'PAUSE_REQUESTED':
+        case 'PAUSE_AUTO_STARTED':
           title = 'Pause Started';
           details = `${e.reason || 'No reason'} | ${this.fmtDate(d.pauseStartDate)} → ${this.fmtDate(d.pauseEndDate)}`;
           break;
@@ -549,9 +709,14 @@ export class StudentDetailComponent implements OnChanges {
   private buildPausePeriods() {
     const periods: PausePeriodEntry[] = [];
     for (const event of this.subscriptionHistory) {
-      if (event.action === 'PAUSE_STARTED' && event.details?.pauseStartDate && event.details?.pauseEndDate) {
-        const start = event.details.pauseStartDate;
-        const end = event.details.pauseEndDate;
+      const d = event.details || {};
+      if (d.pauseStartDate && d.pauseEndDate &&
+        ['PAUSE_STARTED', 'PAUSE_REQUESTED', 'PAUSE_AUTO_STARTED'].includes(event.action)) {
+        // Deduplicate: skip if same start/end already added
+        const exists = periods.some(p => p.pauseStart === d.pauseStartDate && p.pauseEnd === d.pauseEndDate);
+        if (exists) continue;
+        const start = d.pauseStartDate;
+        const end = d.pauseEndDate;
         const now = Date.now();
         const isActive = now >= start && now <= end;
         const days = Math.max(1, Math.round((end - start) / 86400000));
@@ -613,39 +778,23 @@ export class StudentDetailComponent implements OnChanges {
   onTabChange(tabId: string) {
     this.activeTab = tabId;
     if (tabId === 'attendance') {
-      this.refreshHeatmap();
+      this.buildMonthCalendar();
+      this.buildMealSummary('yearly', this.yearlyMealSummaryCards);
+      this.cdr.detectChanges();
     }
   }
 
-  onHeatmapViewChange(view: 'yearly' | 'monthly' | 'weekly') {
-    this.heatmapView = view;
-    this.refreshHeatmap();
-  }
-
-  onHeatmapYearChange(dir: number) {
-    this.heatmapYear += dir;
-    this.refreshHeatmap();
-  }
-
-  onHeatmapMonthChange(dir: number) {
-    this.heatmapMonth += dir;
-    if (this.heatmapMonth < 0) { this.heatmapMonth = 11; this.heatmapYear--; }
-    if (this.heatmapMonth > 11) { this.heatmapMonth = 0; this.heatmapYear++; }
-    this.refreshHeatmap();
-  }
-
-  private refreshHeatmap() {
-    if (this.heatmapView === 'yearly') {
-      this.buildYearlyHeatmap();
-    } else if (this.heatmapView === 'monthly') {
-      this.buildMonthlyHeatmap();
-    }
+  onMonthChange(dir: number) {
+    this.calendarMonth += dir;
+    if (this.calendarMonth < 0) { this.calendarMonth = 11; this.calendarYear--; }
+    if (this.calendarMonth > 11) { this.calendarMonth = 0; this.calendarYear++; }
+    this.buildMonthCalendar();
     this.cdr.detectChanges();
   }
 
-  onCellClick(cell: HeatmapCell | null) {
-    if (!cell) return;
-    const match = this.attendanceData.find(a => a.date === cell.dateStr);
+  onCellClick(day: CalendarDay | null) {
+    if (!day) return;
+    const match = this.attendanceData.find(a => a.date === day.dateStr);
     if (match) {
       this.selectedDayTap = this.toDayTapDetail(match);
     }
@@ -738,7 +887,7 @@ export class StudentDetailComponent implements OnChanges {
     return ACTION_COLORS[action] || { bg: '#F3F4F6', text: '#6B7280', icon: 'circle' };
   }
 
-  cellTitle(cell: HeatmapCell | null): string {
+  cellTitle(cell: CalendarDay | null): string {
     if (!cell) return '';
     return `${cell.dateStr}: ${cell.overall || 'no data'}`;
   }
@@ -815,4 +964,5 @@ export class StudentDetailComponent implements OnChanges {
 
   readonly dayLabels = DAY_LABELS;
   readonly monthLabels = MONTH_LABELS;
+  readonly Math = Math;
 }
