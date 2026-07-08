@@ -116,6 +116,22 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - Corrected mapping of paused subscription status
 - Renamed `hmsId` to `roll_number` across dashboard and API modules; optimized concurrent data loading in dashboard component
 
+### 2026-07-09 — Student Detail UI/UX Enhancements
+
+**Student Detail component** (`projects/mess-management/src/app/modules/reports/components/student-detail/`)
+
+#### Added
+- **Pause & Comp as 4th top-level tab**: Moved from inline section inside Activity & History to its own top-level tab (alongside Overview, Attendance, Activity & History)
+- **Events panel**: Holiday/pause reasons shown as colored badge pills (blue for holiday, amber for paused) instead of italic text
+- **Holiday reason lookup**: Holiday reasons loaded from API into `holidayMap` and displayed in the yearly meal summary events panel
+- **Pause period detection**: `buildPausePeriods()` now recognizes `PAUSE_REQUESTED` and `PAUSE_AUTO_STARTED` actions (not just `PAUSE_STARTED`), with deduplication to avoid duplicate entries
+
+#### Changed
+- **Overview attendance cards**: Increased height (`min-h-[130px]`), always-on colored top strip per day status, larger fonts (date→16px, month→12px, pills→11px)
+- **Holiday/paused pills**: Overview cards now show single "Holiday"/"Paused" pill (matching Attendance tab style) when day's overall status is holiday/paused, instead of per-meal H/P letters
+- **Subscription Milestones scrollable**: List items container has `overflow-y-auto max-h-[500px]` so the header stays fixed while long lists scroll
+- **Milestones builder**: Added `PAUSE_REQUESTED` and `PAUSE_AUTO_STARTED` cases alongside `PAUSE_STARTED` for proper display in the timeline
+
 ---
 
 ## [0.0.1] - 2026-06-03
