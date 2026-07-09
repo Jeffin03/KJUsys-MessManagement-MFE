@@ -16,6 +16,7 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Subscription audit — Check 2 (blocked card)**: Was reading `sub.cardStatus` instead of `sub.card_blocked`. Now correctly checks the `card_blocked` boolean.
 - **Subscription audit — Check 3 (unsubscribed meals)**: Was missing the meal-name vs schedule-name comparison. Now cross-references `mealNames` from the subscription against active schedule meals.
 - **Subscription audit — Check 4 (taps during pause)**: `pauseStartDate` was being compared as a raw timestamp string instead of parsed `dd/MM/yy` — added `stringToDate()` conversion for correct epoch comparison.
+- **dayPreference lost on edit**: `BackendStudent` interface and `mapToSubscriber` didn't include `dayPreference`, so editing a subscriber always showed "All Days". Added `dayPreference` to `BackendStudent`, `Subscriber`, and the mapper.
 
 ### Changed
 - **Entries-table constrained**: Removed `min-h-[738px]` scrolling; replaced with `entries.slice(0, 15)` to cap display at 15 rows with `mb-3` spacing. No max-height or scroll on the table.
@@ -135,6 +136,7 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 #### Fixed
 - **IST morning tap date off-by-one**: Attendance API stores `dayStart` as midnight IST timestamp but derives `rec.date` using UTC — taps before ~5:30 AM IST showed under the previous day. Fixed by computing the local date from `dayStart` directly.
 - **Future calendar days showing "Not Tapped"**: Calendar grid pre-rendered all month days with empty meal slots. Future days now show only a muted day number (no meal info, not clickable).
+- **dayPreference lost on edit**: `BackendStudent` interface and `mapToSubscriber` didn't include `dayPreference`, so editing a subscriber always showed "All Days". Added `dayPreference` to `BackendStudent`, `Subscriber`, and the mapper.
 
 #### Changed
 - **Calendar grid meal pills**: Replaced separate "Tapped"/"Not Tapped" text pills with colored meal-name pills (green=tapped, pink=not tapped) — matches the Overview card style, cleaner and more compact.
