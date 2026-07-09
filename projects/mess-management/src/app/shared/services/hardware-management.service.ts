@@ -94,8 +94,8 @@ export class HardwareManagementService {
     return this.http.post(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_TEST_DISPLAY(deviceId)}`, { lcd_line1: lcdLine1, lcd_line2: lcdLine2 });
   }
 
-  rotateSecret(deviceId: string): Observable<{ newSecret: string }> {
-    return this.http.post<ApiResponse<{ newSecret: string }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_ROTATE_SECRET(deviceId)}`, {})
+  rotateSecret(deviceId: string): Observable<{ newSecret: string; newSecretHash: string }> {
+    return this.http.post<ApiResponse<{ newSecret: string; newSecretHash: string }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_ROTATE_SECRET(deviceId)}`, {})
       .pipe(
         map(res => res.responseData?.data)
       );
@@ -107,5 +107,13 @@ export class HardwareManagementService {
 
   updateDevice(deviceId: string, data: Partial<{ name: string; type: string }>): Observable<any> {
     return this.http.put(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_BY_ID(deviceId)}`, data);
+  }
+
+  connectDevice(macAddress: string, name: string, type: string): Observable<{ device: HardwareDevice; hmacSecret: string; hmacSecretHash: string }> {
+    return this.http.post<ApiResponse<{ device: HardwareDevice; hmacSecret: string; hmacSecretHash: string }>>(
+      `${this.baseUrl}${API_ENDPOINTS.HARDWARE_CONNECT}`, { macAddress, name, type }
+    ).pipe(
+      map(res => res.responseData?.data)
+    );
   }
 }
