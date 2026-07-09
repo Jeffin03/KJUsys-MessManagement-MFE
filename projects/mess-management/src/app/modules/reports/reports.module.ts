@@ -11,7 +11,7 @@ import { ReportsDashboardComponent } from './components/reports-dashboard/report
 
 import { TabsModule } from '@libs/tabs';
 import { SubTabsModule } from '@libs/sub-tabs';
-import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
+import { BreadcrumbsTitleComponent, ButtonComponent } from '@libs/shared-ui';
 
 @NgModule({
   declarations: [
@@ -26,6 +26,7 @@ import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
     TabsModule,
     SubTabsModule,
     BreadcrumbsTitleComponent,
+    ButtonComponent,
     AuditToolsComponent,
     ReportsDashboardComponent,
   ]

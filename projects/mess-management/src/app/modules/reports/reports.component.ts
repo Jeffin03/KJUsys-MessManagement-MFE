@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { TabItem } from '@libs/tabs';
 import { SubTabItem } from '@libs/sub-tabs';
+import { ReportsDashboardComponent } from './components/reports-dashboard/reports-dashboard.component';
 
 @Component({
   selector: 'app-reports',
@@ -9,6 +10,8 @@ import { SubTabItem } from '@libs/sub-tabs';
   styleUrls: ['./reports.component.css']
 })
 export class ReportsComponent {
+
+  @ViewChild(ReportsDashboardComponent) dashboardRef?: ReportsDashboardComponent;
 
   activeSubTab = 'dashboard';
 
@@ -45,5 +48,9 @@ export class ReportsComponent {
 
   onSubTabChange(tabId: string) {
     this.activeSubTab = tabId;
+  }
+
+  onExportClick() {
+    this.dashboardRef?.openExportModal();
   }
 }

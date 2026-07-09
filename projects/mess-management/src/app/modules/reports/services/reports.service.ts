@@ -326,6 +326,11 @@ export class ReportsService {
     roll_number?: string;
     from?: number;
     to?: number;
+    mealSlots?: string[];
+    statuses?: string[];
+    rollNumbers?: string[];
+    includeSummary?: boolean;
+    includeDetail?: boolean;
   }): Observable<Blob> {
     return this.http.post(
       `${this.baseUrl}${API_ENDPOINTS.REPORTS_EXPORT_TRIGGER}`,
