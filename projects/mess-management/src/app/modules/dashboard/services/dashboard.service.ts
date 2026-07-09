@@ -5,6 +5,7 @@ import { map, shareReplay, tap } from 'rxjs/operators';
 import { MealSlot, MealEntry, HardwareDevice } from '../../../shared/models/dashboard.models';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
 import { environment } from '../../../../environments/environment';
+import { timeToMinutes, compareMealStartTimes } from '../../../shared/constants/meal-sort';
 
 export interface HolidayRecord {
   id: string;
@@ -96,7 +97,7 @@ export class DashboardService {
               thirdLabel: status === 'Closed' ? 'Skipped' : 'Pending',
               startTime: m.start
             };
-          }).sort((a, b) => a.startTime.localeCompare(b.startTime));
+           }).sort((a, b) => compareMealStartTimes(timeToMinutes(a.startTime), timeToMinutes(b.startTime)));
         })
       );
 

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 
-import { StudentDetailComponent } from '../reports/components/student-detail/student-detail.component';
+import { StudentDetailComponent } from './components/student-detail/student-detail.component';
 
 import { SubscriberStatsComponent } from './components/subscriber-stats/subscriber-stats.component';
 import { SubscriberTableComponent } from './components/subscriber-table/subscriber-table.component';
@@ -58,10 +58,16 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  breadcrumbs = [
-    { label: 'Hostel' },
-    { label: 'Mess Management' }
-  ];
+  get breadcrumbs() {
+    const crumbs = [
+      { label: 'Hostel' },
+      { label: 'Mess Management' }
+    ];
+    if (this.selectedStudentRollNumber) {
+      crumbs.push({ label: this.selectedStudentRollNumber });
+    }
+    return crumbs;
+  }
 
   subscribers: Subscriber[] = [];
   isLoading = false;

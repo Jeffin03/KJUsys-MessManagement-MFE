@@ -5,9 +5,10 @@ import { FormsModule } from '@angular/forms';
 import { SubTabsModule } from '@libs/sub-tabs';
 import { ButtonComponent, EmptyStateComponent } from '@libs/shared-ui';
 import { TableModule } from '@libs/table';
-import { ReportsService } from '../../services/reports.service';
-import { StudentOverview, AttendanceDay, ChangelogEntry } from '../../models/reports.models';
+import { ReportsService } from '../../../reports/services/reports.service';
+import { StudentOverview, AttendanceDay, ChangelogEntry } from '../../../reports/models/reports.models';
 import type { TableColumn } from '@libs/table';
+import { mealNameToMinutes, compareMealStartTimes } from '../../../../shared/constants/meal-sort';
 
 // ── Interfaces ──────────────────────────────────────────────────────────────────
 
@@ -99,7 +100,7 @@ const HEATMAP_COLORS: Record<string, string> = {
   'present': '#1D9F00',
   'partial': '#30A14E',
   'absent': '#EBEDF0',
-  'holiday': '#3B82F6',
+  'holiday': '#EF4444',
   'paused': '#D97706',
 };
 
@@ -334,6 +335,12 @@ export class StudentDetailComponent implements OnChanges {
     this.attendanceLoading = true;
     this.reportsService.getStudentAttendance(this.rollNumber, from, to).subscribe({
       next: data => {
+        // Sort meal slots with 3am pivot for every day
+        for (const day of data) {
+          day.mealSlots.sort((a, b) => compareMealStartTimes(
+            mealNameToMinutes(a.slotName), mealNameToMinutes(b.slotName)
+          ));
+        }
         this.attendanceData = data;
         this.attendanceLoading = false;
         this.buildWeeklyDayCards();
@@ -526,14 +533,14 @@ export class StudentDetailComponent implements OnChanges {
       ? [
           { key: 'present', label: 'Present', color: '#1D9F00' },
           { key: 'absent', label: 'Absent', color: '#D1D5DB' },
-          { key: 'holiday', label: 'Holiday', color: '#3B82F6' },
+          { key: 'holiday', label: 'Holiday', color: '#EF4444' },
           { key: 'paused', label: 'Paused', color: '#D97706' },
         ]
       : [
           { key: 'present', label: 'Present', color: '#1D9F00' },
           { key: 'partial', label: 'Partial', color: '#30A14E' },
           { key: 'absent', label: 'Absent', color: '#D1D5DB' },
-          { key: 'holiday', label: 'Holiday', color: '#3B82F6' },
+          { key: 'holiday', label: 'Holiday', color: '#EF4444' },
           { key: 'paused', label: 'Paused', color: '#D97706' },
         ];
 
@@ -620,6 +627,10 @@ export class StudentDetailComponent implements OnChanges {
       });
     }
 
+    // Sort cards with 3am pivot
+    cards.sort((a, b) => compareMealStartTimes(
+      mealNameToMinutes(a.slotName), mealNameToMinutes(b.slotName)
+    ));
     target.splice(0, target.length, ...cards);
   }
 

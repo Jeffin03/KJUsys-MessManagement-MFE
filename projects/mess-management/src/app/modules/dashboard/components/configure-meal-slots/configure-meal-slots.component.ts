@@ -8,6 +8,7 @@ import { ButtonComponent } from '@libs/shared-ui';
 import { MealSlotService } from '../../../../shared/services/meal-slot.service';
 import { HardwareManagementService, HardwareDevice } from '../../../../shared/services/hardware-management.service';
 import { HolidayCalendarComponent } from './holiday-calendar.component';
+import { compareMealStartTimes, timeToMinutes } from '../../../../shared/constants/meal-sort';
 
 interface SuggestionItem {
   label: string;
@@ -1042,7 +1043,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     }
 
     // Re-sort after add/update
-    this.slots.sort((a, b) => this.toMins(a.start24) - this.toMins(b.start24));
+    this.slots.sort((a, b) => compareMealStartTimes(this.toMins(a.start24), this.toMins(b.start24)));
     this.closeAllDropdowns();
   }
 
@@ -1140,7 +1141,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
               end24,
               daysAvailable
             } as MealSlotConfig;
-          }).sort((a: MealSlotConfig, b: MealSlotConfig) => this.toMins(a.start24) - this.toMins(b.start24));
+          }).sort((a: MealSlotConfig, b: MealSlotConfig) => compareMealStartTimes(this.toMins(a.start24), this.toMins(b.start24)));
           // Seed the meal preview substitution from the first slot
           if (this.slots.length > 0 && !this.previewSubstitutions.meal) {
             this.previewSubstitutions.meal = this.slots[0].name;

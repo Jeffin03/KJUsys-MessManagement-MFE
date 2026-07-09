@@ -8,7 +8,7 @@ import { SharedToastService } from '@libs/shared-toast';
 import { DatePickerModule } from '@libs/date-picker';
 import { DropdownLibModule } from '@libs/dropdown-lib';
 import { ReportsService } from '../../services/reports.service';
-import { DailyAnalytics, MealDistribution } from '../../models/reports.models';
+import { DailyAnalytics } from '../../models/reports.models';
 import { DashboardService } from '../../../dashboard/services/dashboard.service';
 import { MealEntry } from '../../../../shared/models/dashboard.models';
 
@@ -18,14 +18,6 @@ interface KpiCard {
   icon: string;
   color: string;
   accent: 'blue' | 'green' | 'orange' | 'red' | 'purple';
-}
-
-interface MealBar {
-  name: string;
-  served: number;
-  total: number;
-  percent: number;
-  color: string;
 }
 
 @Component({
@@ -57,28 +49,6 @@ interface MealBar {
           </p>
         </div>
       </div>
-
-      <!-- Meal Utilization Bars -->
-      <div class="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <span class="text-sm font-semibold text-[#111827] block mb-4">Today's Meal Utilization</span>
-          <div *ngIf="mealBars.length > 0; else noMealData" class="space-y-4">
-            <div *ngFor="let bar of mealBars">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-[#111827]">{{ bar.name }}</span>
-                <span class="text-[10px] font-medium text-[#6B7280]">{{ bar.served }} / {{ bar.total }} served ({{ bar.percent }}%)</span>
-              </div>
-              <div class="w-full h-2 bg-[#F3F4F6] rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-500"
-                  [style.width.%]="bar.percent"
-                  [style.background-color]="bar.color">
-                </div>
-              </div>
-            </div>
-          </div>
-          <ng-template #noMealData>
-            <div class="text-xs text-[#6B7280] text-center py-6">No meal data available for today.</div>
-          </ng-template>
-        </div>
 
       <!-- Live Taps Table -->
       <div class="bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
@@ -256,10 +226,6 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     { label: 'Anomalies', value: 0, icon: '', color: '', accent: 'red' },
   ];
 
-  // Meal bars
-  mealBars: MealBar[] = [];
-  barColors = ['#155DFC', '#007A55', '#FE9A00', '#7C3AED', '#C70036'];
-
   // Taps table
   tapColumns: TableColumn[] = [
     { key: 'customer', label: 'Subscriber', sortable: true, minWidth: '160px' },
@@ -300,11 +266,11 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   selectedMealSlots: any[] = [];
 
   availableMealSlots = [
+    { id: 'EARLY_BREAKFAST', label: 'Early Breakfast' },
     { id: 'BREAKFAST', label: 'Breakfast' },
+    { id: 'BRUNCH', label: 'Brunch' },
     { id: 'LUNCH', label: 'Lunch' },
     { id: 'DINNER', label: 'Dinner' },
-    { id: 'EARLY_BREAKFAST', label: 'Early Breakfast' },
-    { id: 'BRUNCH', label: 'Brunch' },
     { id: 'LATE_NIGHT', label: 'Late Night' },
     { id: 'MIDNIGHT_SNACK', label: 'Midnight Snack' },
   ];
@@ -338,7 +304,6 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
         this.kpiCards[3].value = analytics.pausedCount;
         this.kpiCards[4].value = 0;
 
-        this.buildMealBars(analytics.mealDistribution);
         this.cdr.detectChanges();
       },
       error: () => this.cdr.detectChanges()
@@ -351,16 +316,6 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
       },
       error: () => this.cdr.detectChanges()
     });
-  }
-
-  private buildMealBars(distribution: MealDistribution[]) {
-    this.mealBars = distribution.map((d, i) => ({
-      name: d.slotName,
-      served: d.tapCount,
-      total: d.subscriberCount,
-      percent: d.subscriberCount > 0 ? Math.round((d.tapCount / d.subscriberCount) * 100) : 0,
-      color: this.barColors[i % this.barColors.length],
-    }));
   }
 
   private loadTaps() {
