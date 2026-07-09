@@ -274,30 +274,38 @@
             </div>
             <ng-container *ngFor="let week of calendarWeeks">
               <div *ngFor="let day of week.days; let ci = index"
-                class="rounded-lg border min-h-[120px] cursor-pointer transition-all hover:shadow-md flex flex-col overflow-hidden p-2"
+                class="rounded-lg border min-h-[120px] flex flex-col overflow-hidden p-2 transition-all"
+                [class.cursor-pointer]="!day?.isFuture"
+                [class.hover:shadow-md]="!day?.isFuture"
                 [style.background]="'#FFFFFF'"
-                [class.border-[#D1D5DB]]="selectedDayTap?.date !== day?.dateStr"
-                [style.border-color]="selectedDayTap?.date === day?.dateStr ? '#155DFC' : undefined"
-                [style.box-shadow]="selectedDayTap?.date === day?.dateStr ? '0 0 0 1.5px #155DFC' : undefined"
-                (click)="day && onCellClick(day)">
+                [class.border-[#D1D5DB]]="!day?.isFuture && selectedDayTap?.date !== day?.dateStr"
+                [class.border-[#E5E7EB]]="day?.isFuture"
+                [style.border-color]="!day?.isFuture && selectedDayTap?.date === day?.dateStr ? '#155DFC' : undefined"
+                [style.box-shadow]="!day?.isFuture && selectedDayTap?.date === day?.dateStr ? '0 0 0 1.5px #155DFC' : undefined"
+                (click)="day && !day.isFuture && onCellClick(day)">
                 <ng-container *ngIf="day; else emptyCell">
-                  <div class="h-1.5 -mx-2 -mt-2 mb-2 rounded-t-lg" *ngIf="day.overall === 'holiday' || day.overall === 'paused'" [style.background]="getHeatmapColor(day.overall)"></div>
-                  <div class="text-lg font-bold text-[#111827] leading-tight">{{ day.day }}</div>
-                  <div class="flex-1 flex flex-col justify-center gap-1.5">
-                    <ng-container *ngIf="day.overall === 'holiday' || day.overall === 'paused'; else mealsBlock">
-                      <div class="px-3 py-2 rounded text-xs font-semibold text-center w-[100px]"
-                        [style.background]="day.overall === 'holiday' ? '#DBEAFE' : '#FEF3C7'"
-                        [style.color]="day.overall === 'holiday' ? '#1E40AF' : '#92400E'">{{ day.overall === 'holiday' ? 'Holiday' : 'Paused' }}</div>
-                    </ng-container>
-                    <ng-template #mealsBlock>
-                      <div *ngFor="let meal of day.meals" class="flex items-center gap-1.5">
-                        <span class="text-xs text-[#6B7280]">{{ meal.slotName }}</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold"
-                          [style.background]="meal.tapped ? '#DCFCE7' : '#FFF1F2'"
-                          [style.color]="meal.tapped ? '#007A55' : '#C70036'">{{ meal.tapped ? 'Tapped' : 'Not Tapped' }}</span>
-                      </div>
-                    </ng-template>
-                  </div>
+                  <ng-container *ngIf="!day.isFuture; else futureBlock">
+                    <div class="h-1.5 -mx-2 -mt-2 mb-2 rounded-t-lg" *ngIf="day.overall === 'holiday' || day.overall === 'paused'" [style.background]="getHeatmapColor(day.overall)"></div>
+                    <div class="text-lg font-bold text-[#111827] leading-tight">{{ day.day }}</div>
+                    <div class="flex-1 flex flex-col justify-center gap-1.5">
+                      <ng-container *ngIf="day.overall === 'holiday' || day.overall === 'paused'; else mealsBlock">
+                        <div class="px-3 py-2 rounded text-xs font-semibold text-center w-[100px]"
+                          [style.background]="day.overall === 'holiday' ? '#DBEAFE' : '#FEF3C7'"
+                          [style.color]="day.overall === 'holiday' ? '#1E40AF' : '#92400E'">{{ day.overall === 'holiday' ? 'Holiday' : 'Paused' }}</div>
+                      </ng-container>
+                      <ng-template #mealsBlock>
+                        <div *ngFor="let meal of day.meals" class="flex items-center gap-1.5">
+                          <span class="text-xs text-[#6B7280]">{{ meal.slotName }}</span>
+                          <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold"
+                            [style.background]="meal.tapped ? '#DCFCE7' : '#FFF1F2'"
+                            [style.color]="meal.tapped ? '#007A55' : '#C70036'">{{ meal.tapped ? 'Tapped' : 'Not Tapped' }}</span>
+                        </div>
+                      </ng-template>
+                    </div>
+                  </ng-container>
+                  <ng-template #futureBlock>
+                    <div class="text-lg font-bold text-[#9CA3AF] leading-tight">{{ day.day }}</div>
+                  </ng-template>
                 </ng-container>
                 <ng-template #emptyCell><div class="min-h-[120px]"></div></ng-template>
               </div>
