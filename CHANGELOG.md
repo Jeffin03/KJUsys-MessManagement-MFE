@@ -132,6 +132,10 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Subscription Milestones scrollable**: List items container has `overflow-y-auto max-h-[500px]` so the header stays fixed while long lists scroll
 - **Milestones builder**: Added `PAUSE_REQUESTED` and `PAUSE_AUTO_STARTED` cases alongside `PAUSE_STARTED` for proper display in the timeline
 
+#### Fixed
+- **IST morning tap date off-by-one**: Attendance API stores `dayStart` as midnight IST timestamp but derives `rec.date` using UTC — taps before ~5:30 AM IST showed under the previous day. Fixed by computing the local date from `dayStart` directly.
+- **Future calendar days showing "Not Tapped"**: Calendar grid pre-rendered all month days with empty meal slots. Future days now show only a muted day number (no meal info, not clickable).
+
 ---
 
 ## [0.0.1] - 2026-06-03

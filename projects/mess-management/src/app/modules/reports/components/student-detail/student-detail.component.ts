@@ -27,6 +27,7 @@ interface CalendarDay {
   }[];
   tappedCount: number;
   totalMeals: number;
+  isFuture?: boolean;
 }
 
 interface CalendarWeek {
@@ -465,11 +466,15 @@ export class StudentDetailComponent implements OnChanges {
     const weeks: CalendarWeek[] = [];
     let currentWeek: (CalendarDay | null)[] = [];
 
+    const today = new Date();
+    const todayStr = this.toDateStr(today);
+
     for (let i = 0; i < totalCells; i++) {
       const cellDate = new Date(year, month, i - startPad + 1);
 
       if (i >= startPad && i < startPad + totalDays) {
         const ds = this.toDateStr(cellDate);
+        const isFuture = ds > todayStr;
         const match = this.attendanceData.find(a => a.date === ds);
         const meals = match ? match.mealSlots.map(m => ({
           slotName: m.slotName,
@@ -487,6 +492,7 @@ export class StudentDetailComponent implements OnChanges {
           meals,
           tappedCount: meals.filter(m => m.tapped).length,
           totalMeals: meals.filter(m => !m.isHoliday).length,
+          isFuture,
         });
       } else {
         currentWeek.push(null);
@@ -793,7 +799,7 @@ export class StudentDetailComponent implements OnChanges {
   }
 
   onCellClick(day: CalendarDay | null) {
-    if (!day) return;
+    if (!day || day.isFuture) return;
     const match = this.attendanceData.find(a => a.date === day.dateStr);
     if (match) {
       this.selectedDayTap = this.toDayTapDetail(match);

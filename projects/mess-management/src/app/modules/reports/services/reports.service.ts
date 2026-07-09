@@ -59,9 +59,20 @@ export class ReportsService {
         const data = this.extractData(r);
         const records = data && data.records ? data.records : [];
 
+        function toLocalDateStr(ts: number): string {
+          const d = new Date(ts);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
         const dayMap = new Map<string, { slots: { slotName: string; status: string }[] }>();
         records.forEach((rec: any) => {
-          const dayKey = rec.date || '';
+          let dayKey = rec.date || '';
+          if (rec.dayStart) {
+            const localDate = toLocalDateStr(Number(rec.dayStart));
+            if (localDate !== dayKey) {
+              dayKey = localDate;
+            }
+          }
           if (!dayMap.has(dayKey)) dayMap.set(dayKey, { slots: [] });
           dayMap.get(dayKey)!.slots.push({
             slotName: rec.mealSlot ? formatMealLabel(rec.mealSlot) : '',
