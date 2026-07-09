@@ -294,11 +294,10 @@
                           [style.color]="day.overall === 'holiday' ? '#1E40AF' : '#92400E'">{{ day.overall === 'holiday' ? 'Holiday' : 'Paused' }}</div>
                       </ng-container>
                       <ng-template #mealsBlock>
-                        <div *ngFor="let meal of day.meals" class="flex items-center gap-1.5">
-                          <span class="text-xs text-[#6B7280]">{{ meal.slotName }}</span>
-                          <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold"
+                        <div *ngFor="let meal of day.meals" class="flex items-center gap-1">
+                          <span class="px-1.5 py-0.5 rounded text-[11px] font-semibold truncate max-w-[80px]"
                             [style.background]="meal.tapped ? '#DCFCE7' : '#FFF1F2'"
-                            [style.color]="meal.tapped ? '#007A55' : '#C70036'">{{ meal.tapped ? 'Tapped' : 'Not Tapped' }}</span>
+                            [style.color]="meal.tapped ? '#007A55' : '#C70036'">{{ meal.slotName }}</span>
                         </div>
                       </ng-template>
                     </div>
