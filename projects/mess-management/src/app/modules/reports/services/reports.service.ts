@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
+import { compareMealStartTimes, mealNameToMinutes } from '../../../shared/constants/meal-sort';
 import {
   TapRecord, AttendanceDay, HolidayRecord, ChangelogEntry,
   StudentOverview, DailyAnalytics,
@@ -82,6 +83,11 @@ export class ReportsService {
 
         const result: AttendanceDay[] = [];
         dayMap.forEach((day, date) => {
+          // Sort meal slots with 3am pivot
+          day.slots.sort((a, b) => compareMealStartTimes(
+            mealNameToMinutes(a.slotName),
+            mealNameToMinutes(b.slotName)
+          ));
           const statuses = day.slots.map(s => s.status);
           let overall: AttendanceDay['overall'] = 'absent';
           if (statuses.every(s => s === 'holiday')) overall = 'holiday';

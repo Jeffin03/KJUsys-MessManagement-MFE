@@ -4,6 +4,7 @@ import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { map, catchError, take, tap, shareReplay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
+import { compareMealStartTimes } from '../constants/meal-sort';
 
 export interface BackendSchedule {
   _id: { $oid: string };
@@ -103,7 +104,7 @@ export class MealSlotService {
       map(res => {
         const newSlot = this.mapToMealSlot(res.responseData.data.schedule);
         const current = this.mealSlotsSubject.value;
-        this.mealSlotsSubject.next([...current, newSlot].sort((a, b) => a.startTime - b.startTime));
+        this.mealSlotsSubject.next([...current, newSlot].sort((a, b) => compareMealStartTimes(a.startTime, b.startTime)));
         this.cacheTimestamp = Date.now();
         return newSlot;
       })
@@ -117,7 +118,7 @@ export class MealSlotService {
       map(res => {
         const updated = this.mapToMealSlot(res.responseData.data.schedule);
         const current = this.mealSlotsSubject.value.map(s => s.id === id ? updated : s);
-        this.mealSlotsSubject.next(current);
+        this.mealSlotsSubject.next(current.sort((a, b) => compareMealStartTimes(a.startTime, b.startTime)));
         this.cacheTimestamp = Date.now();
         return updated;
       })
