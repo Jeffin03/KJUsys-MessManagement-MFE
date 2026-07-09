@@ -7,6 +7,7 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ### Added
 - **CSV export format option**: Export modal now includes Excel/CSV toggle buttons. Selecting CSV generates a single `.csv` file instead of multi-sheet Excel. Output preview updates to show "Single CSV file" when CSV selected.
 - **Case-insensitive roll number input**: Student roll number field in export modal auto-uppercases typed text for better UX. Backend matches roll numbers case-insensitively.
+- **Copy-to-clipboard toasts in HMAC popup**: Copying HMAC Secret or Device Token now shows a toast notification confirming the copy. Icons revert after 2s to allow repeated copies.
 - **Enhanced export modal with rich filters**: Reports Dashboard export modal redesigned with date range picker (`<lib-date-picker>`), multi-select meal slot dropdown (`<lib-dropdown-lib>`), comma-separated student roll number input, and Summary/Data sheet toggles.
 - **Multi-sheet Excel output**: Backend now generates 2-sheet workbooks — Summary (KPIs + per-meal-slot breakdown) and Data (full tap detail). Filter params: `mealSlots`, `statuses`, `rollNumbers`, `includeSummary`, `includeDetail`.
 - **Date picker in export modal**: Uses `<lib-date-picker>` from `@libs/date-picker` for consistent date range selection (replaced native `<input type="date">`).
@@ -16,6 +17,7 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Export output preview**: Shows which sheets will be included based on toggle state.
 
 ### Changed
+- **Hardware settings modal design refinements**: Increased subtitle margin-bottom (`mb-4`) for better spacing. Replaced `<lib-button>` copy buttons in HMAC popup with icon-only copy/check icons (16px, 32×32 button) — label and icon now use `flex justify-between`. Register Device button right-aligned. MAC address placeholder simplified to "Device MAC address".
 - **Export button relocated to sub-tabs header**: Export button moved from the dashboard card to the sub-tabs header row in `reports.component.html` using `flex justify-between` layout. `reports.component.ts` uses `@ViewChild(ReportsDashboardComponent)` to call `openExportModal()`. `ButtonComponent` added to `reports.module.ts`.
 - **Reports Dashboard component** (`reports-dashboard.component.ts`): Added `DatePickerModule` and `DropdownLibModule` imports. Rewrote export modal with enhanced filter state variables (`exportStartDate`, `exportEndDate`, `exportRollNumbersInput`, `selectedMealSlots`, `exportIncludeSummary`, `exportIncludeDetail`, `exportFormat`). Updated `onGenerateExport()` to build enhanced filter params with format selection. Added `closeExportModal()` with full state reset including format. Added `openExportModal()` public method. Removed standalone export card from dashboard.
 - **`ReportsService.triggerFilteredExport()`**: Updated params interface to accept `mealSlots?: string[]`, `statuses?: string[]`, `rollNumbers?: string[]`, `includeSummary?: boolean`, `includeDetail?: boolean`.
