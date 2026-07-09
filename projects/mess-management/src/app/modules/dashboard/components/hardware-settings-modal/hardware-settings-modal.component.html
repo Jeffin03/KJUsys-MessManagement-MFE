@@ -8,27 +8,52 @@
       <div class="flex items-start justify-between">
         <div>
           <h2 class="text-sm font-semibold text-[#111827]">Hardware Settings</h2>
-          <p class="text-xs font-medium text-[#86868B] mt-0.5">Manage devices, pairing, and diagnostics</p>
+          <p class="text-xs font-medium text-[#86868B] mt-0.5">Manage devices, registration, and diagnostics</p>
         </div>
         <button class="bg-transparent border-none text-base cursor-pointer px-1.5 py-0.5 leading-none"
           style="color:#86868B;" (click)="onClose()">&#x2715;</button>
       </div>
     </div>
 
-    <!-- Fixed Sub Tabs -->
-    <div class="px-7 pt-4 pb-0 bg-white border-b border-[#E5E7EB] flex-shrink-0">
-      <lib-sub-tabs [tabs]="subTabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-sub-tabs>
-    </div>
-
     <!-- Scrollable Content -->
     <div class="overflow-y-auto flex-1 bg-white">
 
-      <!-- ── Devices Tab ── -->
-      <div *ngIf="activeTab === 'devices'" class="px-7 py-4">
+      <!-- ── Register New Device ── -->
+      <div class="px-7 py-4 border-b border-[#E5E7EB]">
+        <h3 class="text-xs font-semibold mb-3" style="color:#1D1D1F;">Register New Device</h3>
+        <div class="grid gap-2">
+          <input
+            [(ngModel)]="registerMac"
+            placeholder="Device MAC address (optional for testing)"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400">
+          <input
+            [(ngModel)]="registerName"
+            placeholder="Device name (e.g. ESP32 Main Gate)"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400">
+          <lib-dropdown-lib
+            label="Device Type"
+            placeholder="Select type"
+            [singleSelection]="true"
+            [data]="deviceTypes"
+            idField="id"
+            textField="title"
+            [selectedItems]="selectedDeviceType"
+            (selectionChange)="onDeviceTypeChange($event)">
+          </lib-dropdown-lib>
+          <div class="mt-1">
+            <lib-button label="Register Device" type="green" [loading]="isRegistering" (onClick)="registerDevice()"></lib-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Registered Devices ── -->
+      <div class="px-7 py-4">
+        <h3 class="text-xs font-semibold mb-3" style="color:#1D1D1F;">Registered Devices</h3>
+
         <div *ngIf="isLoading" class="text-center py-8 text-xs" style="color:#86868B;">Loading devices...</div>
 
-        <div *ngIf="!isLoading && devices.length === 0" class="pt-4">
-          <lib-empty-state type="no-results" title="No devices registered" subtext="Go to the Pairing tab to add one."></lib-empty-state>
+        <div *ngIf="!isLoading && devices.length === 0" class="pt-2">
+          <lib-empty-state type="no-results" title="No devices registered" subtext="Register a device above to get started."></lib-empty-state>
         </div>
 
         <div *ngFor="let device of devices" class="py-3 px-4 mb-2 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
@@ -66,7 +91,7 @@
                 label="Rotate Key"
                 type="secondary"
                 [loading]="rotatingDeviceId === device._id"
-                (onClick)="rotateSecret(device._id)">
+                (onClick)="requestRotateSecret(device)">
               </lib-button>
               <button (click)="startEdit(device)" title="Edit"
                 class="flex items-center justify-center w-8 h-8 rounded-lg border border-[#E5E7EB] hover:bg-gray-50">
@@ -103,78 +128,6 @@
         </div>
       </div>
 
-      <!-- ── Pairing Tab ── -->
-      <div *ngIf="activeTab === 'pairing'" class="px-7 py-4">
-
-        <div *ngIf="!pairingActive" class="text-center py-6">
-          <p class="text-xs mb-4" style="color:#86868B;">
-            Click below to open a 2-minute pairing window. Power on the device in discovery mode, then confirm it here.
-          </p>
-          <lib-button label="Start Pairing" type="primary" (onClick)="startPairing()"></lib-button>
-        </div>
-
-        <div *ngIf="pairingActive">
-          <div class="flex items-center justify-between mb-4 p-3 rounded-lg bg-blue-50/50 border border-blue-100">
-            <div>
-              <span class="text-xs font-medium text-blue-700">Pairing Window Active</span>
-              <span class="text-xs ml-3 text-blue-500">{{ pairingCountdown }}s remaining</span>
-            </div>
-            <lib-button label="Cancel" type="reject" (onClick)="stopPairing()"></lib-button>
-          </div>
-        </div>
-
-        <div *ngIf="pendingDevices.length > 0" class="mb-4">
-          <h3 class="text-xs font-semibold mb-3" style="color:#1D1D1F;">Discovered Devices</h3>
-          <div class="space-y-2">
-            <div *ngFor="let device of pendingDevices"
-                 class="flex items-center justify-between p-3 rounded-lg border border-gray-100">
-              <div class="flex items-center gap-3 min-w-0">
-                <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:#FE9A00;"></span>
-                <div class="min-w-0">
-                  <div class="text-sm font-medium truncate" style="color:#1D1D1F;">{{ device.name || 'Unnamed' }}</div>
-                  <div class="text-xs mt-0.5" style="color:#86868B;">
-                    {{ device.macAddress || 'MAC pending' }} &middot; {{ device.type || 'unknown' }}
-                  </div>
-                </div>
-              </div>
-              <lib-button
-                label="Confirm"
-                type="green"
-                [loading]="confirmingDeviceId === device._id"
-                (onClick)="approvePending(device._id)">
-              </lib-button>
-            </div>
-          </div>
-        </div>
-
-        <details class="mt-4">
-          <summary class="text-xs cursor-pointer select-none" style="color:#6B7280;">Manual Entry (for testing)</summary>
-          <div class="mt-3 grid gap-2">
-            <input
-              [(ngModel)]="confirmMac"
-              placeholder="Device MAC address"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400">
-            <input
-              [(ngModel)]="confirmName"
-              placeholder="Device name (e.g. ESP32 Main Gate)"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400">
-            <lib-dropdown-lib
-              label="Device Type"
-              placeholder="Select type"
-              [singleSelection]="true"
-              [data]="deviceTypes"
-              idField="id"
-              textField="title"
-              [selectedItems]="selectedDeviceType"
-              (selectionChange)="onDeviceTypeChange($event)">
-            </lib-dropdown-lib>
-            <div class="mt-2">
-              <lib-button label="Confirm & Pair" type="green" (onClick)="confirmDevice()"></lib-button>
-            </div>
-          </div>
-        </details>
-      </div>
-
     </div>
 
     <!-- Delete Confirmation Popup -->
@@ -191,6 +144,71 @@
           <lib-button type="secondary" label="No, cancel" (onClick)="cancelDeleteDevice()"></lib-button>
           <lib-button type="primary" label="Confirm" (onClick)="confirmDeleteDevice()"></lib-button>
         </div>
+      </div>
+    </div>
+
+    <!-- Rotate Secret Confirmation Popup -->
+    <div *ngIf="showRotateConfirmPopup" class="absolute z-[100] flex items-center justify-center inset-0"
+        style="background:rgba(0,0,0,.15);">
+      <div class="relative bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] w-full max-w-xs mx-4 px-8 py-8 flex flex-col items-center gap-5">
+        <button (click)="cancelRotateSecret()"
+          class="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#374151] transition-colors text-lg leading-none p-1">✕</button>
+        <img src="assets/exclamation-circle.svg" class="w-16 h-16" />
+        <p class="text-[15px] font-semibold text-[#111827] text-center leading-6">
+          Rotate HMAC secret for {{ pendingRotateDevice?.name }}?
+        </p>
+        <p class="text-xs text-center" style="color:#86868B;">
+          All active connections will need to re-authenticate with the new key.
+        </p>
+        <div class="flex gap-3 w-full *:flex-1 *:w-full">
+          <lib-button type="secondary" label="No, cancel" (onClick)="cancelRotateSecret()"></lib-button>
+          <lib-button type="primary" label="Confirm" (onClick)="confirmRotateSecret()"></lib-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HMAC Secret Popup -->
+    <div *ngIf="showHmacPopup" class="absolute z-[100] flex items-center justify-center inset-0"
+        style="background:rgba(0,0,0,.15);">
+      <div class="relative bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] w-full max-w-sm mx-4 px-8 py-8 flex flex-col items-center gap-5">
+        <button (click)="closeHmacPopup()"
+          class="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#374151] transition-colors text-lg leading-none p-1">✕</button>
+        <div class="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center">
+          <svg class="w-7 h-7" style="color:#1D9F00;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+          </svg>
+        </div>
+        <p class="text-[15px] font-semibold text-[#111827] text-center leading-6">
+          Device Credentials
+        </p>
+        <p class="text-xs text-center" style="color:#86868B;">
+          Copy these values and configure them on your device. They will not be shown again.
+        </p>
+        <div class="w-full space-y-3">
+          <div>
+            <label class="text-xs font-medium block mb-1" style="color:#374151;">HMAC Secret (for signing)</label>
+            <div class="bg-gray-50 rounded-lg px-4 py-3 border border-gray-200">
+              <code class="text-xs break-all font-mono" style="color:#1D1D1F;">{{ hmacSecret }}</code>
+            </div>
+            <lib-button
+              [label]="hmacCopied ? 'Copied!' : 'Copy Secret'"
+              [type]="hmacCopied ? 'green' : 'secondary'"
+              (onClick)="copyHmacSecret()">
+            </lib-button>
+          </div>
+          <div>
+            <label class="text-xs font-medium block mb-1" style="color:#374151;">Device Token (for identification)</label>
+            <div class="bg-gray-50 rounded-lg px-4 py-3 border border-gray-200">
+              <code class="text-xs break-all font-mono" style="color:#1D1D1F;">{{ hmacSecretHash }}</code>
+            </div>
+            <lib-button
+              [label]="hmacHashCopied ? 'Copied!' : 'Copy Token'"
+              [type]="hmacHashCopied ? 'green' : 'secondary'"
+              (onClick)="copyHmacHash()">
+            </lib-button>
+          </div>
+        </div>
+        <lib-button label="Done" type="primary" (onClick)="closeHmacPopup()"></lib-button>
       </div>
     </div>
 

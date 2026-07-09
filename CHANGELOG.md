@@ -5,6 +5,24 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ## [Unreleased]
 
 ### Added
+- **Hardware registration via `POST /hardware/connect`**: New `connectDevice()` method in `HardwareManagementService` calls the backend connect endpoint. Device is created as `active` with HMAC secret in one step — no pairing flow required.
+- **HMAC secret popup with dual credentials**: After registering or rotating a secret, the popup now shows two values: **HMAC Secret** (for signing requests) and **Device Token** (SHA-256 hash, for device identification). Each has its own copy button.
+- **Rotate secret confirmation modal**: Clicking "Rotate Key" now opens an inline confirmation popup (matching the delete confirmation pattern) instead of a browser `confirm()` dialog.
+
+### Changed
+- **Hardware settings modal flat layout**: Removed sub-tabs (Devices / Pairing). New layout: "Register New Device" form at top, "Registered Devices" list below. No more pairing window, countdown timer, or pending device polling.
+- **`HARDWARE_CONNECT` endpoint added** to `api-endpoints.ts`. `HARDWARE_HEARTBEAT` updated to `/hardware/heartbeat` (no longer takes `id` param).
+- **`HardwareManagementService.connectDevice()`** returns `{ device, hmacSecret, hmacSecretHash }`.
+- **`HardwareManagementService.rotateSecret()`** returns `{ newSecret, newSecretHash }`.
+
+### Removed
+- **Pairing flow**: Removed all pairing-related logic from the hardware settings modal — `subTabs`, `activeTab`, `pairingActive`, `pairingCountdown`, `pairingTimer`, `pendingDevices`, `pendingPollingTimer`, `startPairing()`, `stopPairing()`, `startPendingPolling()`, `stopPendingPolling()`, `loadPendingDevices()`, `confirmDevice()` (manual entry). Removed `SubTabsModule` import from the component.
+
+---
+
+## [Unreleased] (earlier)
+
+### Added
 - **Reports Dashboard** (`reports-dashboard`): New standalone component aggregated from the old analytics dashboard — KPI cards (meals served, active subscribers, absent, paused, anomalies), Today's Meal Utilization bars, Live Tap Activity table with client pagination, and Export Report modal.
 - **"View all" routing from dashboard entries-table**: Entries-table "View all" button now routes to `../reports` (Reports Dashboard) for full tap activity visibility.
 - **Changelog search (client-side)**: Backend `/changelog` endpoint does not support `roll_number` filter — switched to client-side filtering. Service fetches up to 500 entries, locally filters by roll number (case-insensitive partial match), action type, and date range. Table uses `[clientPagination]="true"`.

@@ -1,7 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
 import { ButtonComponent, EmptyStateComponent } from '@libs/shared-ui';
 import { DropdownLibModule } from '@libs/dropdown-lib';
 import { SharedToastService } from '@libs/shared-toast';
@@ -10,7 +9,7 @@ import { HardwareManagementService, HardwareDevice, HardwarePeripheral } from '.
 @Component({
   selector: 'app-hardware-settings-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, SubTabsModule, ButtonComponent, DropdownLibModule, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, DropdownLibModule, EmptyStateComponent],
   templateUrl: './hardware-settings-modal.component.html',
 })
 export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
@@ -28,24 +27,19 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
     private cdr: ChangeDetectorRef
   ) {}
 
-  subTabs: SubTabItem[] = [
-    { id: 'devices', label: 'Devices', count: 0 },
-    { id: 'pairing', label: 'Pairing' },
-  ];
-  activeTab = 'devices';
-
   devices: HardwareDevice[] = [];
   isLoading = false;
 
-  pairingActive = false;
-  pairingCountdown = 0;
-  pairingTimer: any;
-  pendingDevices: HardwareDevice[] = [];
-  pendingPollingTimer: any;
+  registerMac = '';
+  registerName = '';
+  registerType = 'esp32';
+  isRegistering = false;
 
-  confirmName = '';
-  confirmType = 'esp32';
-  confirmMac = '';
+  showHmacPopup = false;
+  hmacSecret = '';
+  hmacSecretHash = '';
+  hmacCopied = false;
+  hmacHashCopied = false;
 
   selectedDeviceType: any[] = [];
   testingPeripheralDeviceId = '';
@@ -58,6 +52,9 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
 
   showDeleteConfirmPopup = false;
   pendingDeleteDevice: HardwareDevice | null = null;
+
+  showRotateConfirmPopup = false;
+  pendingRotateDevice: HardwareDevice | null = null;
 
   readonly deviceTypes = [
     { id: 'esp32', title: 'ESP32 (LCD + Printer + Buzzer)' },
@@ -75,13 +72,11 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
       this.loadDevices();
     } else {
       this.unlockScroll();
-      this.stopPairing();
     }
   }
 
   ngOnDestroy(): void {
     this.unlockScroll();
-    this.stopPairing();
   }
 
   private unlockScroll(): void {
@@ -96,14 +91,8 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
 
   onClose(): void {
     this.unlockScroll();
+    this.resetRegisterForm();
     this.close.emit();
-  }
-
-  onTabChange(tabId: string): void {
-    this.activeTab = tabId;
-    if (tabId === 'devices') this.loadDevices();
-    if (tabId === 'pairing') this.startPendingPolling();
-    if (tabId !== 'pairing') this.stopPendingPolling();
   }
 
   loadDevices(): void {
@@ -111,7 +100,6 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
     this.hwMgmt.getDevices().subscribe({
       next: (devices) => {
         this.devices = devices;
-        this.subTabs = this.subTabs.map(t => t.id === 'devices' ? { ...t, count: devices.length } : t);
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -250,90 +238,66 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
   }
 
   onDeviceTypeChange(selected: any[]): void {
-    this.confirmType = selected[0]?.id || 'esp32';
+    this.registerType = selected[0]?.id || 'esp32';
   }
 
-  // ── Pairing ──
+  // ── Register Device ──
 
-  startPairing(): void {
-    this.pairingActive = true;
-    this.pairingCountdown = 120;
-    this.hwMgmt.startPairing().subscribe({
+  registerDevice(): void {
+    if (!this.registerName.trim()) {
+      this.toast.warning('Enter a device name');
+      return;
+    }
+    this.isRegistering = true;
+    const mac = this.registerMac.trim() || '00:00:00:00:00:00';
+    this.hwMgmt.connectDevice(mac, this.registerName.trim(), this.registerType).subscribe({
       next: (res) => {
-        this.toast.info('Pairing window opened for 2 minutes');
-        this.pairingTimer = setInterval(() => {
-          this.pairingCountdown--;
-          if (this.pairingCountdown <= 0) this.stopPairing();
-          this.cdr.detectChanges();
-        }, 1000);
+        this.isRegistering = false;
+        this.hmacSecret = res.hmacSecret;
+        this.hmacSecretHash = res.hmacSecretHash;
+        this.hmacCopied = false;
+        this.hmacHashCopied = false;
+        this.showHmacPopup = true;
+        this.resetRegisterForm();
+        this.cdr.detectChanges();
       },
-      error: () => {
-        this.toast.error('Failed to open pairing window');
-        this.pairingActive = false;
+      error: (err) => {
+        this.isRegistering = false;
+        this.toast.error(err.error?.message || 'Registration failed');
       }
     });
   }
 
-  stopPairing(): void {
-    this.pairingActive = false;
-    if (this.pairingTimer) {
-      clearInterval(this.pairingTimer);
-      this.pairingTimer = null;
-    }
-    this.hwMgmt.cancelPairing().subscribe({ error: () => {} });
+  private resetRegisterForm(): void {
+    this.registerMac = '';
+    this.registerName = '';
+    this.registerType = 'esp32';
+    this.selectedDeviceType = [];
   }
 
-  // ── Pending Devices Polling ──
+  // ── HMAC Popup ──
 
-  private startPendingPolling(): void {
-    this.loadPendingDevices();
-    this.pendingPollingTimer = setInterval(() => this.loadPendingDevices(), 3000);
-  }
-
-  private stopPendingPolling(): void {
-    if (this.pendingPollingTimer) {
-      clearInterval(this.pendingPollingTimer);
-      this.pendingPollingTimer = null;
-    }
-  }
-
-  private loadPendingDevices(): void {
-    this.hwMgmt.getDevices().subscribe({
-      next: (devices) => {
-        this.pendingDevices = devices
-          .filter(d => d.state === 'pending')
-          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        this.subTabs = this.subTabs.map(t =>
-          t.id === 'pairing'
-            ? { ...t, count: this.pendingDevices.length > 0 ? this.pendingDevices.length : undefined }
-            : t);
-        this.cdr.detectChanges();
-      },
-      error: () => { /* silent — polling retries */ }
+  copyHmacSecret(): void {
+    navigator.clipboard.writeText(this.hmacSecret).then(() => {
+      this.hmacCopied = true;
+      this.cdr.detectChanges();
     });
   }
 
-  confirmDevice(): void {
-    if (!this.confirmName) {
-      this.toast.warning('Enter a device name');
-      return;
-    }
-    this.hwMgmt.pairDevice(this.confirmMac || '00:00:00:00:00:00', this.confirmName).subscribe({
-      next: (device) => {
-        this.hwMgmt.confirmDevice(device._id).subscribe({
-          next: () => {
-            this.toast.success('Device paired successfully');
-            this.confirmMac = '';
-            this.confirmName = '';
-            this.confirmType = 'esp32';
-            this.stopPairing();
-            this.loadDevices();
-          },
-          error: () => this.toast.error('Confirmation failed')
-        });
-      },
-      error: (err) => this.toast.error(err.error?.message || 'Pairing failed')
+  copyHmacHash(): void {
+    navigator.clipboard.writeText(this.hmacSecretHash).then(() => {
+      this.hmacHashCopied = true;
+      this.cdr.detectChanges();
     });
+  }
+
+  closeHmacPopup(): void {
+    this.showHmacPopup = false;
+    this.hmacSecret = '';
+    this.hmacSecretHash = '';
+    this.hmacCopied = false;
+    this.hmacHashCopied = false;
+    this.loadDevices();
   }
 
   // ── Peripheral Tests ──
@@ -387,14 +351,31 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
 
   // ── Secret Rotation ──
 
-  rotateSecret(deviceId: string): void {
-    if (!confirm('Rotate HMAC secret for this device? All active connections will need to re-authenticate.')) return;
+  requestRotateSecret(device: HardwareDevice): void {
+    this.pendingRotateDevice = device;
+    this.showRotateConfirmPopup = true;
+  }
+
+  cancelRotateSecret(): void {
+    this.showRotateConfirmPopup = false;
+    this.pendingRotateDevice = null;
+  }
+
+  confirmRotateSecret(): void {
+    if (!this.pendingRotateDevice) return;
+    const deviceId = this.pendingRotateDevice._id;
+    this.showRotateConfirmPopup = false;
+    this.pendingRotateDevice = null;
     this.rotatingDeviceId = deviceId;
     this.hwMgmt.rotateSecret(deviceId).subscribe({
       next: (res) => {
-        this.toast.success('Secret rotated. Device will re-connect with new key.');
         this.rotatingDeviceId = '';
-        this.loadDevices();
+        this.hmacSecret = res.newSecret;
+        this.hmacSecretHash = res.newSecretHash;
+        this.hmacCopied = false;
+        this.hmacHashCopied = false;
+        this.showHmacPopup = true;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.toast.error('Failed to rotate secret');
