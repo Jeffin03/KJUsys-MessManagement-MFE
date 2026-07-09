@@ -280,14 +280,18 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
   copyHmacSecret(): void {
     navigator.clipboard.writeText(this.hmacSecret).then(() => {
       this.hmacCopied = true;
+      this.toast.success('HMAC Secret copied to clipboard');
       this.cdr.detectChanges();
+      setTimeout(() => { this.hmacCopied = false; this.cdr.detectChanges(); }, 2000);
     });
   }
 
   copyHmacHash(): void {
     navigator.clipboard.writeText(this.hmacSecretHash).then(() => {
       this.hmacHashCopied = true;
+      this.toast.success('Device Token copied to clipboard');
       this.cdr.detectChanges();
+      setTimeout(() => { this.hmacHashCopied = false; this.cdr.detectChanges(); }, 2000);
     });
   }
 
