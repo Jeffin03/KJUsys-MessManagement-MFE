@@ -185,7 +185,7 @@ export class SubscriberFormService {
       })
       .filter(Boolean);
 
-    form.mealSlot.dayPreference = (subscriber as any).dayPreference || 'all';
+    form.mealSlot.dayPreference = subscriber.dayPreference || 'all';
     form.mealSlot.status = subscriber.status || 'Active';
 
     if (subscriber.status === 'Paused') {
