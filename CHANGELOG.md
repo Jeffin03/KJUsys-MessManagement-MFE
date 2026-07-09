@@ -16,7 +16,8 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Export output preview**: Shows which sheets will be included based on toggle state.
 
 ### Changed
-- **Reports Dashboard component** (`reports-dashboard.component.ts`): Added `DatePickerModule` and `DropdownLibModule` imports. Rewrote export modal with enhanced filter state variables (`exportStartDate`, `exportEndDate`, `exportRollNumbersInput`, `selectedMealSlots`, `exportIncludeSummary`, `exportIncludeDetail`, `exportFormat`). Updated `onGenerateExport()` to build enhanced filter params with format selection. Added `closeExportModal()` with full state reset including format.
+- **Export button relocated to sub-tabs header**: Export button moved from the dashboard card to the sub-tabs header row in `reports.component.html` using `flex justify-between` layout. `reports.component.ts` uses `@ViewChild(ReportsDashboardComponent)` to call `openExportModal()`. `ButtonComponent` added to `reports.module.ts`.
+- **Reports Dashboard component** (`reports-dashboard.component.ts`): Added `DatePickerModule` and `DropdownLibModule` imports. Rewrote export modal with enhanced filter state variables (`exportStartDate`, `exportEndDate`, `exportRollNumbersInput`, `selectedMealSlots`, `exportIncludeSummary`, `exportIncludeDetail`, `exportFormat`). Updated `onGenerateExport()` to build enhanced filter params with format selection. Added `closeExportModal()` with full state reset including format. Added `openExportModal()` public method. Removed standalone export card from dashboard.
 - **`ReportsService.triggerFilteredExport()`**: Updated params interface to accept `mealSlots?: string[]`, `statuses?: string[]`, `rollNumbers?: string[]`, `includeSummary?: boolean`, `includeDetail?: boolean`.
 
 ### Removed
