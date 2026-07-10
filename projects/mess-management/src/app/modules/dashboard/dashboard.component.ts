@@ -37,7 +37,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private uptimeInterval: any;
   private hardwarePollingInterval: any;
   private roll_numberLookup = new Map<string, string>();
-  private activeByMealPlan: { [key: string]: number } = {};
+  private activeByMealPlan: { [key: string]: { all: number; weekday: number; weekend: number } } = {};
+  private activeByDayPreference = { all: 0, weekday: 0, weekend: 0 };
   private subscriptions = new Subscription();
   private wsInitialized = false;
 
@@ -234,7 +235,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private processSubscribers(subscribers: Subscriber[]): void {
     const total = subscribers.length;
     let active = 0;
-    const activeByMealPlan: { [key: string]: number } = {};
+    const activeByMealPlan: { [key: string]: { all: number; weekday: number; weekend: number } } = {};
+    const activeByDayPreference = { all: 0, weekday: 0, weekend: 0 };
 
     // Build roll number lookup map while counting active users and active by meal plan
     this.roll_numberLookup.clear();
@@ -242,11 +244,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.roll_numberLookup.set(s.name, s.roll_number);
       if (s.status === 'Active') {
         active++;
+        const pref = s.dayPreference || 'all';
+        if (pref === 'weekday') activeByDayPreference.weekday++;
+        else if (pref === 'weekend') activeByDayPreference.weekend++;
+        else activeByDayPreference.all++;
         // Count active subscribers for each meal plan character (skip 'None')
         if (s.mealPlan !== 'None') {
           const mealChars = s.mealPlan.split('+');
           for (const char of mealChars) {
-            activeByMealPlan[char] = (activeByMealPlan[char] || 0) + 1;
+            if (!activeByMealPlan[char]) activeByMealPlan[char] = { all: 0, weekday: 0, weekend: 0 };
+            if (pref === 'weekday') activeByMealPlan[char].weekday++;
+            else if (pref === 'weekend') activeByMealPlan[char].weekend++;
+            else activeByMealPlan[char].all++;
           }
         }
       }
@@ -255,12 +264,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.stats[0].value = total;
     this.stats[1].value = active;
     this.activeByMealPlan = activeByMealPlan;
+    this.activeByDayPreference = activeByDayPreference;
   }
 
   private processSchedules(schedules: MealSlot[]): void {
     if (schedules && schedules.length > 0) {
+      const day = new Date().getDay();
+      const isWeekend = day === 0 || day === 6;
       this.mealSlots = schedules.map((slot: MealSlot) => {
-        const eligibleSubs = this.activeByMealPlan?.[slot.code] || 0;
+        const counts = this.activeByMealPlan?.[slot.code];
+        const eligibleSubs = counts
+          ? (isWeekend ? counts.all + counts.weekend : counts.all + counts.weekday)
+          : 0;
 
         return {
           ...slot,
@@ -273,13 +288,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  private getExpectedActiveToday(): number {
+    const day = new Date().getDay();
+    const isWeekend = day === 0 || day === 6;
+    const prefs = this.activeByDayPreference;
+    return isWeekend ? prefs.all + prefs.weekend : prefs.all + prefs.weekday;
+  }
+
   private processTaps(taps: MealEntry[]): void {
     const allowedTaps = taps.filter((t: MealEntry) => t.status === 'Allowed');
     const mealsServed = allowedTaps.length;
-    const active = this.stats[1].value;
+    const expected = this.getExpectedActiveToday();
 
     this.stats[2].value = mealsServed;
-    this.stats[3].value = Math.max(0, active - mealsServed);
+    this.stats[3].value = Math.max(0, expected - mealsServed);
 
     // Enrich taps with roll number and set recent entries (service already returns newest first)
     if (taps.length > 0) {
@@ -380,7 +402,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // WebSocket tap.new is only broadcast on SUCCESS, so always increment stats
     const currentMealsServed = this.stats[2].value;
     this.stats[2].value = currentMealsServed + 1;
-    this.stats[3].value = Math.max(0, this.stats[1].value - this.stats[2].value);
+    this.stats[3].value = Math.max(0, this.getExpectedActiveToday() - this.stats[2].value);
 
     // Update meal slot stats if needed
     this.updateMealSlotStats(newTapData);

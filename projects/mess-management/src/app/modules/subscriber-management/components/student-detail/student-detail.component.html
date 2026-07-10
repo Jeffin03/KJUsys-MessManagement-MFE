@@ -20,11 +20,16 @@
 
     <div class="p-6">
 
+      <div *ngIf="studentNotFound" class="flex items-center justify-center py-16">
+        <lib-empty-state type="no-results" title="Student Not Found" subtext="No subscriber found with roll number &quot;{{ rollNumber }}&quot;"></lib-empty-state>
+      </div>
+
+      <ng-container *ngIf="!studentNotFound">
+
       <!-- ══════════════════════════════════════════════════════════════════════
            TAB 1: OVERVIEW
            ══════════════════════════════════════════════════════════════════════ -->
       <div *ngIf="activeTab === 'overview'" class="flex flex-col gap-8">
-
         <!-- Section 1: Student Profile -->
         <div>
           <div class="flex items-center gap-2 mb-4">
@@ -94,12 +99,18 @@
               [style.box-shadow]="selectedDayTap?.date === card.dateStr ? '0 0 0 1.5px #155DFC' : undefined"
               (click)="onCellClick(card)">
               <div class="h-1.5" [style.background]="getHeatmapColor(card.overall)"></div>
-              <div class="px-2 pt-1.5 pb-2 flex">
+              <div class="px-2 pt-1.5 pb-2 flex flex-col min-h-[calc(130px-6px)]">
                 <div class="flex flex-col flex-shrink-0">
                   <span class="text-base font-bold text-[#111827]">{{ card.day }}</span>
                   <span class="text-xs text-[#6B7280] -mt-0.5">{{ monthLabels[card.month] }}</span>
                 </div>
-                <div class="flex-1 flex flex-col justify-center items-end gap-1 ml-2">
+                <div class="flex-1 flex flex-col justify-end items-end gap-1">
+                  <ng-container *ngIf="card.overall === 'not_applicable'; else naContainer">
+                    <div class="flex items-center leading-tight">
+                      <span class="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-gray-200 text-gray-400">N/A</span>
+                    </div>
+                  </ng-container>
+                  <ng-template #naContainer>
                   <ng-container *ngIf="card.overall === 'holiday' || card.overall === 'paused'; else mealsBlock">
                     <div class="flex items-center leading-tight">
                       <span class="px-1.5 py-0.5 rounded text-[11px] font-semibold"
@@ -120,6 +131,7 @@
                         [style.background]="meal.tapped ? '#DCFCE7' : '#FFF1F2'"
                         [style.color]="meal.tapped ? '#007A55' : '#C70036'">{{ meal.slotName }}</span>
                     </div>
+                  </ng-template>
                   </ng-template>
                 </div>
               </div>
@@ -288,20 +300,27 @@
                 <ng-container *ngIf="day; else emptyCell">
                   <ng-container *ngIf="!day.isFuture; else futureBlock">
                     <div class="text-lg font-bold text-[#111827] leading-tight">{{ day.day }}</div>
-                    <div class="flex-1 flex flex-col justify-center items-end gap-1.5">
-                      <ng-container *ngIf="day.overall === 'holiday' || day.overall === 'paused'; else mealsBlock">
+                    <div class="flex-1 flex flex-col justify-end items-end gap-1.5">
+                      <ng-container *ngIf="day.overall === 'not_applicable'; else naContainer2">
+                        <div class="flex items-center gap-1">
+                          <span class="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-gray-200 text-gray-400">N/A</span>
+                        </div>
+                      </ng-container>
+                      <ng-template #naContainer2>
+                      <ng-container *ngIf="day.overall === 'holiday' || day.overall === 'paused'; else mealsBlock2">
                         <div class="flex items-center gap-1">
                           <span class="px-1.5 py-0.5 rounded text-[11px] font-semibold"
                             [style.background]="day.overall === 'holiday' ? '#FEE2E2' : '#FEF3C7'"
                             [style.color]="day.overall === 'holiday' ? '#991B1B' : '#92400E'">{{ day.overall === 'holiday' ? 'Holiday' : 'Paused' }}</span>
                         </div>
                       </ng-container>
-                      <ng-template #mealsBlock>
+                      <ng-template #mealsBlock2>
                         <div *ngFor="let meal of day.meals" class="flex items-center gap-1">
                           <span class="px-1.5 py-0.5 rounded text-[11px] font-semibold truncate max-w-[80px]"
                             [style.background]="meal.tapped ? '#DCFCE7' : '#FFF1F2'"
                             [style.color]="meal.tapped ? '#007A55' : '#C70036'">{{ meal.slotName }}</span>
                         </div>
+                      </ng-template>
                       </ng-template>
                     </div>
                   </ng-container>
@@ -553,6 +572,7 @@
         <div class="h-20"></div>
       </div>
 
+    </ng-container>
     </div>
   </div>
 </div>

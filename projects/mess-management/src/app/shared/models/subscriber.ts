@@ -14,6 +14,5 @@ export interface Subscriber {
   pauseReason?: string;
   mealNames?: string[]; // Original meal names from backend
   expiryWarning?: string;
-  card_blocked?: boolean;
   dayPreference?: string;
 }

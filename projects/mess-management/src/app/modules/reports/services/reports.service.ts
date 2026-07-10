@@ -230,7 +230,8 @@ export class ReportsService {
           rollNumber: student.roll_number || '',
           name: student.name || '',
           email: student.email || '',
-          cardStatus: student.card_blocked ? 'Blocked' : 'Active',
+          cardStatus: 'Active',
+          dayPreference: student.dayPreference || 'all',
           subscription: {
             currentPlan: mealSlots.join(' + ') || 'None',
             startDate: sub.start_Date || 0,
@@ -365,6 +366,7 @@ export class ReportsService {
         return {
           totalTaps: raw?.totalTaps || 0,
           totalActiveSubscribers: raw?.totalActiveSubscribers || 0,
+          expectedActiveToday: raw?.expectedActiveToday ?? (raw?.totalActiveSubscribers || 0),
           pausedCount: raw?.pausedCount || 0,
           expiredCount: raw?.expiredCount || 0,
           mealDistribution: dist.map((m: any) => ({

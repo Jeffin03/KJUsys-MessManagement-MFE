@@ -5,7 +5,31 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ## [Unreleased]
 
 ### Added
-- **CSV export format option**: Export modal now includes Excel/CSV toggle buttons. Selecting CSV generates a single `.csv` file instead of multi-sheet Excel. Output preview updates to show "Single CSV file" when CSV selected.
+- **dayPreference-aware dashboard stats**: `DashboardComponent` now splits active subscriber counts by `dayPreference` (all/weekday/weekend). `getExpectedActiveToday()` filters by current day type — absent count uses day-appropriate total instead of all active subscribers. Meal slot eligible counts respect day type (e.g. weekend-only subscribers count only on weekends).
+- **`expectedActiveToday` to Reports Dashboard KPI**: New KPI card replaces redundant "Absent Today" with "Expected Subscribers Today" — reflects dayPreference-filtered expected count. Anomaly KPI card and its data loading removed.
+- **`expectedActiveToday` field** to `DailyAnalytics` model with backend fallback.
+- **`dayPreference` field** to `StudentOverview` model and `ReportsService` mapping.
+- **Student Detail `not_applicable` status**: Overview cards, Attendance calendar, and subscription heatmap show muted "N/A" pills/gray backgrounds for dates outside the student's `dayPreference` (e.g. weekends for weekday-only subscribers). `isApplicable()` method filters attendance/meal summary computations.
+- **Student Detail `studentNotFound` empty state**: When API returns no data or errors, shows `<lib-empty-state>` with "Student Not Found" instead of a blank page.
+- **`parseBackendDate()` helper** in `DashboardService` — converts `dd-MM-yyyy` string (from backend `processResponseDocument`) to epoch millis for holiday calendar date-key mapping.
+
+### Changed
+- **Audit Tools subtabs**: Removed "Anomaly Detector" and "Subscription Audit" subtabs. Reordered to "Change Log" then "Pause Audit". Default tab is now Change Log. Removed `PillTabsModule`, `DashboardService`, `SubscriberService` imports/providers. Removed `SubscriptionIssue` interface, `PillTabItem`, anomaly/sub-audit columns, data, loading states, and all handler methods (`loadAnomalies()`, `onSeverityTabChange()`, `runSubscriptionAudit()`, `computeSubscriptionIssues()`).
+- **Changelog table default rows**: Reduced from 30 to 10 per page.
+- **Changelog filter options**: Removed `CARD_BLOCKED` and `CARD_UNBLOCKED` action types from dropdown and badge color map.
+- **Student Detail `ACTION_COLORS`/`ACTIVITY_COLORS`**: Removed `CARD_BLOCKED`/`CARD_UNBLOCKED` entries.
+- **`subscriber-management.component.ts`**: Query param `student` is no longer cleared on component init — navigation to `backFromStudentDetail()` handles it on explicit back navigation.
+- **Hardware settings modal**: Removed fixed footer (Close button) from bottom.
+
+### Fixed
+- **Holiday calendar not rendering seeded holidays**: `getHolidays()` now maps backend fields (`_id` → `id`, `date_Date` → `date`) with proper `dd-MM-yyyy` → millis parsing via `parseBackendDate()`. Previously `h.date` was `undefined` because the API returned `date_Date` as the key, causing `buildHolidayMap()` to skip all holidays.
+
+### Removed
+- **`card_blocked` from entire frontend**: Removed from `Subscriber`, `BackendStudent` interfaces, `subscriber.service.ts` mapping, `quick-modal.component.ts` cardStatus display, `reports.service.ts` overview mapping (always `'Active'`).
+- **Anomaly Detector subtab**: Entire anomaly detection UI, data models, severity pill filters, anomaly table columns, and API loading logic removed from Audit Tools.
+- **Subscription Audit subtab**: Entire subscription audit UI, data models, `SubscriptionIssue` interface, and audit computation logic removed from Audit Tools.
+- **Anomaly KPI card**: Removed from Reports Dashboard — including anomaly count fetch and KPI card display.
+- **`PillTabsModule` import**: No longer needed after anomaly subtab removal.
 - **Case-insensitive roll number input**: Student roll number field in export modal auto-uppercases typed text for better UX. Backend matches roll numbers case-insensitively.
 - **Copy-to-clipboard toasts in HMAC popup**: Copying HMAC Secret or Device Token now shows a toast notification confirming the copy. Icons revert after 2s to allow repeated copies.
 - **3am-pivot meal slot sorting utility** (`shared/constants/meal-sort.ts`): `compareMealStartTimes()`, `mealNameToMinutes()`, `timeToMinutes()`, `sortByMealTime()`. Meals before 3am (Midnight Snack, Late Night) sort after all others across the entire application.
@@ -33,15 +57,13 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Native date inputs in export modal**: Replaced `<input type="date">` with `<lib-date-picker>` for consistent UX.
 - **HMAC secret popup with dual credentials**: After registering or rotating a secret, the popup now shows two values: **HMAC Secret** (for signing requests) and **Device Token** (SHA-256 hash, for device identification). Each has its own copy button.
 - **Rotate secret confirmation modal**: Clicking "Rotate Key" now opens an inline confirmation popup (matching the delete confirmation pattern) instead of a browser `confirm()` dialog.
+- **Pairing flow**: Removed all pairing-related logic from the hardware settings modal — `subTabs`, `activeTab`, `pairingActive`, `pairingCountdown`, `pairingTimer`, `pendingDevices`, `pendingPollingTimer`, `startPairing()`, `stopPairing()`, `startPendingPolling()`, `stopPendingPolling()`, `loadPendingDevices()`, `confirmDevice()` (manual entry). Removed `SubTabsModule` import from the component.
 
 ### Changed
 - **Hardware settings modal flat layout**: Removed sub-tabs (Devices / Pairing). New layout: "Register New Device" form at top, "Registered Devices" list below. No more pairing window, countdown timer, or pending device polling.
 - **`HARDWARE_CONNECT` endpoint added** to `api-endpoints.ts`. `HARDWARE_HEARTBEAT` updated to `/hardware/heartbeat` (no longer takes `id` param).
 - **`HardwareManagementService.connectDevice()`** returns `{ device, hmacSecret, hmacSecretHash }`.
 - **`HardwareManagementService.rotateSecret()`** returns `{ newSecret, newSecretHash }`.
-
-### Removed
-- **Pairing flow**: Removed all pairing-related logic from the hardware settings modal — `subTabs`, `activeTab`, `pairingActive`, `pairingCountdown`, `pairingTimer`, `pendingDevices`, `pendingPollingTimer`, `startPairing()`, `stopPairing()`, `startPendingPolling()`, `stopPendingPolling()`, `loadPendingDevices()`, `confirmDevice()` (manual entry). Removed `SubTabsModule` import from the component.
 
 ---
 

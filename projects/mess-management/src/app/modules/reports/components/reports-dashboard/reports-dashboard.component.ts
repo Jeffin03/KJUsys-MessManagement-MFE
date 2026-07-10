@@ -221,9 +221,9 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   kpiCards: KpiCard[] = [
     { label: 'Meals Served Today', value: 0, icon: '', color: '', accent: 'blue' },
     { label: 'Active Subscribers', value: 0, icon: '', color: '', accent: 'green' },
-    { label: 'Absent Today', value: 0, icon: '', color: '', accent: 'orange' },
-    { label: 'Paused', value: 0, icon: '', color: '', accent: 'purple' },
-    { label: 'Anomalies', value: 0, icon: '', color: '', accent: 'red' },
+    { label: 'Expected Subscribers Today', value: 0, icon: '', color: '', accent: 'blue' },
+    { label: 'Absent Today', value: 0, icon: '', color: '', accent: 'red' },
+    { label: 'Paused', value: 0, icon: '', color: '', accent: 'orange' },
   ];
 
   // Taps table
@@ -300,18 +300,10 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
       next: (analytics) => {
         this.kpiCards[0].value = analytics.totalTaps;
         this.kpiCards[1].value = analytics.totalActiveSubscribers;
-        this.kpiCards[2].value = Math.max(0, analytics.totalActiveSubscribers - analytics.totalTaps);
-        this.kpiCards[3].value = analytics.pausedCount;
-        this.kpiCards[4].value = 0;
+        this.kpiCards[2].value = analytics.expectedActiveToday;
+        this.kpiCards[3].value = Math.max(0, analytics.expectedActiveToday - analytics.totalTaps);
+        this.kpiCards[4].value = analytics.pausedCount;
 
-        this.cdr.detectChanges();
-      },
-      error: () => this.cdr.detectChanges()
-    });
-
-    this.reportsService.getAnomalies(48).subscribe({
-      next: (anomalies) => {
-        this.kpiCards[4].value = anomalies.length;
         this.cdr.detectChanges();
       },
       error: () => this.cdr.detectChanges()

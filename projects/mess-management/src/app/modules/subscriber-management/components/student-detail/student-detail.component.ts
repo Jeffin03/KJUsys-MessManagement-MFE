@@ -102,6 +102,7 @@ const HEATMAP_COLORS: Record<string, string> = {
   'absent': '#EBEDF0',
   'holiday': '#EF4444',
   'paused': '#D97706',
+  'not_applicable': '#F3F4F6',
 };
 
 const MEAL_SLOT_COLORS: Record<string, string> = {
@@ -120,8 +121,6 @@ const ACTION_COLORS: Record<string, { bg: string; text: string; icon: string }> 
   PAUSE_STARTED:          { bg: '#FEF3C7', text: '#FE9A00', icon: 'pause' },
   PAUSE_ENDED:          { bg: '#DCFCE7', text: '#1D9F00', icon: 'play' },
   PAUSE_EXTENDED:         { bg: '#FEF3C7', text: '#FE9A00', icon: 'clock' },
-  CARD_BLOCKED:           { bg: '#FFF1F2', text: '#C70036', icon: 'lock' },
-  CARD_UNBLOCKED:         { bg: '#DCFCE7', text: '#1D9F00', icon: 'unlock' },
 };
 
 const ACTIVITY_COLORS: Record<string, { bg: string; text: string }> = {
@@ -132,8 +131,6 @@ const ACTIVITY_COLORS: Record<string, { bg: string; text: string }> = {
   PAUSE_STARTED:          { bg: '#FEF3C7', text: '#FE9A00' },
   PAUSE_ENDED:          { bg: '#DCFCE7', text: '#1D9F00' },
   PAUSE_EXTENDED:         { bg: '#FEF3C7', text: '#FE9A00' },
-  CARD_BLOCKED:           { bg: '#FFF1F2', text: '#C70036' },
-  CARD_UNBLOCKED:         { bg: '#DCFCE7', text: '#1D9F00' },
 };
 
 // ── Component ───────────────────────────────────────────────────────────────────
@@ -161,6 +158,7 @@ export class StudentDetailComponent implements OnChanges {
 
   // ── API data ────────────────────────────────────────────────────────────────
   overview: StudentOverview | null = null;
+  dayPreference: string = 'all';
   attendanceData: AttendanceDay[] = [];
   changelogData: ChangelogEntry[] = [];
   subscriptionHistory: any[] = [];
@@ -168,6 +166,7 @@ export class StudentDetailComponent implements OnChanges {
 
   // ── Loading states ──────────────────────────────────────────────────────────
   overviewLoading = false;
+  studentNotFound = false;
   attendanceLoading = false;
   changelogLoading = false;
   historyLoading = false;
@@ -212,6 +211,7 @@ export class StudentDetailComponent implements OnChanges {
 
     for (const day of this.attendanceData) {
       if (new Date(day.date).getFullYear() !== now.getFullYear()) continue;
+      if (!this.isApplicable(day.date)) continue;
       for (const meal of day.mealSlots) {
         if (meal.slotName !== slotName) continue;
 
@@ -301,6 +301,7 @@ export class StudentDetailComponent implements OnChanges {
     this.browsingDay = null;
     this.activityFilter = null;
     this.mealSummaryCards = [];
+    this.studentNotFound = false;
   }
 
   private loadAllData() {
@@ -321,13 +322,22 @@ export class StudentDetailComponent implements OnChanges {
 
   private loadOverview() {
     this.overviewLoading = true;
+    this.studentNotFound = false;
     this.reportsService.getStudentOverview(this.rollNumber).subscribe({
       next: data => {
         this.overview = data;
+        this.dayPreference = data?.dayPreference || 'all';
         this.overviewLoading = false;
+        if (!data || !data.name) {
+          this.studentNotFound = true;
+        }
         this.cdr.detectChanges();
       },
-      error: () => { this.overviewLoading = false; this.cdr.detectChanges(); }
+      error: () => {
+        this.overviewLoading = false;
+        this.studentNotFound = true;
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -361,6 +371,7 @@ export class StudentDetailComponent implements OnChanges {
     let totalTaps = 0;
     let totalExpected = 0;
     for (const day of this.attendanceData) {
+      if (!this.isApplicable(day.date)) continue;
       for (const meal of day.mealSlots) {
         if (meal.isHoliday || meal.isPaused) continue;
         totalExpected++;
@@ -369,6 +380,16 @@ export class StudentDetailComponent implements OnChanges {
     }
     this.overview.attendanceRate = totalExpected > 0 ? Math.round(totalTaps / totalExpected * 100) : 0;
     this.overview.totalTaps = totalTaps;
+  }
+
+  private isApplicable(dateStr: string): boolean {
+    const pref = this.dayPreference;
+    if (!pref || pref === 'all') return true;
+    const d = new Date(dateStr);
+    const day = d.getDay();
+    if (pref === 'weekday') return day >= 1 && day <= 5;
+    if (pref === 'weekend') return day === 0 || day === 6;
+    return true;
   }
 
   private loadChangelog() {
@@ -434,6 +455,7 @@ export class StudentDetailComponent implements OnChanges {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const ds = this.toDateStr(d);
+      const applicable = this.isApplicable(ds);
       const match = this.attendanceData.find(a => a.date === ds);
       const meals = match ? match.mealSlots.map(m => ({
         slotName: m.slotName,
@@ -449,7 +471,7 @@ export class StudentDetailComponent implements OnChanges {
         day: d.getDate(),
         month: d.getMonth(),
         year: d.getFullYear(),
-        overall: match?.overall,
+        overall: applicable ? match?.overall : 'not_applicable',
         name: dayNames[d.getDay()],
         meals,
         tappedCount,
@@ -482,6 +504,7 @@ export class StudentDetailComponent implements OnChanges {
       if (i >= startPad && i < startPad + totalDays) {
         const ds = this.toDateStr(cellDate);
         const isFuture = ds > todayStr;
+        const applicable = this.isApplicable(ds);
         const match = this.attendanceData.find(a => a.date === ds);
         const meals = match ? match.mealSlots.map(m => ({
           slotName: m.slotName,
@@ -495,7 +518,7 @@ export class StudentDetailComponent implements OnChanges {
           day: cellDate.getDate(),
           month: cellDate.getMonth(),
           year: cellDate.getFullYear(),
-          overall: match?.overall,
+          overall: applicable ? match?.overall : 'not_applicable',
           meals,
           tappedCount: meals.filter(m => m.tapped).length,
           totalMeals: meals.filter(m => !m.isHoliday).length,
@@ -517,6 +540,7 @@ export class StudentDetailComponent implements OnChanges {
   private computeAttendanceSummary() {
     let present = 0, partial = 0, absent = 0, holiday = 0, paused = 0;
     for (const day of this.attendanceData) {
+      if (!this.isApplicable(day.date)) continue;
       switch (day.overall) {
         case 'present': present++; break;
         case 'partial': partial++; break;
@@ -557,7 +581,7 @@ export class StudentDetailComponent implements OnChanges {
       return date.getFullYear() === now.getFullYear();
     };
 
-    const filtered = this.attendanceData.filter(filterDay);
+    const filtered = this.attendanceData.filter(d => filterDay(d) && this.isApplicable(d.date));
     const slotTotals = new Map<string, number>();
     const statusCounts = new Map<string, Map<string, number>>();
 
@@ -957,6 +981,7 @@ export class StudentDetailComponent implements OnChanges {
       case 'absent': return 'bg-[#EBEDF0]';
       case 'holiday': return 'bg-[#BBDEFB]';
       case 'paused': return 'bg-[#FEF3C7]';
+      case 'not_applicable': return 'bg-[#F3F4F6]';
       default: return 'bg-[#EBEDF0]';
     }
   }

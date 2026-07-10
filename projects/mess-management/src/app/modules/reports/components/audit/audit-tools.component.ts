@@ -6,33 +6,21 @@ import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs'
 import { SubTabsModule } from '@libs/sub-tabs';
 import { TableModule, TableColumn } from '@libs/table';
 import { ButtonComponent } from '@libs/shared-ui';
-import { PillTabsModule, PillTabItem } from '@libs/pill-tabs';
 import { DatePickerModule } from '@libs/date-picker';
 import { ReportsService } from '../../services/reports.service';
-import { DashboardService } from '../../../dashboard/services/dashboard.service';
-import { SubscriberService } from '../../../subscriber-management/services/subscriber.service';
-import { MealEntry } from '../../../../shared/models/dashboard.models';
 
 interface SubTabItem { id: string; label: string; count?: number; }
-
-interface SubscriptionIssue {
-  rollNumber: string;
-  name: string;
-  issue: string;
-  severity: 'high' | 'medium' | 'low';
-  detail: string;
-}
 
 @Component({
   selector: 'app-audit-tools',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, SubTabsModule, TableModule, ButtonComponent, PillTabsModule, DatePickerModule],
-  providers: [ReportsService, DashboardService, SubscriberService],
+  imports: [CommonModule, RouterModule, FormsModule, SubTabsModule, TableModule, ButtonComponent, DatePickerModule],
+  providers: [ReportsService],
   template: `
     <div class="flex flex-col gap-5">
       <div class="flex items-center gap-3">
         <span class="text-sm font-semibold text-[#111827]">Audit Tools</span>
-        <span class="text-[10px] text-[#6B7280]">Pause audits, anomaly detection, and change logs</span>
+        <span class="text-[10px] text-[#6B7280]">Pause audits and change logs</span>
       </div>
 
       <div class="flex flex-col bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden">
@@ -67,37 +55,6 @@ interface SubscriptionIssue {
             </div>
           </div>
 
-          <!-- ══════ Anomaly Detector ══════ -->
-          <div *ngIf="activeTab === 'anomalies'">
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-xs font-semibold text-[#111827]">Anomaly Detection</span>
-              <div class="flex items-center gap-3">
-                <span class="text-[10px] text-[#6B7280]">Lookback</span>
-                <select [(ngModel)]="anomalyHours" (change)="loadAnomalies()"
-                  class="h-[32px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
-                  <option [value]="24">24 hours</option>
-                  <option [value]="48">48 hours</option>
-                  <option [value]="72">7 days</option>
-                </select>
-              </div>
-            </div>
-            <div class="mb-4">
-              <lib-pill-tabs [tabs]="severityTabs" [activeTabId]="activeSeverityTab" (tabChange)="onSeverityTabChange($event)"></lib-pill-tabs>
-            </div>
-            <lib-table
-              [columns]="anomalyColumns"
-              [data]="filteredAnomalyData"
-              [loading]="anomalyLoading"
-              [showToolbar]="false"
-              [stickyActions]="false"
-              [clientPagination]="true"
-              [pagination]="{ currentPage: 1, itemsPerPage: 20, totalItems: filteredAnomalyData.length, totalPages: Math.ceil(filteredAnomalyData.length / 20) }"
-            ></lib-table>
-            <div *ngIf="!anomalyLoading && anomalyData.length === 0" class="text-xs text-[#6B7280] text-center py-6">
-              No anomalies detected in the selected period.
-            </div>
-          </div>
-
           <!-- ══════ Change Log ══════ -->
           <div *ngIf="activeTab === 'changelog'">
             <div class="flex items-center justify-between mb-4">
@@ -117,8 +74,6 @@ interface SubscriptionIssue {
                 <option value="PAUSE_EXTENDED">Pause Extended</option>
                 <option value="PAUSE_ENDED">Pause Ended</option>
                 <option value="PAUSE_AUTO_STARTED">Pause Auto-Started</option>
-                <option value="CARD_BLOCKED">Card Blocked</option>
-                <option value="CARD_UNBLOCKED">Card Unblocked</option>
                 <option value="HOLIDAY_MARKED">Holiday Marked</option>
               </select>
               <div class="relative flex-1 max-w-xs">
@@ -143,38 +98,10 @@ interface SubscriptionIssue {
               [showToolbar]="false"
               [stickyActions]="false"
               [clientPagination]="true"
-              [pagination]="{ currentPage: 1, itemsPerPage: 30, totalItems: changelogData.length, totalPages: Math.ceil(changelogData.length / 30) || 1 }"
+              [pagination]="{ currentPage: 1, itemsPerPage: 10, totalItems: changelogData.length, totalPages: Math.ceil(changelogData.length / 10) || 1 }"
             ></lib-table>
             <div *ngIf="!changelogLoading && changelogData.length === 0" class="text-xs text-[#6B7280] text-center py-6">
               No change log entries found.
-            </div>
-          </div>
-
-          <!-- ══════ Subscription Audit ══════ -->
-          <div *ngIf="activeTab === 'subscription-audit'">
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-xs font-semibold text-[#111827]">Subscription Audit</span>
-              <lib-button type="primary" label="Run Audit" (onClick)="runSubscriptionAudit()" [loading]="subAuditLoading"></lib-button>
-            </div>
-            <div *ngIf="!subAuditLoading && subAuditData.length > 0"
-              class="flex items-center gap-2 mb-4 px-4 py-3 bg-[#FEF2F2] border border-[#FECACA] rounded-xl">
-              <span class="text-xs font-semibold text-[#C70036]">{{ subAuditData.length }} issue{{ subAuditData.length > 1 ? 's' : '' }} detected</span>
-              <span class="text-[10px] text-[#991B1B]">
-                <ng-container *ngIf="subAuditSeverityCounts.high > 0">{{ subAuditSeverityCounts.high }} high &middot; </ng-container>
-                {{ subAuditSeverityCounts.medium }} medium &middot; {{ subAuditSeverityCounts.low }} low
-              </span>
-            </div>
-            <lib-table
-              [columns]="subAuditColumns"
-              [data]="subAuditData"
-              [loading]="subAuditLoading"
-              [showToolbar]="false"
-              [stickyActions]="false"
-              [clientPagination]="true"
-              [pagination]="{ currentPage: 1, itemsPerPage: 20, totalItems: subAuditData.length, totalPages: Math.ceil(subAuditData.length / 20) }"
-            ></lib-table>
-            <div *ngIf="!subAuditLoading && subAuditData.length === 0" class="text-xs text-[#6B7280] text-center py-6">
-              No subscription issues found. Click "Run Audit" to check.
             </div>
           </div>
 
@@ -187,12 +114,10 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
   Math = Math;
 
   subTabs: SubTabItem[] = [
-    { id: 'pause-audit', label: 'Pause Audit' },
-    { id: 'anomalies', label: 'Anomaly Detector' },
     { id: 'changelog', label: 'Change Log' },
-    { id: 'subscription-audit', label: 'Subscription Audit' },
+    { id: 'pause-audit', label: 'Pause Audit' },
   ];
-  activeTab = 'pause-audit';
+  activeTab = 'changelog';
 
   // ── Pause Audit ──────────────────────────────────────────────────
   pauseAuditColumns: TableColumn[] = [
@@ -207,36 +132,6 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
   pauseAuditLoading = false;
   get uniquePauseViolators(): number {
     return new Set(this.pauseAuditData.map((d: any) => d.rollNumber)).size;
-  }
-
-  // ── Anomaly Detector ──────────────────────────────────────────────
-  severityTabs: PillTabItem[] = [
-    { id: 'all', label: 'All' },
-    { id: 'high', label: 'High' },
-    { id: 'medium', label: 'Medium' },
-    { id: 'low', label: 'Low' },
-  ];
-  activeSeverityTab = 'all';
-  anomalyHours = 48;
-  anomalyColumns: TableColumn[] = [
-    { key: 'rollNumber', label: 'ROLL NUMBER', sortable: true, minWidth: '130px' },
-    { key: 'studentName', label: 'NAME', minWidth: '160px' },
-    { key: 'mealSlot', label: 'MEAL SLOT', minWidth: '110px' },
-    { key: 'tapTimestamp', label: 'TIME', minWidth: '140px' },
-    { key: 'reason', label: 'REASON', minWidth: '160px' },
-    { key: 'severity', label: 'SEVERITY', type: 'badge', minWidth: '100px',
-      colorMap: {
-        'high': { bg: '#FEF2F2', text: '#C70036' },
-        'medium': { bg: '#FFF7ED', text: '#BB4D00' },
-        'low': { bg: '#EFF6FF', text: '#155DFC' },
-      }
-    },
-  ];
-  anomalyData: any[] = [];
-  anomalyLoading = false;
-  get filteredAnomalyData(): any[] {
-    if (this.activeSeverityTab === 'all') return this.anomalyData;
-    return this.anomalyData.filter((d: any) => d.severity === this.activeSeverityTab);
   }
 
   // ── Change Log ────────────────────────────────────────────────────
@@ -255,8 +150,6 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
         'PAUSE_EXTENDED': { bg: '#FFF7ED', text: '#BB4D00' },
         'PAUSE_ENDED': { bg: '#F0FDF4', text: '#007A55' },
         'PAUSE_AUTO_STARTED': { bg: '#EFF6FF', text: '#155DFC' },
-        'CARD_BLOCKED': { bg: '#FEF2F2', text: '#C70036' },
-        'CARD_UNBLOCKED': { bg: '#F0FDF4', text: '#007A55' },
         'HOLIDAY_MARKED': { bg: '#F3E8FF', text: '#7C3AED' },
       }
     },
@@ -271,7 +164,7 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
   changelogFrom = '';
   changelogTo = '';
   changelogPage = 1;
-  changelogSize = 30;
+  changelogSize = 10;
   changelogTotal = 0;
   private changelogRawData: any[] = [];
   get changelogPagination() {
@@ -283,31 +176,6 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
     };
   }
 
-  // ── Subscription Audit ────────────────────────────────────────────
-  subAuditColumns: TableColumn[] = [
-    { key: 'rollNumber', label: 'ROLL NUMBER', sortable: true, minWidth: '130px' },
-    { key: 'name', label: 'NAME', minWidth: '160px' },
-    { key: 'issue', label: 'ISSUE', minWidth: '180px' },
-    {
-      key: 'severity', label: 'SEVERITY', type: 'badge', minWidth: '100px',
-      colorMap: {
-        'high': { bg: '#FEF2F2', text: '#C70036' },
-        'medium': { bg: '#FFF7ED', text: '#BB4D00' },
-        'low': { bg: '#EFF6FF', text: '#155DFC' },
-      }
-    },
-    { key: 'detail', label: 'DETAIL', minWidth: '280px' },
-  ];
-  subAuditData: SubscriptionIssue[] = [];
-  subAuditLoading = false;
-  get subAuditSeverityCounts() {
-    return {
-      high: this.subAuditData.filter(d => d.severity === 'high').length,
-      medium: this.subAuditData.filter(d => d.severity === 'medium').length,
-      low: this.subAuditData.filter(d => d.severity === 'low').length,
-    };
-  }
-
   private changelogRollSubject = new Subject<string>();
   private changelogRollSub: Subscription | null = null;
 
@@ -316,9 +184,8 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
       debounceTime(400),
       distinctUntilChanged()
     ).subscribe(() => this.loadChangelog());
-    this.runAudit();
-    this.loadAnomalies();
     this.loadChangelog();
+    this.runAudit();
   }
 
   ngOnDestroy() {
@@ -331,8 +198,6 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
 
   constructor(
     private reportsService: ReportsService,
-    private dashboardService: DashboardService,
-    private subscriberService: SubscriberService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -348,27 +213,6 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.pauseAuditLoading = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  // ── Anomaly Detector ─────────────────────────────────────────────
-
-  onSeverityTabChange(tabId: string) {
-    this.activeSeverityTab = tabId;
-  }
-
-  loadAnomalies() {
-    this.anomalyLoading = true;
-    this.reportsService.getAnomalies(this.anomalyHours).subscribe({
-      next: data => {
-        this.anomalyData = data;
-        this.anomalyLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.anomalyLoading = false;
         this.cdr.detectChanges();
       }
     });
@@ -477,128 +321,4 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  // ── Subscription Audit ───────────────────────────────────────────
-
-  runSubscriptionAudit() {
-    this.subAuditLoading = true;
-    this.subAuditData = [];
-
-    this.subscriberService.getSubscribers('', 0, 10000).subscribe({
-      next: ({ subscribers }) => {
-        this.dashboardService.getSchedules().subscribe({
-          next: (mealSlots) => {
-            this.dashboardService.getTaps().subscribe({
-              next: (taps) => {
-                this.subAuditData = this.computeSubscriptionIssues(subscribers, mealSlots, taps);
-                this.subAuditLoading = false;
-                this.cdr.detectChanges();
-              },
-              error: () => {
-                this.subAuditLoading = false;
-                this.cdr.detectChanges();
-              }
-            });
-          },
-          error: () => {
-            this.subAuditLoading = false;
-            this.cdr.detectChanges();
-          }
-        });
-      },
-      error: () => {
-        this.subAuditLoading = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  private computeSubscriptionIssues(subscribers: any[], mealSlots: any[], taps: MealEntry[]): SubscriptionIssue[] {
-    const issues: SubscriptionIssue[] = [];
-    const activeSlotCodes = new Set(mealSlots.map((s: any) => s.code));
-    const activeSlotNames = new Set(mealSlots.map((s: any) => s.name.toUpperCase()));
-    const tapRollNumbers = new Set(taps.map(t => t.roll_number));
-
-    for (const sub of subscribers) {
-      const status = sub.status || '';
-      const cardStatus = sub.card_blocked ? 'blocked' : 'active';
-      const mealPlan = sub.mealPlan || sub.meal_plan || '';
-      const name = sub.name || '';
-      const rollNumber = sub.roll_number || '';
-
-      // 1. Expired subscriber with recent taps
-      if ((status === 'Expired' || status === 'Lapsed') && tapRollNumbers.has(rollNumber)) {
-        issues.push({
-          rollNumber,
-          name,
-          issue: 'Expired subscriber tapped',
-          severity: 'high',
-          detail: `Subscription ${status.toLowerCase()}, but has ${taps.filter(t => t.roll_number === rollNumber).length} tap(s) today.`
-        });
-      }
-
-      // 2. Blocked card with active subscription
-      if (status === 'Active' && cardStatus === 'blocked') {
-        issues.push({
-          rollNumber,
-          name,
-          issue: 'Blocked card on active subscription',
-          severity: 'high',
-          detail: 'Card is blocked but subscription is still active. Unblock card or investigate.'
-        });
-      }
-
-      // 3a. Meal plan codes reference inactive/deleted slots
-      if (mealPlan && mealPlan !== 'None') {
-        const planChars = mealPlan.split('+');
-        for (const char of planChars) {
-          if (!activeSlotCodes.has(char)) {
-            issues.push({
-              rollNumber,
-              name,
-              issue: 'Meal plan mismatch',
-              severity: 'medium',
-              detail: `Plan includes "${char}" which no longer exists as an active meal slot.`
-            });
-            break;
-          }
-        }
-      }
-
-      // 3b. Meal names that don't match any schedule slot (e.g. deleted slot)
-      const mealNames = sub.mealNames || [];
-      for (const mealName of mealNames) {
-        if (!activeSlotNames.has(mealName.toUpperCase())) {
-          issues.push({
-            rollNumber,
-            name,
-            issue: 'Meal plan mismatch',
-            severity: 'medium',
-            detail: `Subscription includes "${mealName}" which is not available in the current schedule.`
-          });
-          break;
-        }
-      }
-
-      // 4. Paused with no end date for too long (7+ days)
-      if (status === 'Paused') {
-        const pauseStart = sub.pauseStartDate;
-        if (pauseStart && pauseStart.includes('/')) {
-          const parts = pauseStart.split('/');
-          const pauseDate = new Date(2000 + parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
-          const daysPaused = Math.floor((Date.now() - pauseDate.getTime()) / 86400000);
-          if (daysPaused > 7) {
-            issues.push({
-              rollNumber,
-              name,
-              issue: 'Extended pause',
-              severity: 'low',
-              detail: `Paused for ${daysPaused} days without resolution.`
-            });
-          }
-        }
-      }
-    }
-
-    return issues;
-  }
 }

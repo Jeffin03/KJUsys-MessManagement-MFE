@@ -142,7 +142,7 @@ export class QuickModalComponent implements OnChanges {
           rollNumber: s?.roll_number || '',
           plan: mealSlots.join(' + ') || 'None',
           status,
-          cardStatus: s?.card_blocked ? 'Blocked' : 'Active',
+          cardStatus: 'Active',
           attendanceRate: 0,
           startDate: sub.start_Date
             ? new Date(sub.start_Date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
