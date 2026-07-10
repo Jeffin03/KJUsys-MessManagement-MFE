@@ -64,6 +64,7 @@ export interface StudentOverview {
   name: string;
   email?: string;
   cardStatus: string;
+  dayPreference?: string;
   subscription: StudentSubscriptionSummary;
   totalTaps: number;
   attendanceRate: number;
@@ -78,6 +79,7 @@ export interface MealDistribution {
 export interface DailyAnalytics {
   totalTaps: number;
   totalActiveSubscribers: number;
+  expectedActiveToday: number;
   pausedCount: number;
   expiredCount: number;
   mealDistribution: MealDistribution[];

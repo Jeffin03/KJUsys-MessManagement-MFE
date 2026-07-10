@@ -210,10 +210,15 @@ export class DashboardService {
       .pipe(
         map(res => {
           const data = res.responseData?.data;
-          if (Array.isArray(data)) return data;
-          if (data?.holidays) return data.holidays;
-          if (data?.results) return data.results;
-          return [];
+          let items: any[] = [];
+          if (Array.isArray(data)) items = data;
+          else if (data?.holidays) items = data.holidays;
+          else if (data?.results) items = data.results;
+          return items.map((h: any) => ({
+            id: h._id || h.id || '',
+            date: parseBackendDate(h.date_Date),
+            reason: h.reason || '',
+          }));
         })
       );
   }
@@ -225,4 +230,14 @@ export class DashboardService {
   deleteHoliday(id: string): Observable<any> {
     return this.http.delete(`${this.baseUrl}${API_ENDPOINTS.HOLIDAY_BY_ID(id)}`);
   }
+}
+
+function parseBackendDate(val: any): string {
+  if (!val) return '';
+  if (typeof val === 'number') return String(val);
+  const parts = val.split('-');
+  if (parts.length === 3) {
+    return String(new Date(+parts[2], +parts[1] - 1, +parts[0]).getTime());
+  }
+  return val;
 }

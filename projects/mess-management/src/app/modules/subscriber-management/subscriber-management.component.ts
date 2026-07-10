@@ -133,7 +133,6 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
       const roll = params['student'];
       if (roll) {
         this.selectedStudentRollNumber = roll;
-        this.router.navigate([], { relativeTo: this.route, queryParams: { student: null }, queryParamsHandling: 'merge' });
       }
     });
 
@@ -463,6 +462,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
 
   backFromStudentDetail(): void {
     this.selectedStudentRollNumber = null;
+    this.router.navigate([], { relativeTo: this.route, queryParams: { student: null }, queryParamsHandling: 'merge' });
   }
 
   cancelDeleteSubscriber(): void {
