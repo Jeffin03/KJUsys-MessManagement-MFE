@@ -23,6 +23,7 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 
 ### Fixed
 - **Holiday calendar not rendering seeded holidays**: `getHolidays()` now maps backend fields (`_id` → `id`, `date_Date` → `date`) with proper `dd-MM-yyyy` → millis parsing via `parseBackendDate()`. Previously `h.date` was `undefined` because the API returned `date_Date` as the key, causing `buildHolidayMap()` to skip all holidays.
+- **dayPreference not persisted on subscriber create**: `SubscriberFormComponent.ngOnChanges()` was replacing the entire form when `mealSlots` loaded asynchronously, discarding user input including `dayPreference`. Changed to only re-initialize on `initialData` changes (edit flow), with the form always initialized once in `ngAfterViewInit`.
 
 ### Removed
 - **`card_blocked` from entire frontend**: Removed from `Subscriber`, `BackendStudent` interfaces, `subscriber.service.ts` mapping, `quick-modal.component.ts` cardStatus display, `reports.service.ts` overview mapping (always `'Active'`).

@@ -12,6 +12,7 @@ import { DailyAnalytics } from '../../models/reports.models';
 import { DashboardService } from '../../../dashboard/services/dashboard.service';
 import { MealEntry } from '../../../../shared/models/dashboard.models';
 
+
 interface KpiCard {
   label: string;
   value: number;
@@ -67,9 +68,7 @@ interface KpiCard {
             [showSearch]="true"
             [stickyActions]="false"
             [clientPagination]="true"
-            [pagination]="{ currentPage: 1, itemsPerPage: 20, totalItems: tapData.length, totalPages: Math.ceil(tapData.length / 20) }"
-            [exportOptions]="exportOptions"
-            (onExport)="onTableExport($event)"
+            [pagination]="{ currentPage: 1, itemsPerPage: 10, totalItems: tapData.length, totalPages: Math.ceil(tapData.length / 10) }"
           ></lib-table>
           <div *ngIf="!tapsLoading && tapData.length === 0" class="text-xs text-[#6B7280] text-center py-6">
             No taps recorded today.
@@ -79,41 +78,61 @@ interface KpiCard {
 
       <!-- Export Modal -->
       <div *ngIf="showExportModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+        class="fixed inset-0 bg-black/55 z-[1000] flex items-center justify-center p-4"
         (click)="closeExportModal()">
-        <div class="bg-white rounded-2xl p-6 w-[560px] max-h-[85vh] overflow-y-auto shadow-xl" (click)="$event.stopPropagation()">
+        <div class="relative w-full max-w-2xl mx-4 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] flex flex-col bg-white"
+          style="height:680px; max-height:90vh;"
+          (click)="$event.stopPropagation()">
 
-          <!-- Header -->
-          <div class="flex items-center justify-between mb-5">
+          <!-- Fixed Header -->
+          <div class="px-7 pt-5 bg-white border-b border-[#E5E7EB] rounded-t-2xl flex-shrink-0">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-sm font-semibold text-[#111827]">Export Report</span>
+                <p class="text-xs font-medium text-[#86868B] mt-0.5 mb-4">Generate multi-sheet Excel workbook</p>
+              </div>
+              <button (click)="closeExportModal()" class="text-[#6B7280] hover:text-[#111827] transition-colors text-lg leading-none p-1">
+                &#x2715;
+              </button>
+            </div>
+          </div>
+
+          <!-- Scrollable Content -->
+          <div class="overflow-y-auto flex-1 bg-white p-7 space-y-5">
+
+            <!-- Report Type -->
             <div>
-              <span class="text-sm font-semibold text-[#111827]">Export Report</span>
-              <span class="text-[10px] text-[#6B7280] block mt-0.5">Generate multi-sheet Excel workbook</span>
+              <label class="block text-[10px] font-medium text-[#6B7280] mb-1.5">REPORT TYPE</label>
+              <div class="flex gap-2">
+                <button (click)="exportReportType = 'today'"
+                  class="px-3 py-1.5 text-[10px] font-semibold rounded-full transition-colors"
+                  [class]="exportReportType === 'today' ? 'bg-[#EEF2FF] text-[#155DFC]' : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'">
+                  Today's Report
+                </button>
+                <button (click)="exportReportType = 'full'"
+                  class="px-3 py-1.5 text-[10px] font-semibold rounded-full transition-colors"
+                  [class]="exportReportType === 'full' ? 'bg-[#EEF2FF] text-[#155DFC]' : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'">
+                  Full Report
+                </button>
+              </div>
             </div>
-            <button (click)="closeExportModal()" class="text-[#6B7280] hover:text-[#111827] transition-colors">
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
 
-          <!-- Format badge -->
-          <div class="flex items-center gap-2 mb-5">
-            <label class="block text-[10px] font-medium text-[#6B7280]">FORMAT</label>
-            <div class="flex gap-2">
-              <button (click)="exportFormat = 'xlsx'"
-                class="px-3 py-1.5 text-[10px] font-semibold rounded-full transition-colors"
-                [class]="exportFormat === 'xlsx' ? 'bg-[#EEF2FF] text-[#155DFC]' : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'">
-                Excel (.xlsx)
-              </button>
-              <button (click)="exportFormat = 'csv'"
-                class="px-3 py-1.5 text-[10px] font-semibold rounded-full transition-colors"
-                [class]="exportFormat === 'csv' ? 'bg-[#EEF2FF] text-[#155DFC]' : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'">
-                CSV (.csv)
-              </button>
+            <!-- Format -->
+            <div>
+              <label class="block text-[10px] font-medium text-[#6B7280] mb-1.5">FORMAT</label>
+              <div class="flex gap-2">
+                <button (click)="exportFormat = 'xlsx'"
+                  class="px-3 py-1.5 text-[10px] font-semibold rounded-full transition-colors"
+                  [class]="exportFormat === 'xlsx' ? 'bg-[#EEF2FF] text-[#155DFC]' : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'">
+                  Excel (.xlsx)
+                </button>
+                <button (click)="exportFormat = 'csv'"
+                  class="px-3 py-1.5 text-[10px] font-semibold rounded-full transition-colors"
+                  [class]="exportFormat === 'csv' ? 'bg-[#EEF2FF] text-[#155DFC]' : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'">
+                  CSV (.csv)
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div class="space-y-5">
 
             <!-- Date Range -->
             <div>
@@ -136,6 +155,7 @@ interface KpiCard {
                 [data]="availableMealSlots"
                 idField="id"
                 textField="label"
+                [label]="''"
                 [selectedItems]="selectedMealSlots"
                 (selectionChange)="onMealSlotSelectionChange($event)">
               </lib-dropdown-lib>
@@ -149,61 +169,63 @@ interface KpiCard {
                 (input)="exportRollNumbersInput = $any($event.target).value.toUpperCase()">
             </div>
 
-            <!-- Include toggles -->
-            <div class="flex gap-6">
-              <label class="flex items-center gap-2.5 cursor-pointer">
-                <div class="relative">
-                  <input type="checkbox" [(ngModel)]="exportIncludeSummary"
-                    class="sr-only peer">
-                  <div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-[#155DFC] transition-colors"></div>
-                  <div class="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform"></div>
-                </div>
-                <span class="text-xs text-[#111827]">Include Summary sheet</span>
-              </label>
-              <label class="flex items-center gap-2.5 cursor-pointer">
-                <div class="relative">
-                  <input type="checkbox" [(ngModel)]="exportIncludeDetail"
-                    class="sr-only peer">
-                  <div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-[#155DFC] transition-colors"></div>
-                  <div class="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform"></div>
-                </div>
-                <span class="text-xs text-[#111827]">Include Data sheet</span>
-              </label>
-            </div>
+            <!-- Include toggles + Output -->
+            <div>
+              <div class="flex gap-6 mb-4">
+                <label class="flex items-center gap-2.5 cursor-pointer">
+                  <div class="relative">
+                    <input type="checkbox" [(ngModel)]="exportIncludeSummary"
+                      class="sr-only peer">
+                    <div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-[#155DFC] transition-colors"></div>
+                    <div class="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform"></div>
+                  </div>
+                  <span class="text-xs text-[#111827]">Include Summary sheet</span>
+                </label>
+                <label class="flex items-center gap-2.5 cursor-pointer">
+                  <div class="relative">
+                    <input type="checkbox" [(ngModel)]="exportIncludeDetail"
+                      class="sr-only peer">
+                    <div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-[#155DFC] transition-colors"></div>
+                    <div class="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform"></div>
+                  </div>
+                  <span class="text-xs text-[#111827]">Include Data sheet</span>
+                </label>
+              </div>
 
-            <!-- Estimated output -->
-            <div *ngIf="!generatingExport"
-              class="flex items-center gap-2 px-3 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
-              <svg width="14" height="14" fill="none" stroke="#6B7280" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <span class="text-[10px] text-[#6B7280]">
-                Output:
-                <span *ngIf="exportFormat === 'xlsx'">
-                  <span *ngIf="exportIncludeSummary && exportIncludeDetail">Summary + Data sheets</span>
-                  <span *ngIf="exportIncludeSummary && !exportIncludeDetail">Summary sheet only</span>
-                  <span *ngIf="!exportIncludeSummary && exportIncludeDetail">Data sheet only</span>
-                  <span *ngIf="!exportIncludeSummary && !exportIncludeDetail">Select at least one sheet</span>
+              <!-- Estimated output -->
+              <div *ngIf="!generatingExport"
+                class="flex items-center gap-2 px-3 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
+                <svg width="14" height="14" fill="none" stroke="#6B7280" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="text-[10px] text-[#6B7280]">
+                  Output:
+                  <span *ngIf="exportFormat === 'xlsx'">
+                    <span *ngIf="exportIncludeSummary && exportIncludeDetail">Summary + Data sheets</span>
+                    <span *ngIf="exportIncludeSummary && !exportIncludeDetail">Summary sheet only</span>
+                    <span *ngIf="!exportIncludeSummary && exportIncludeDetail">Data sheet only</span>
+                    <span *ngIf="!exportIncludeSummary && !exportIncludeDetail">Select at least one sheet</span>
+                  </span>
+                  <span *ngIf="exportFormat === 'csv'">Single CSV file</span>
                 </span>
-                <span *ngIf="exportFormat === 'csv'">Single CSV file</span>
-              </span>
+              </div>
+
+              <!-- Progress indicator -->
+              <div *ngIf="generatingExport"
+                class="flex items-center gap-3 px-4 py-3 bg-[#EEF2FF] border border-[#C7D2FE] rounded-lg">
+                <div class="w-4 h-4 border-2 border-[#155DFC] border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-xs font-medium text-[#155DFC]">Generating report...</span>
+              </div>
             </div>
 
-            <!-- Progress indicator -->
-            <div *ngIf="generatingExport"
-              class="flex items-center gap-3 px-4 py-3 bg-[#EEF2FF] border border-[#C7D2FE] rounded-lg">
-              <div class="w-4 h-4 border-2 border-[#155DFC] border-t-transparent rounded-full animate-spin"></div>
-              <span class="text-xs font-medium text-[#155DFC]">Generating report...</span>
+            <!-- Actions -->
+            <div class="flex justify-end gap-3">
+              <lib-button type="secondary" label="Cancel" (onClick)="closeExportModal()"></lib-button>
+              <lib-button type="primary" label="Generate & Download" (onClick)="onGenerateExport()"
+                [disabled]="generatingExport || (!exportIncludeSummary && !exportIncludeDetail)"
+                [loading]="generatingExport"></lib-button>
             </div>
 
-          </div>
-
-          <!-- Actions -->
-          <div class="flex justify-end gap-3 mt-6">
-            <lib-button type="secondary" label="Cancel" (onClick)="closeExportModal()"></lib-button>
-            <lib-button type="primary" label="Generate & Download" (onClick)="onGenerateExport()"
-              [disabled]="generatingExport || (!exportIncludeSummary && !exportIncludeDetail)"
-              [loading]="generatingExport"></lib-button>
           </div>
         </div>
       </div>
@@ -212,6 +234,7 @@ interface KpiCard {
   `,
   styles: [`
     :host { display: block; }
+    ::ng-deep lib-dropdown-lib .max-h-\\[220px\\] { max-height: 104px !important; }
   `]
 })
 export class ReportsDashboardComponent implements OnInit, OnDestroy {
@@ -247,15 +270,11 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   tapData: MealEntry[] = [];
   tapsLoading = false;
 
-  exportOptions = [
-    { key: 'csv', label: 'Export as CSV', svgPath: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3' },
-    { key: 'excel', label: 'Export as Excel', svgPath: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3' },
-  ];
-
   // Export modal state
   showExportModal = false;
   generatingExport = false;
   exportFormat: 'xlsx' | 'csv' = 'xlsx';
+  exportReportType: 'today' | 'full' = 'today';
 
   // Enhanced filter state
   exportStartDate: Date | null = null;
@@ -264,15 +283,12 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   exportIncludeSummary = true;
   exportIncludeDetail = true;
   selectedMealSlots: any[] = [];
-
   availableMealSlots = [
-    { id: 'EARLY_BREAKFAST', label: 'Early Breakfast' },
     { id: 'BREAKFAST', label: 'Breakfast' },
     { id: 'BRUNCH', label: 'Brunch' },
     { id: 'LUNCH', label: 'Lunch' },
+    { id: 'SNACKS', label: 'Snacks' },
     { id: 'DINNER', label: 'Dinner' },
-    { id: 'LATE_NIGHT', label: 'Late Night' },
-    { id: 'MIDNIGHT_SNACK', label: 'Midnight Snack' },
   ];
 
   private subscriptions = new Subscription();
@@ -282,6 +298,7 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private reportsService: ReportsService,
     private dashboardService: DashboardService,
+
     private toast: SharedToastService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -325,29 +342,6 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  onTableExport(format: string) {
-    if (format === 'excel') {
-      this.onGenerateExport();
-      return;
-    }
-    if (this.tapData.length === 0) return;
-    const headers = this.tapColumns.map(c => c.label);
-    const rows = this.tapData.map(row =>
-      this.tapColumns.map(c => {
-        const val = (row as any)[c.key];
-        return val != null ? String(val).replace(/,/g, ' ') : '';
-      })
-    );
-    const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tap-activity-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 100);
-  }
-
   onExportDateRangeSelect(event: { from: Date; to: Date | null }) {
     this.exportStartDate = event.from;
     this.exportEndDate = event.to;
@@ -367,7 +361,7 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.exportSuccess = null;
 
     const params: any = {
-      type: 'full',
+      type: this.exportReportType,
       format: this.exportFormat,
     };
 
@@ -419,6 +413,7 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.exportIncludeSummary = true;
     this.exportIncludeDetail = true;
     this.exportFormat = 'xlsx';
+    this.exportReportType = 'today';
   }
 
   openExportModal() {
