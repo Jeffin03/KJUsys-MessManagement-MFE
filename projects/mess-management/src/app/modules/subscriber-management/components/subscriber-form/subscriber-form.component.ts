@@ -130,7 +130,7 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
       this.syncViewDates();
       this.validateForm();
       this.cdr.markForCheck();
-    } else if (this.mealSlots.length > 0) {
+    } else {
       this.form = this.formService.initializeForm(this.mealSlots);
       this.validateForm();
       this.cdr.markForCheck();
@@ -138,17 +138,9 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    const hasInitialData = changes['initialData'] && !!this.initialData;
-    const hasMealSlots = changes['mealSlots'] && this.mealSlots.length > 0;
+    if (!changes['initialData'] || !this.initialData) return;
 
-    if (!hasInitialData && !hasMealSlots) return;
-
-    if (hasInitialData) {
-      this.form = { ...this.initialData! };
-    } else if (hasMealSlots) {
-      this.form = this.formService.initializeForm(this.mealSlots);
-    }
-
+    this.form = { ...this.initialData! };
     this.syncViewDates();
     this.validateForm();
     this.cdr.markForCheck();

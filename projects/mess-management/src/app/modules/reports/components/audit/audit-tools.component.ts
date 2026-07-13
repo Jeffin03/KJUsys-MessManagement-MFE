@@ -48,7 +48,7 @@ interface SubTabItem { id: string; label: string; count?: number; }
               [showToolbar]="false"
               [stickyActions]="false"
               [clientPagination]="true"
-              [pagination]="{ currentPage: 1, itemsPerPage: 20, totalItems: pauseAuditData.length, totalPages: Math.ceil(pauseAuditData.length / 20) }"
+              [pagination]="{ currentPage: 1, itemsPerPage: 10, totalItems: pauseAuditData.length, totalPages: Math.ceil(pauseAuditData.length / 10) }"
             ></lib-table>
             <div *ngIf="!pauseAuditLoading && pauseAuditData.length === 0" class="text-xs text-[#6B7280] text-center py-6">
               No pause violations found. All paused subscribers appear compliant.
