@@ -9,6 +9,12 @@ interface CalendarDay {
   isCurrentMonth: boolean;
 }
 
+interface HolidayGroup {
+  monthKey: string;
+  label: string;
+  holidays: HolidayRecord[];
+}
+
 @Component({
   selector: 'app-holiday-calendar',
   standalone: true,
@@ -53,7 +59,10 @@ interface CalendarDay {
           <div *ngFor="let item of calendarDays"
                (click)="selectDate(item.date, $event)"
                class="cal-day-cell"
-               [class.cal-day-empty]="!item.date">
+               [class.cal-day-empty]="!item.date"
+               [class.cal-selected]="isSelected(item.date)"
+               [class.cal-today]="isToday(item.date) && !isSelected(item.date)"
+               [class.cal-has-holiday]="hasHoliday(item.date) && !isSelected(item.date)">
 
             <!-- Range Background -->
             <div *ngIf="item.date && isRangeMiddle(item.date)" class="cal-range-bg cal-range-middle"></div>
@@ -77,7 +86,7 @@ interface CalendarDay {
         <!-- Legend -->
         <div class="flex items-center gap-4 mt-4 px-2">
           <div class="flex items-center gap-1.5">
-            <div class="w-3 h-3 rounded bg-[#FEF3C7] border border-[#F59E0B]"></div>
+            <div class="w-3 h-3 rounded bg-[#FEE2E2] border border-[#EF4444]"></div>
             <span class="text-[10px] font-medium text-[#6B7280]">Holiday</span>
           </div>
           <div class="flex items-center gap-1.5">
@@ -109,35 +118,50 @@ interface CalendarDay {
         </div>
       </div>
 
-      <!-- Selected Date Detail Panel -->
-      <div *ngIf="selectedDate"
-           class="bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+      <!-- Holidays Configured Container -->
+      <div class="bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
         <div class="px-5 py-3 bg-[#F9FAFB] border-b border-[#E5E7EB]">
-          <span class="text-xs font-semibold text-[#111827]">Holidays on {{ selectedDate | date:'dd/MM/yyyy' }}</span>
+          <span class="text-xs font-semibold text-[#111827]">Holidays Configured</span>
         </div>
-
-        <!-- Holiday List for Selected Date -->
-        <div *ngIf="getHolidaysForDate(selectedDate).length > 0" class="divide-y divide-[#F3F4F6]">
-          <div *ngFor="let holiday of getHolidaysForDate(selectedDate)"
-               class="flex items-center justify-between px-5 py-3 hover:bg-[#F9FAFB] transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-2 h-2 rounded-full bg-[#F59E0B]"></div>
-              <span class="text-xs font-medium text-[#111827]">{{ holiday.reason }}</span>
+        <div class="overflow-y-auto max-h-[320px]">
+          <!-- Month-Grouped Holiday Accordion -->
+          <div *ngIf="!loading && groupedHolidays.length > 0" class="flex flex-col gap-2 p-4">
+            <div *ngFor="let group of groupedHolidays"
+                 class="border border-[#E5E7EB] rounded-xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+              <div (click)="toggleMonth(group.monthKey)"
+                   class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-[#F9FAFB] transition-colors select-none">
+                <span class="text-xs font-semibold text-[#111827]">{{ group.label }} · {{ group.holidays.length }} Holiday{{ group.holidays.length > 1 ? 's' : '' }}</span>
+                <svg [style.transform]="expandedMonths.has(group.monthKey) ? 'rotate(180deg)' : 'rotate(0deg)'"
+                     class="w-4 h-4 text-[#6B7280] transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+              <div *ngIf="expandedMonths.has(group.monthKey)" class="divide-y divide-[#F3F4F6]">
+                <div *ngFor="let holiday of group.holidays" class="flex rounded-lg border border-[#E5E7EB] overflow-hidden mx-4 my-1.5">
+                  <div class="w-1 flex-shrink-0" style="background:#EF4444"></div>
+                  <div class="flex items-center justify-between flex-1 px-3 py-2">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-medium text-[#6B7280] min-w-[60px]">{{ formatHolidayDate(holiday.date) }}</span>
+                      <span class="text-xs font-medium text-[#111827]">{{ holiday.reason }}</span>
+                    </div>
+                    <button (click)="deleteHoliday(holiday.id); $event.stopPropagation()"
+                        class="text-xs font-medium text-[#C70036] hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <button (click)="deleteHoliday(holiday.id)"
-                class="text-xs font-medium text-[#C70036] hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50">
-              Delete
-            </button>
           </div>
-        </div>
 
-        <!-- Empty State -->
-        <div *ngIf="getHolidaysForDate(selectedDate).length === 0" class="px-5 py-8 text-center">
-          <div class="flex flex-col items-center gap-2">
-            <svg width="24" height="24" fill="none" stroke="#D1D5DB" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            <span class="text-xs text-[#6B7280]">No holidays configured for {{ selectedDate | date:'dd/MM/yyyy' }}</span>
+          <!-- No Holidays State -->
+          <div *ngIf="!loading && groupedHolidays.length === 0" class="px-5 py-8 text-center">
+            <div class="flex flex-col items-center gap-2">
+              <svg width="24" height="24" fill="none" stroke="#D1D5DB" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <span class="text-xs text-[#6B7280]">No holidays configured</span>
+            </div>
           </div>
         </div>
       </div>
@@ -197,6 +221,8 @@ interface CalendarDay {
       height: 3rem;
       width: 100%;
       cursor: pointer;
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
     }
 
     .cal-day-cell.cal-day-empty {
@@ -210,11 +236,11 @@ interface CalendarDay {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 2.25rem;
-      height: 2.25rem;
-      font-size: 11px;
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 12px;
       font-weight: 600;
-      border-radius: 10px;
+      border-radius: 8px;
       transition: all 0.2s;
     }
 
@@ -226,32 +252,45 @@ interface CalendarDay {
       color: #D1D5DB;
     }
 
-    .cal-day-number.cal-selected {
-      background-color: #155DFC !important;
-      color: white !important;
-      border: none !important;
+    .cal-day-cell.cal-selected {
+      background-color: #155DFC;
+      color: white;
       box-shadow: 0 4px 12px rgba(21, 93, 252, 0.3);
     }
 
-    .cal-day-cell:hover .cal-day-number:not(.cal-selected) {
+    .cal-day-number.cal-selected {
+      color: white;
+    }
+
+    .cal-day-cell:not(.cal-selected):hover {
       background-color: #F3F4F6;
     }
 
-    .cal-day-number.cal-today:not(.cal-selected) {
+    .cal-day-cell.cal-has-holiday:not(.cal-selected):hover {
+      background-color: #FECACA;
+    }
+
+    .cal-day-cell.cal-today:not(.cal-selected) {
       border: 1.5px solid #155DFC;
+    }
+
+    .cal-day-number.cal-today:not(.cal-selected) {
       color: #155DFC;
     }
 
+    .cal-day-cell.cal-has-holiday {
+      background-color: #FEE2E2;
+    }
+
     .cal-day-number.cal-has-holiday {
-      background-color: #FEF3C7;
-      color: #92400E;
+      color: #991B1B;
     }
 
     .cal-range-bg {
       position: absolute;
       top: 0.5rem;
       bottom: 0.5rem;
-      background-color: #FEF3C7;
+      background-color: #FEE2E2;
       z-index: 5;
     }
 
@@ -293,6 +332,8 @@ interface CalendarDay {
 export class HolidayCalendarComponent implements OnInit {
   holidays: HolidayRecord[] = [];
   holidayMap = new Map<string, HolidayRecord[]>();
+  groupedHolidays: HolidayGroup[] = [];
+  expandedMonths: Set<string> = new Set();
   loading = false;
 
   calendarViewDate: Date = new Date();
@@ -319,6 +360,7 @@ export class HolidayCalendarComponent implements OnInit {
       next: data => {
         this.holidays = data;
         this.buildHolidayMap();
+        this.buildGroupedHolidays();
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -340,6 +382,52 @@ export class HolidayCalendarComponent implements OnInit {
       list.push(h);
       this.holidayMap.set(key, list);
     }
+  }
+
+  private buildGroupedHolidays() {
+    const groups = new Map<string, { label: string; holidays: HolidayRecord[] }>();
+
+    for (const h of this.holidays) {
+      const ts = typeof h.date === 'string' ? parseInt(h.date, 10) : h.date;
+      if (!ts) continue;
+      const d = new Date(ts);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      if (!groups.has(monthKey)) {
+        groups.set(monthKey, { label, holidays: [] });
+      }
+      groups.get(monthKey)!.holidays.push(h);
+    }
+
+    this.groupedHolidays = Array.from(groups.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([monthKey, data]) => ({ monthKey, ...data }));
+
+    this.expandedMonths.clear();
+    if (this.groupedHolidays.length > 0) {
+      this.expandedMonths.add(this.groupedHolidays[0].monthKey);
+    }
+  }
+
+  toggleMonth(monthKey: string) {
+    if (this.expandedMonths.has(monthKey)) {
+      this.expandedMonths.clear();
+    } else {
+      this.expandedMonths.clear();
+      this.expandedMonths.add(monthKey);
+    }
+  }
+
+  formatHolidayDate(dateVal: any): string {
+    if (!dateVal) return '';
+    const ts = typeof dateVal === 'string' ? parseInt(dateVal, 10) : dateVal;
+    if (!ts) return dateVal;
+    const d = new Date(ts);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
   }
 
   private dateKey(d: Date): string {
@@ -449,6 +537,12 @@ export class HolidayCalendarComponent implements OnInit {
     event.stopPropagation();
     if (!date) return;
     this.selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    if (this.showAddForm) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      this.newHolidayDate = `${y}-${m}-${d}`;
+    }
     this.cdr.detectChanges();
   }
 
