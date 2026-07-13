@@ -224,7 +224,7 @@ export class DashboardService {
   }
 
   createHoliday(dateMillis: number, reason: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_HOLIDAY}`, { date: dateMillis, reason });
+    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_HOLIDAY}`, { date_Date: dateMillis, reason });
   }
 
   deleteHoliday(id: string): Observable<any> {

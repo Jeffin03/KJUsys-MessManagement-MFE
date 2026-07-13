@@ -12,6 +12,9 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Student Detail `not_applicable` status**: Overview cards, Attendance calendar, and subscription heatmap show muted "N/A" pills/gray backgrounds for dates outside the student's `dayPreference` (e.g. weekends for weekday-only subscribers). `isApplicable()` method filters attendance/meal summary computations.
 - **Student Detail `studentNotFound` empty state**: When API returns no data or errors, shows `<lib-empty-state>` with "Student Not Found" instead of a blank page.
 - **`parseBackendDate()` helper** in `DashboardService` — converts `dd-MM-yyyy` string (from backend `processResponseDocument`) to epoch millis for holiday calendar date-key mapping.
+- **Holiday calendar month-grouped accordion**: Click-to-view-detail panel replaced with single-expand accordion grouped by month. Most recent month auto-expands. Items show red left-strip (`#EF4444`) and holiday reason.
+- **Holiday calendar red color scheme**: Holiday cells use `#FEE2E2` background, `#991B1B` text, `#EF4444` borders and accents (replaced amber tones).
+- **Holiday calendar cell layout**: Cells have `3rem` height, `1px solid #E5E7EB` border, `6px` border-radius, backgrounds fill the full cell for selected/today/holiday states.
 
 ### Changed
 - **Audit Tools subtabs**: Removed "Anomaly Detector" and "Subscription Audit" subtabs. Reordered to "Change Log" then "Pause Audit". Default tab is now Change Log. Removed `PillTabsModule`, `DashboardService`, `SubscriberService` imports/providers. Removed `SubscriptionIssue` interface, `PillTabItem`, anomaly/sub-audit columns, data, loading states, and all handler methods (`loadAnomalies()`, `onSeverityTabChange()`, `runSubscriptionAudit()`, `computeSubscriptionIssues()`).
@@ -24,6 +27,10 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ### Fixed
 - **Holiday calendar not rendering seeded holidays**: `getHolidays()` now maps backend fields (`_id` → `id`, `date_Date` → `date`) with proper `dd-MM-yyyy` → millis parsing via `parseBackendDate()`. Previously `h.date` was `undefined` because the API returned `date_Date` as the key, causing `buildHolidayMap()` to skip all holidays.
 - **dayPreference not persisted on subscriber create**: `SubscriberFormComponent.ngOnChanges()` was replacing the entire form when `mealSlots` loaded asynchronously, discarding user input including `dayPreference`. Changed to only re-initialize on `initialData` changes (edit flow), with the form always initialized once in `ngAfterViewInit`.
+- **Add holiday form payload field name**: `DashboardService.createHoliday()` was sending `{ date: dateMillis, reason }` but backend expects `date_Date`. Fixed payload field to `date_Date`.
+
+### Removed
+- **Recurring holiday repeat feature**: Removed after implementation — repeat type pills (None/Weekly/Monthly), weekly day-of-week toggle, monthly day-of-month auto-fill, optional repeat end date, and repeat badge in accordion list. `HolidayRecord.repeat`, `repeatDayOfWeek`, `repeatDayOfMonth`, `repeatEndDate` fields and corresponding `createHoliday()` parameters removed. Backend `markHoliday()` no longer stores repeat fields.
 
 ### Removed
 - **`card_blocked` from entire frontend**: Removed from `Subscriber`, `BackendStudent` interfaces, `subscriber.service.ts` mapping, `quick-modal.component.ts` cardStatus display, `reports.service.ts` overview mapping (always `'Active'`).
