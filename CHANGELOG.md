@@ -224,6 +224,11 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 #### Changed
 - **Calendar grid meal pills**: Replaced separate "Tapped"/"Not Tapped" text pills with colored meal-name pills (green=tapped, pink=not tapped) — matches the Overview card style, cleaner and more compact.
 
+#### Changed
+- **Holiday Config form repositioned**: "Add Holiday" form and instruction info moved from below the calendar to above it in `holiday-calendar.component`
+- **Holiday Config instruction text**: Added blue info banner inside the form explaining users can type a date or click the calendar
+- **Student Detail meal summary synced with weekly view**: `buildMealSummary('weekly')` now uses the same last-7-day window as `buildWeeklyDayCards()` instead of the calendar Mon-Sun week
+
 ---
 
 ## [0.0.1] - 2026-06-03

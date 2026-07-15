@@ -572,11 +572,12 @@ export class StudentDetailComponent implements OnChanges {
     const filterDay = (d: AttendanceDay) => {
       const date = new Date(d.date);
       if (mode === 'weekly') {
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        return date >= startOfWeek && date <= endOfWeek;
+        const start = new Date(now);
+        start.setDate(now.getDate() - 6);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        return date >= start && date <= end;
       }
       return date.getFullYear() === now.getFullYear();
     };
