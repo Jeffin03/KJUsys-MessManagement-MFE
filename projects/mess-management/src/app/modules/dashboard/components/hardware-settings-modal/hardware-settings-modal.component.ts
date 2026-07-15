@@ -42,8 +42,6 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
   hmacHashCopied = false;
 
   selectedDeviceType: any[] = [];
-  testingPeripheralDeviceId = '';
-  testingPeripheralType = '';
 
   rotatingDeviceId = '';
   confirmingDeviceId = '';
@@ -302,38 +300,6 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
     this.hmacCopied = false;
     this.hmacHashCopied = false;
     this.loadDevices();
-  }
-
-  // ── Peripheral Tests ──
-
-  testPeripheral(deviceId: string, type: string): void {
-    this.testingPeripheralDeviceId = deviceId;
-    this.testingPeripheralType = type;
-    this.hwMgmt.sendTestCommand(deviceId, type).subscribe({
-      next: () => {
-        this.toast.success(this.getPeripheralLabel(type) + ' test sent');
-        this.testingPeripheralDeviceId = '';
-        this.testingPeripheralType = '';
-      },
-      error: (err) => {
-        this.toast.error(err.error?.message || 'Test failed');
-        this.testingPeripheralDeviceId = '';
-        this.testingPeripheralType = '';
-      }
-    });
-  }
-
-  isTesting(deviceId: string, type: string): boolean {
-    return this.testingPeripheralDeviceId === deviceId && this.testingPeripheralType === type;
-  }
-
-  // ── Emergency Stop ──
-
-  stopDevice(deviceId: string): void {
-    this.hwMgmt.stopDevice(deviceId).subscribe({
-      next: () => this.toast.info('Stop command sent'),
-      error: () => this.toast.error('Failed to send stop command')
-    });
   }
 
   // ── Approve pending device (created via API/Postman) ──

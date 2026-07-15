@@ -108,21 +108,6 @@
               <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" [style.background]="getPeripheralColor(getEffectivePeripheralStatus(device, p))"></span>
               <span class="text-xs" style="color:#4A5565;">{{ getPeripheralLabel(p.type) }}</span>
               <span class="text-xs" style="color:#86868B;">{{ getEffectivePeripheralStatus(device, p) }}</span>
-              <button *ngIf="p.type === 'lcd'"
-                class="ml-auto text-xs bg-transparent border border-gray-200 rounded px-2 py-0.5 cursor-pointer hover:bg-gray-50 disabled:opacity-40"
-                style="color:#155DFC;"
-                [disabled]="isTesting(device._id, p.type)"
-                (click)="testPeripheral(device._id, p.type)">
-                {{ isTesting(device._id, p.type) ? '...' : 'Test' }}
-              </button>
-              <button *ngIf="p.type === 'printer' && !isTesting(device._id, p.type)"
-                class="ml-auto text-xs bg-transparent border border-gray-200 rounded px-2 py-0.5 cursor-pointer hover:bg-gray-50"
-                style="color:#155DFC;"
-                (click)="testPeripheral(device._id, p.type)">Test</button>
-              <button *ngIf="p.type === 'printer' && isTesting(device._id, p.type)"
-                class="ml-auto text-xs bg-transparent border border-gray-200 rounded px-2 py-0.5 cursor-pointer hover:bg-gray-50"
-                style="color:#D92C2B;"
-                (click)="stopDevice(device._id)">Stop</button>
             </div>
           </div>
         </div>

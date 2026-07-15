@@ -49,11 +49,8 @@ export const API_ENDPOINTS = {
   HARDWARE_START_PAIRING: '/hardware/start-pairing',
   HARDWARE_PAIR: '/hardware/pair',
   HARDWARE_CONFIRM: (id: string) => `/hardware/${id}/confirm`,
-  HARDWARE_TEST_PRINTER: (id: string) => `/hardware/${id}/test-printer`,
-  HARDWARE_TEST_DISPLAY: (id: string) => `/hardware/${id}/test-display`,
   HARDWARE_ROTATE_SECRET: (id: string) => `/hardware/${id}/rotate-secret`,
   HARDWARE_HEARTBEAT: '/hardware/heartbeat',
-  HARDWARE_STOP: (id: string) => `/hardware/${id}/stop`,
 
   // Display Config
   DISPLAY_CONFIG: '/display-config',
