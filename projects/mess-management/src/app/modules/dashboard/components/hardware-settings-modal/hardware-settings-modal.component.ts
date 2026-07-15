@@ -249,7 +249,7 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
       return;
     }
     this.isRegistering = true;
-    const mac = this.registerMac.trim() || '00:00:00:00:00:00';
+    const mac = (this.registerMac.trim().toUpperCase()) || '00:00:00:00:00:00';
     this.hwMgmt.connectDevice(mac, this.registerName.trim(), this.registerType).subscribe({
       next: (res) => {
         this.isRegistering = false;

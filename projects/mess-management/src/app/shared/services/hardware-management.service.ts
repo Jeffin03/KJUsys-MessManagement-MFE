@@ -56,8 +56,8 @@ export class HardwareManagementService {
     return this.http.delete(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_BY_ID(deviceId)}`);
   }
 
-  startPairing(): Observable<{ windowExpiresAt: number }> {
-    return this.http.post<ApiResponse<{ windowExpiresAt: number }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_START_PAIRING}`, {})
+  startPairing(): Observable<{ code: string; expiresInMs: number }> {
+    return this.http.post<ApiResponse<{ code: string; expiresInMs: number }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_START_PAIRING}`, {})
       .pipe(
         map(res => res.responseData?.data)
       );
@@ -70,8 +70,8 @@ export class HardwareManagementService {
       );
   }
 
-  confirmDevice(deviceId: string): Observable<HardwareDevice> {
-    return this.http.post<ApiResponse<HardwareDevice>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_CONFIRM(deviceId)}`, {})
+  confirmDevice(deviceId: string): Observable<{ status: string; hmacSecret: string; hmacSecretHash: string }> {
+    return this.http.post<ApiResponse<{ status: string; hmacSecret: string; hmacSecretHash: string }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_CONFIRM(deviceId)}`, {})
       .pipe(
         map(res => res.responseData?.data)
       );
