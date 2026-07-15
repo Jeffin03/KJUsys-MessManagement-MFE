@@ -31,6 +31,37 @@ interface HolidayGroup {
         <lib-button type="primary" label="Add Holiday" (onClick)="openAddForm()"></lib-button>
       </div>
 
+      <!-- Add Holiday Form -->
+      <div *ngIf="showAddForm"
+           class="bg-white border border-[#E5E7EB] rounded-2xl p-5 space-y-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] animate-in fade-in">
+        <span class="text-xs font-semibold text-[#111827]">New Holiday</span>
+        <div class="flex items-start gap-2 px-4 py-3 bg-[#EFF6FF] border border-[#B4C9FF] rounded-xl">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10" stroke="#155DFC" stroke-width="1.5"/>
+            <path d="M12 16v-4M12 8h.01" stroke="#155DFC" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <p class="text-[11px] text-[#1D4ED8] leading-5">
+            Enter a date manually or click a date on the calendar.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-medium text-[#111827] mb-1">Date</label>
+            <input type="date" lang="en-GB" [ngModel]="newHolidayDate" (ngModelChange)="newHolidayDate = $event"
+              class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-[#155DFC] focus:ring-1 focus:ring-[#155DFC] outline-none transition-colors" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-medium text-[#111827] mb-1">Reason</label>
+            <input type="text" [(ngModel)]="newHolidayReason" placeholder="e.g. National Holiday"
+              class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-[#155DFC] focus:ring-1 focus:ring-[#155DFC] outline-none transition-colors" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-3">
+          <lib-button type="secondary" label="Cancel" (onClick)="showAddForm = false"></lib-button>
+          <lib-button type="primary" label="Save" (onClick)="saveHoliday()" [disabled]="!newHolidayDate || !newHolidayReason"></lib-button>
+        </div>
+      </div>
+
       <!-- Calendar Card -->
       <div class="bg-white border border-[#E5E7EB] rounded-2xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 
@@ -93,28 +124,6 @@ interface HolidayGroup {
             <div class="w-2 h-2 rounded-full bg-[#155DFC]"></div>
             <span class="text-[10px] font-medium text-[#6B7280]">Today</span>
           </div>
-        </div>
-      </div>
-
-      <!-- Add Holiday Form -->
-      <div *ngIf="showAddForm"
-           class="bg-white border border-[#E5E7EB] rounded-2xl p-5 space-y-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] animate-in fade-in">
-        <span class="text-xs font-semibold text-[#111827]">New Holiday</span>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[10px] font-medium text-[#111827] mb-1">Date</label>
-            <input type="date" lang="en-GB" [ngModel]="newHolidayDate" (ngModelChange)="newHolidayDate = $event"
-              class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-[#155DFC] focus:ring-1 focus:ring-[#155DFC] outline-none transition-colors" />
-          </div>
-          <div>
-            <label class="block text-[10px] font-medium text-[#111827] mb-1">Reason</label>
-            <input type="text" [(ngModel)]="newHolidayReason" placeholder="e.g. National Holiday"
-              class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-[#155DFC] focus:ring-1 focus:ring-[#155DFC] outline-none transition-colors" />
-          </div>
-        </div>
-        <div class="flex justify-end gap-3">
-          <lib-button type="secondary" label="Cancel" (onClick)="showAddForm = false"></lib-button>
-          <lib-button type="primary" label="Save" (onClick)="saveHoliday()" [disabled]="!newHolidayDate || !newHolidayReason"></lib-button>
         </div>
       </div>
 
