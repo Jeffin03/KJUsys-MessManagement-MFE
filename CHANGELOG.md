@@ -23,6 +23,10 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Student Detail `ACTION_COLORS`/`ACTIVITY_COLORS`**: Removed `CARD_BLOCKED`/`CARD_UNBLOCKED` entries.
 - **`subscriber-management.component.ts`**: Query param `student` is no longer cleared on component init — navigation to `backFromStudentDetail()` handles it on explicit back navigation.
 - **Hardware settings modal**: Removed fixed footer (Close button) from bottom.
+- **Hardware modal pairing workflow reverted**: Removed "Pair via WiFi" button, pairing status panel, and all pairing state/methods from the modal component. `approvePending()` reverted to original toast+reload behavior. Only the MAC `.toUpperCase()` fix and service type changes remain.
+- **`HardwareManagementService.startPairing()` return type**: Updated from `{ windowExpiresAt }` to `{ code, expiresInMs }`.
+- **`HardwareManagementService.confirmDevice()` return type**: Updated from `HardwareDevice` to `{ status, hmacSecret, hmacSecretHash }`.
+- **MAC address auto-uppercase**: Device MAC input now auto-uppercases via `.toUpperCase()` for consistent formatting.
 
 ### Fixed
 - **Holiday calendar not rendering seeded holidays**: `getHolidays()` now maps backend fields (`_id` → `id`, `date_Date` → `date`) with proper `dd-MM-yyyy` → millis parsing via `parseBackendDate()`. Previously `h.date` was `undefined` because the API returned `date_Date` as the key, causing `buildHolidayMap()` to skip all holidays.
