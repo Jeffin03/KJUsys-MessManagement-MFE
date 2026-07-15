@@ -37,6 +37,12 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Recurring holiday repeat feature**: Removed after implementation — repeat type pills (None/Weekly/Monthly), weekly day-of-week toggle, monthly day-of-month auto-fill, optional repeat end date, and repeat badge in accordion list. `HolidayRecord.repeat`, `repeatDayOfWeek`, `repeatDayOfMonth`, `repeatEndDate` fields and corresponding `createHoliday()` parameters removed. Backend `markHoliday()` no longer stores repeat fields.
 
 ### Removed
+- **Test printer/display buttons from hardware settings modal**: Removed LCD and Printer test buttons and peripheral test methods (`testPeripheral()`, `isTesting()`, `stopDevice()`) from `HardwareSettingsModalComponent`. Devices no longer support WebSocket-based test commands.
+- **Test on Hardware bars from display panel config**: Removed LCD and Printer "Test on Hardware" dropdown+button bars from `ConfigureMealSlotsComponent` display panel tab. Removed `loadHardwareDevices()`, `testLcdOnHardware()`, `testPrinterOnHardware()` methods and `HardwareManagementService` dependency.
+- **`sendTestCommand()`, `sendTestDisplay()`, `stopDevice()` from `HardwareManagementService`**: HTTP service methods removed — backend no longer supports WebSocket-based device push commands.
+- **`HARDWARE_TEST_PRINTER`, `HARDWARE_TEST_DISPLAY`, `HARDWARE_STOP` API endpoint constants**: Removed from `api-endpoints.ts`.
+
+### Removed
 - **`card_blocked` from entire frontend**: Removed from `Subscriber`, `BackendStudent` interfaces, `subscriber.service.ts` mapping, `quick-modal.component.ts` cardStatus display, `reports.service.ts` overview mapping (always `'Active'`).
 - **Anomaly Detector subtab**: Entire anomaly detection UI, data models, severity pill filters, anomaly table columns, and API loading logic removed from Audit Tools.
 - **Subscription Audit subtab**: Entire subscription audit UI, data models, `SubscriptionIssue` interface, and audit computation logic removed from Audit Tools.

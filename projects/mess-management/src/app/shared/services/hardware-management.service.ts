@@ -83,26 +83,11 @@ export class HardwareManagementService {
     );
   }
 
-  sendTestCommand(deviceId: string, testType: string): Observable<any> {
-    const endpoint = testType === 'lcd' || testType === 'display'
-      ? API_ENDPOINTS.HARDWARE_TEST_DISPLAY(deviceId)
-      : API_ENDPOINTS.HARDWARE_TEST_PRINTER(deviceId);
-    return this.http.post(`${this.baseUrl}${endpoint}`, {});
-  }
-
-  sendTestDisplay(deviceId: string, lcdLine1: string, lcdLine2: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_TEST_DISPLAY(deviceId)}`, { lcd_line1: lcdLine1, lcd_line2: lcdLine2 });
-  }
-
   rotateSecret(deviceId: string): Observable<{ newSecret: string; newSecretHash: string }> {
     return this.http.post<ApiResponse<{ newSecret: string; newSecretHash: string }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_ROTATE_SECRET(deviceId)}`, {})
       .pipe(
         map(res => res.responseData?.data)
       );
-  }
-
-  stopDevice(deviceId: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_STOP(deviceId)}`, {});
   }
 
   updateDevice(deviceId: string, data: Partial<{ name: string; type: string }>): Observable<any> {
