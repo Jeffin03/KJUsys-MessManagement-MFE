@@ -75,6 +75,11 @@ interface SubTabItem { id: string; label: string; count?: number; }
                 <option value="PAUSE_ENDED">Pause Ended</option>
                 <option value="PAUSE_AUTO_STARTED">Pause Auto-Started</option>
                 <option value="HOLIDAY_MARKED">Holiday Marked</option>
+                <option value="HOLIDAY_DELETED">Holiday Deleted</option>
+                <option value="TAP_REJECTED">Tap Rejected</option>
+                <option value="SCHEDULE_CREATED">Schedule Created</option>
+                <option value="SCHEDULE_MODIFIED">Schedule Modified</option>
+                <option value="SCHEDULE_DELETED">Schedule Deleted</option>
               </select>
               <div class="relative flex-1 max-w-xs">
                 <input type="text" [(ngModel)]="changelogRollNumber" (input)="onChangelogRollInput()"
@@ -151,6 +156,11 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
         'PAUSE_ENDED': { bg: '#F0FDF4', text: '#007A55' },
         'PAUSE_AUTO_STARTED': { bg: '#EFF6FF', text: '#155DFC' },
         'HOLIDAY_MARKED': { bg: '#F3E8FF', text: '#7C3AED' },
+        'HOLIDAY_DELETED': { bg: '#FEF2F2', text: '#C70036' },
+        'TAP_REJECTED': { bg: '#FEF2F2', text: '#C70036' },
+        'SCHEDULE_CREATED': { bg: '#ECFEFF', text: '#0E7490' },
+        'SCHEDULE_MODIFIED': { bg: '#ECFEFF', text: '#0E7490' },
+        'SCHEDULE_DELETED': { bg: '#FEF2F2', text: '#C70036' },
       }
     },
     { key: 'description', label: 'DESCRIPTION', minWidth: '300px' },

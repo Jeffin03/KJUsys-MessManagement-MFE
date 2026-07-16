@@ -41,7 +41,7 @@ import { MealSlotService, MealSlotWithCode } from '../../shared/services/meal-sl
 export class SubscriberManagementComponent implements OnInit, OnDestroy {
 
   tabs: TabItem[] = [
-    { id: 'dashboard', label: 'Dashboard', subtitle: 'Overview' },
+    { id: 'dashboard', label: 'Dashboard', subtitle: 'Dashboard Overview' },
     { id: 'subscriber', label: 'Subscriber Management', subtitle: 'Manage Subscribers' },
     { id: 'reports', label: 'Reports', subtitle: 'View Reports' }
   ];
@@ -205,15 +205,17 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
 
   private filterByExpiry(data: Subscriber[]): Subscriber[] {
     if (this.expiryFilterDays === null) return data;
-    const now = Date.now();
-    const maxTs = now + this.expiryFilterDays * 24 * 60 * 60 * 1000;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartTs = todayStart.getTime();
+    const maxTs = todayStartTs + this.expiryFilterDays * 24 * 60 * 60 * 1000;
     return data.filter(sub => {
       if (sub.status !== 'Active') return false;
       // Parse endDate (DD/MM/YY) to timestamp
       if (!sub.endDate) return false;
       const [d, m, y] = sub.endDate.split('/');
       const endTs = new Date(2000 + parseInt(y), parseInt(m) - 1, parseInt(d)).getTime();
-      return endTs > now && endTs <= maxTs;
+      return endTs >= todayStartTs && endTs <= maxTs;
     });
   }
 

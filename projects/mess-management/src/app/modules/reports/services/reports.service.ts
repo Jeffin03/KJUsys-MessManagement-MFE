@@ -204,19 +204,25 @@ export class ReportsService {
 
         const status = (() => {
           const now = Date.now();
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const todayStartTs = todayStart.getTime();
           if (sub.pauseStart_Date && sub.pauseEnd_Date) {
             if (now >= sub.pauseStart_Date && now <= sub.pauseEnd_Date) return 'paused';
           }
-          if (sub.end_Date && now > sub.end_Date) return 'expired';
-          const hasEndedPause = sub.pauseStart_Date && sub.pauseEnd_Date && now > sub.pauseEnd_Date;
+          if (sub.end_Date && todayStartTs > sub.end_Date) return 'expired';
+          const hasEndedPause = sub.pauseStart_Date && sub.pauseEnd_Date && todayStartTs > sub.pauseEnd_Date;
           if (hasEndedPause) return 'active';
           const hasFuturePause = sub.pauseStart_Date && sub.pauseEnd_Date && now < sub.pauseStart_Date;
           if (hasFuturePause) return 'active';
           return sub.active ? 'active' : 'expired';
         })();
 
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayStartTs = todayStart.getTime();
         const daysRemaining = sub.end_Date
-          ? Math.max(0, Math.ceil(((sub.effective_End_Date || sub.end_Date) - Date.now()) / 86400000))
+          ? Math.max(0, Math.floor(((sub.effective_End_Date || sub.end_Date) - todayStartTs) / 86400000) + 1)
           : 0;
 
         const pausedDays = (sub.pauseStart_Date && sub.pauseEnd_Date)

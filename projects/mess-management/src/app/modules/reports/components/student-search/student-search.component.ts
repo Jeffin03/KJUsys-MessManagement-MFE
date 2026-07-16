@@ -116,9 +116,13 @@ export class StudentSearchComponent {
         const raw = data?.students || [];
         return raw.map((s: any) => {
           const sub = s.subscription || {};
-          const status = sub.pauseStart_Date && sub.pauseEnd_Date && Date.now() >= sub.pauseStart_Date && Date.now() <= sub.pauseEnd_Date
+          const now = Date.now();
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+          const todayStartTs = startOfToday.getTime();
+          const status = sub.pauseStart_Date && sub.pauseEnd_Date && now >= sub.pauseStart_Date && now <= sub.pauseEnd_Date
             ? 'Paused'
-            : sub.end_Date && Date.now() > sub.end_Date
+            : sub.end_Date && todayStartTs > sub.end_Date
               ? 'Lapsed'
               : 'Active';
           return {

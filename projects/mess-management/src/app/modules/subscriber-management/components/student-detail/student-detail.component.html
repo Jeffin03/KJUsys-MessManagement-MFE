@@ -186,8 +186,8 @@
           <div class="flex items-center gap-4 mt-4 text-[10px] text-[#6B7280]">
             <span class="flex items-center gap-1"><span class="w-3 h-3 rounded" [style.background]="'#1D9F00'"></span> Present</span>
             <span class="flex items-center gap-1"><span class="w-3 h-3 rounded" [style.background]="'#30A14E'"></span> Partial</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#EBEDF0] border border-[#D1D5DB]"></span> Absent</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded" [style.background]="'#3B82F6'"></span> Holiday</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded" [style.background]="'#D1D5DB'"></span> Absent</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded" [style.background]="'#EF4444'"></span> Holiday</span>
             <span class="flex items-center gap-1"><span class="w-3 h-3 rounded" [style.background]="'#D97706'"></span> Paused</span>
           </div>
         </div>
@@ -211,7 +211,7 @@
           </div>
 
           <div class="space-y-0">
-            <ng-container *ngFor="let entry of recentActivity; let i = index">
+            <ng-container *ngFor="let entry of recentActivityPreview; let i = index">
               <div class="flex gap-3 cursor-pointer hover:bg-[#F9FAFB] rounded-lg px-3 py-2.5 transition-colors" (click)="toggleActivityExpand(entry)">
                 <div class="flex flex-col items-center">
                   <div class="w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0" [style.background]="actionColor(entry.action).bg" [style.border]="'2px solid ' + actionColor(entry.action).text"></div>
@@ -436,12 +436,12 @@
               [style.background]="!activityFilter ? '#155DFC' : '#F3F4F6'"
               [style.color]="!activityFilter ? 'white' : '#6B7280'"
               (click)="onActivityFilterChip(null)">All</button>
-            <button *ngFor="let action of ['SUBSCRIPTION_CREATED','SUBSCRIPTION_RENEWED','SUBSCRIPTION_MODIFIED','PAUSE_STARTED','PAUSE_ENDED','PAUSE_EXTENDED']"
+            <button *ngFor="let action of activityFilterOptions"
               class="px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors"
-              [style.background]="activityFilter === action ? '#155DFC' : '#F3F4F6'"
+              [style.background]="activityFilter === action ? actionColor(action).text : '#F3F4F6'"
               [style.color]="activityFilter === action ? 'white' : '#6B7280'"
               (click)="onActivityFilterChip(activityFilter === action ? null : action)">
-              {{ action.replace('SUBSCRIPTION_', '').replace('_', ' ') | titlecase }}
+              {{ getActionLabel(action) }}
             </button>
           </div>
 

@@ -75,131 +75,22 @@
         </div>
 
         <!-- Date + Status Row -->
-        <div class="grid grid-cols-3 gap-3.5">
-            <p *ngIf="dateError" class="col-span-3 text-[10px] mt-1" style="color:#C70036;">
+        <div class="grid grid-cols-2 gap-4">
+            <p *ngIf="dateError" class="col-span-2 text-[10px] mt-1" style="color:#C70036;">
                 {{ dateError }}
             </p>
 
-            <!-- Start Date -->
-            <div class="flex flex-col relative">
-                <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Start Date</label>
-                <div class="date-picker-trigger h-[42px] border border-gray-200 rounded-lg px-3 text-xs bg-white cursor-pointer flex items-center justify-between hover:border-gray-300"
-                    (click)="togglePicker('start', $event)">
-                    <span [style.color]="!form.mealSlot.startDate ? '#86868B' : '#1D1D1F'">{{ form.mealSlot.startDate || 'dd/mm/yy' }}</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                </div>
-                <div *ngIf="showStartPicker" class="calendar-popup fixed z-[9999] bg-white rounded-[18px] p-4 w-[300px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-gray-200"
-                    [ngStyle]="{ top: popupTop + 'px', left: popupLeft + 'px' }" (click)="$event.stopPropagation()">
-                    <div class="flex items-center justify-between mb-4">
-                        <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
-                            (click)="prevMonth('start')">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 18 9 12 15 6"/>
-                            </svg>
-                        </button>
-                        <span class="text-sm font-bold" style="color:#1D1D1F;">{{ months[startViewDate.getMonth()] }} {{ startViewDate.getFullYear() }}</span>
-                        <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
-                            (click)="nextMonth('start')">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-7 mb-2">
-                        <span *ngFor="let d of weekDays" class="text-center text-[10px] font-semibold" style="color:#86868B;">{{ d }}</span>
-                    </div>
-                    <div class="grid grid-cols-7">
-                        <div *ngFor="let day of getCalendarDays(startViewDate)" class="h-8 flex items-center justify-center relative"
-                            (click)="selectDay('start', day)">
-                            <div *ngIf="isInRange(day)" class="absolute inset-0 bg-blue-100"></div>
-                            <div class="w-8 h-8 text-xs font-medium flex items-center justify-center rounded-lg cursor-pointer z-10 relative"
-                                [class.bg-blue-600]="isBoundaryDate(day)"
-                                [class.text-white]="isBoundaryDate(day)"
-                                [class.rounded-r-none]="isBoundaryStart(day)"
-                                [class.rounded-l-lg]="isBoundaryStart(day)"
-                                [class.rounded-l-none]="isBoundaryEnd(day)"
-                                [class.rounded-r-lg]="isBoundaryEnd(day)"
-                                [class.ring-1]="isToday(day) && !isBoundaryDate(day)"
-                                [class.ring-inset]="isToday(day) && !isBoundaryDate(day)"
-                                [class.ring-blue-300]="isToday(day) && !isBoundaryDate(day)"
-                                [class.cursor-default]="!day"
-                                [style.color]="isBoundaryDate(day) ? '#fff' : day && isCurrentMonth(day, startViewDate) ? '#1D1D1F' : '#86868B'">
-                                {{ day ? day.getDate() : '' }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 mt-4">
-                        <button class="flex-1 h-10 rounded-xl border border-gray-200 bg-white text-xs font-medium cursor-pointer hover:bg-gray-50"
-                            style="color:#1D1D1F;" (click)="clearDate('start')">Clear</button>
-                        <button class="flex-1 h-10 rounded-xl border-none bg-blue-600 text-white text-xs font-semibold cursor-pointer hover:bg-blue-700"
-                            (click)="confirmDate('start')">Confirm</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- End Date -->
-            <div class="flex flex-col relative">
-                <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">End Date</label>
-                <div class="date-picker-trigger h-[42px] border border-gray-200 rounded-lg px-3 text-xs bg-white cursor-pointer flex items-center justify-between hover:border-gray-300"
-                    (click)="togglePicker('end', $event)">
-                    <span [style.color]="!form.mealSlot.endDate ? '#86868B' : '#1D1D1F'">{{ form.mealSlot.endDate || 'dd/mm/yy' }}</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                </div>
-                <div *ngIf="showEndPicker" class="calendar-popup fixed z-[9999] bg-white rounded-[18px] p-4 w-[300px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-gray-200"
-                    [ngStyle]="{ top: popupTop + 'px', left: popupLeft + 'px' }" (click)="$event.stopPropagation()">
-                    <div class="flex items-center justify-between mb-4">
-                        <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
-                            (click)="prevMonth('end')">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 18 9 12 15 6"/>
-                            </svg>
-                        </button>
-                        <span class="text-sm font-bold" style="color:#1D1D1F;">{{ months[endViewDate.getMonth()] }} {{ endViewDate.getFullYear() }}</span>
-                        <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
-                            (click)="nextMonth('end')">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-7 mb-2">
-                        <span *ngFor="let d of weekDays" class="text-center text-[10px] font-medium" style="color:#86868B;">{{ d }}</span>
-                    </div>
-                    <div class="grid grid-cols-7">
-                        <div *ngFor="let day of getCalendarDays(endViewDate)" class="h-8 flex items-center justify-center relative"
-                            (click)="selectDay('end', day)">
-                            <div *ngIf="isInRange(day)" class="absolute inset-0 bg-blue-100"></div>
-                            <div class="w-8 h-8 text-xs font-medium flex items-center justify-center rounded-lg cursor-pointer z-10 relative"
-                                [class.bg-blue-600]="isBoundaryDate(day)"
-                                [class.text-white]="isBoundaryDate(day)"
-                                [class.rounded-r-none]="isBoundaryStart(day)"
-                                [class.rounded-l-lg]="isBoundaryStart(day)"
-                                [class.rounded-l-none]="isBoundaryEnd(day)"
-                                [class.rounded-r-lg]="isBoundaryEnd(day)"
-                                [class.ring-1]="isToday(day) && !isBoundaryDate(day)"
-                                [class.ring-inset]="isToday(day) && !isBoundaryDate(day)"
-                                [class.ring-blue-300]="isToday(day) && !isBoundaryDate(day)"
-                                [class.cursor-default]="!day"
-                                [style.color]="isBoundaryDate(day) ? '#fff' : day && isCurrentMonth(day, endViewDate) ? '#1D1D1F' : '#86868B'">
-                                {{ day ? day.getDate() : '' }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 mt-4">
-                        <button class="flex-1 h-10 rounded-xl border border-gray-200 bg-white text-xs font-medium cursor-pointer hover:bg-gray-50"
-                            style="color:#1D1D1F;" (click)="clearDate('end')">Clear</button>
-                        <button class="flex-1 h-10 rounded-xl border-none bg-blue-600 text-white text-xs font-semibold cursor-pointer hover:bg-blue-700"
-                            (click)="confirmDate('end')">Confirm</button>
-                    </div>
-                </div>
+            <!-- Subscription Date Range -->
+            <div class="flex flex-col">
+                <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Subscription Period</label>
+                <lib-date-picker
+                    #subDatePicker
+                    [initialStartDate]="subscriptionStart"
+                    [initialEndDate]="subscriptionEnd"
+                    placeholder="Select start & end date"
+                    (dateRangeSelected)="onSubscriptionRangeSelect($event)"
+                    (onClear)="onSubscriptionRangeClear()">
+                </lib-date-picker>
             </div>
 
             <!-- Status -->
@@ -228,129 +119,20 @@
         <!-- Pause Details (shown when status is Paused) -->
         <div *ngIf="form.mealSlot.status === 'Paused'" class="mt-5">
             <div class="text-xs font-semibold mb-3.5" style="color:#1D1D1F;">Pause Details</div>
-            <div class="grid grid-cols-3 gap-3.5">
-                <!-- Pause Start Date -->
-                <div class="flex flex-col relative">
-                    <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Pause Start Date</label>
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Pause Period -->
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Pause Period</label>
                     <p *ngIf="errors.pauseStartDate" class="mb-1 text-[10px]" style="color:#C70036;">{{ errors.pauseStartDate }}</p>
-                    <div class="date-picker-trigger h-[42px] border border-gray-200 rounded-lg px-3 text-xs bg-white cursor-pointer flex items-center justify-between hover:border-gray-300"
-                        (click)="togglePicker('pauseStart', $event)">
-                        <span [style.color]="!form.pauseStartDate ? '#86868B' : '#1D1D1F'">{{ form.pauseStartDate || 'dd/mm/yy' }}</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                            <line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                    </div>
-                    <div *ngIf="showPauseStartPicker" class="calendar-popup fixed z-[9999] bg-white rounded-[18px] p-4 w-[300px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-gray-200"
-                        [ngStyle]="{ top: popupTop + 'px', left: popupLeft + 'px' }" (click)="$event.stopPropagation()">
-                        <div class="flex items-center justify-between mb-4">
-                            <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
-                                (click)="prevMonth('pauseStart')">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="15 18 9 12 15 6"/>
-                                </svg>
-                            </button>
-                            <span class="text-sm font-bold" style="color:#1D1D1F;">{{ months[pauseStartViewDate.getMonth()] }} {{ pauseStartViewDate.getFullYear() }}</span>
-                            <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
-                                (click)="nextMonth('pauseStart')">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="9 18 15 12 9 6"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="grid grid-cols-7 mb-2">
-                            <span *ngFor="let d of weekDays" class="text-center text-[10px] font-semibold" style="color:#86868B;">{{ d }}</span>
-                        </div>
-                        <div class="grid grid-cols-7">
-                            <div *ngFor="let day of getCalendarDays(pauseStartViewDate)" class="h-8 flex items-center justify-center relative"
-                                (click)="selectPauseStartDay(day)">
-                                <div *ngIf="isPauseStartInRange(day)" class="absolute inset-0 bg-blue-100"></div>
-                                <div class="w-8 h-8 text-xs font-medium flex items-center justify-center rounded-lg cursor-pointer z-10 relative"
-                                    [class.bg-blue-600]="isPauseStartBoundaryDate(day)"
-                                    [class.text-white]="isPauseStartBoundaryDate(day)"
-                                    [class.rounded-r-none]="isPauseStartBoundaryStart(day)"
-                                    [class.rounded-l-lg]="isPauseStartBoundaryStart(day)"
-                                    [class.rounded-l-none]="isPauseStartBoundaryEnd(day)"
-                                    [class.rounded-r-lg]="isPauseStartBoundaryEnd(day)"
-                                    [class.ring-1]="isToday(day) && !isPauseStartBoundaryDate(day)"
-                                    [class.ring-inset]="isToday(day) && !isPauseStartBoundaryDate(day)"
-                                    [class.ring-blue-300]="isToday(day) && !isPauseStartBoundaryDate(day)"
-                                    [class.cursor-default]="!day"
-                                    [style.color]="isPauseStartBoundaryDate(day) ? '#fff' : day && isCurrentMonth(day, pauseStartViewDate) ? '#1D1D1F' : '#86868B'">
-                                    {{ day ? day.getDate() : '' }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex gap-2 mt-4">
-                            <button class="flex-1 h-10 rounded-xl border border-gray-200 bg-white text-xs font-medium cursor-pointer hover:bg-gray-50"
-                                style="color:#1D1D1F;" (click)="clearPauseStartDate()">Clear</button>
-                            <button class="flex-1 h-10 rounded-xl border-none bg-blue-600 text-white text-xs font-semibold cursor-pointer hover:bg-blue-700"
-                                (click)="confirmPauseStartDate()">Confirm</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pause End Date -->
-                <div class="flex flex-col relative">
-                    <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Pause End Date</label>
                     <p *ngIf="errors.pauseEndDate" class="mb-1 text-[10px]" style="color:#C70036;">{{ errors.pauseEndDate }}</p>
-                    <div class="date-picker-trigger h-[42px] border border-gray-200 rounded-lg px-3 text-xs bg-white cursor-pointer flex items-center justify-between hover:border-gray-300"
-                        (click)="togglePicker('pauseEnd', $event)">
-                        <span [style.color]="!form.pauseEndDate ? '#86868B' : '#1D1D1F'">{{ form.pauseEndDate || 'dd/mm/yy' }}</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                            <line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                    </div>
-                    <div *ngIf="showPauseEndPicker" class="calendar-popup fixed z-[9999] bg-white rounded-[18px] p-4 w-[300px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] border border-gray-200"
-                        [ngStyle]="{ top: popupTop + 'px', left: popupLeft + 'px' }" (click)="$event.stopPropagation()">
-                        <div class="flex items-center justify-between mb-4">
-                            <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
-                                (click)="prevMonth('pauseEnd')">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="15 18 9 12 15 6"/>
-                                </svg>
-                            </button>
-                            <span class="text-sm font-bold" style="color:#1D1D1F;">{{ months[pauseEndViewDate.getMonth()] }} {{ pauseEndViewDate.getFullYear() }}</span>
-                            <button class="border-none bg-transparent cursor-pointer p-0 rounded-[14px] hover:bg-[#F9FAFB] active:bg-[#E5E7EB] transition-colors"
-                                (click)="nextMonth('pauseEnd')">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="9 18 15 12 9 6"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="grid grid-cols-7 mb-2">
-                            <span *ngFor="let d of weekDays" class="text-center text-[10px] font-semibold" style="color:#86868B;">{{ d }}</span>
-                        </div>
-                        <div class="grid grid-cols-7">
-                            <div *ngFor="let day of getCalendarDays(pauseEndViewDate)" class="h-8 flex items-center justify-center relative"
-                                (click)="selectPauseEndDay(day)">
-                                <div *ngIf="isPauseInRange(day)" class="absolute inset-0 bg-blue-100"></div>
-                                <div class="w-8 h-8 text-xs font-medium flex items-center justify-center rounded-lg cursor-pointer z-10 relative"
-                                    [class.bg-blue-600]="isSelectedPauseEnd(day) || isPauseRangeStart(day)"
-                                    [class.text-white]="isSelectedPauseEnd(day) || isPauseRangeStart(day)"
-                                    [class.rounded-r-none]="isPauseRangeStart(day)"
-                                    [class.rounded-l-lg]="isPauseRangeStart(day)"
-                                    [class.rounded-l-none]="isPauseRangeEnd(day)"
-                                    [class.rounded-r-lg]="isPauseRangeEnd(day)"
-                                    [class.ring-1]="isToday(day) && !isSelectedPauseEnd(day) && !isPauseRangeStart(day)"
-                                    [class.ring-inset]="isToday(day) && !isSelectedPauseEnd(day) && !isPauseRangeStart(day)"
-                                    [class.ring-blue-300]="isToday(day) && !isSelectedPauseEnd(day) && !isPauseRangeStart(day)"
-                                    [class.cursor-default]="!day"
-                                    [style.color]="(isSelectedPauseEnd(day) || isPauseRangeStart(day)) ? '#fff' : day && isCurrentMonth(day, pauseEndViewDate) ? '#1D1D1F' : '#86868B'">
-                                    {{ day ? day.getDate() : '' }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex gap-2 mt-4">
-                            <button class="flex-1 h-10 rounded-xl border border-gray-200 bg-white text-xs font-medium cursor-pointer hover:bg-gray-50"
-                                style="color:#1D1D1F;" (click)="clearPauseEndDate()">Clear</button>
-                            <button class="flex-1 h-10 rounded-xl border-none bg-blue-600 text-white text-xs font-semibold cursor-pointer hover:bg-blue-700"
-                                (click)="confirmPauseEndDate()">Confirm</button>
-                        </div>
-                    </div>
+                    <lib-date-picker
+                        #pauseDatePicker
+                        [initialStartDate]="pauseStart"
+                        [initialEndDate]="pauseEnd"
+                        placeholder="Select pause start & end"
+                        (dateRangeSelected)="onPauseRangeSelect($event)"
+                        (onClear)="onPauseRangeClear()">
+                    </lib-date-picker>
                 </div>
 
                 <!-- Reason for Pause -->
