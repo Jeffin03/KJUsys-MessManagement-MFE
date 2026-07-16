@@ -131,9 +131,12 @@ export class QuickModalComponent implements OnChanges {
         const mealSlots = meals.map((m: string) => m.charAt(0) + m.slice(1).toLowerCase());
 
         const now = Date.now();
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const todayStartTs = startOfToday.getTime();
         const status = sub.pauseStart_Date && sub.pauseEnd_Date && now >= sub.pauseStart_Date && now <= sub.pauseEnd_Date
           ? 'paused'
-          : sub.end_Date && now > sub.end_Date
+          : sub.end_Date && todayStartTs > sub.end_Date
             ? 'expired'
             : 'active';
 

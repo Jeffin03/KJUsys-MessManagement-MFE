@@ -83,6 +83,27 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **`HardwareManagementService.connectDevice()`** returns `{ device, hmacSecret, hmacSecretHash }`.
 - **`HardwareManagementService.rotateSecret()`** returns `{ newSecret, newSecretHash }`.
 
+### Added
+- **Changelog action filters**: `audit-tools.component.ts` — added `HOLIDAY_DELETED`, `TAP_REJECTED`, `SCHEDULE_CREATED`, `SCHEDULE_MODIFIED`, `SCHEDULE_DELETED` to action filter dropdown and badge color map
+- **Student Detail activity filter options**: Dynamically derived from present actions via `get activityFilterOptions()`. Added `recentActivityPreview` getter (first 6 entries)
+- **Student Detail icon mappings**: `SCHEDULE_CREATED`, `SCHEDULE_MODIFIED`, `SCHEDULE_DELETED` → `'calendar'`, `SUBSCRIPTION_EXPIRED` → `'alert'`
+
+### Changed
+- **Tabs subtitle unified**: `dashboard.component.ts`, `reports.component.ts`, `subscriber-management.component.ts` — tab subtitle changed from `'Overview'` to `'Dashboard Overview'` for consistency
+- **Add/Edit subscriber modal height**: Reduced from `800px` → `700px`, `max-h-[92vh]` → `max-h-[90vh]` for a more compact layout
+- **Subscriber form date pickers** (`subscriber-form.component.ts/.html`): Replaced 4 custom inline date pickers (~250 lines) with 2 `<lib-date-picker>` range pickers (`#subDatePicker`, `#pauseDatePicker`). Removed `togglePicker()`, `prevMonth()`, `nextMonth()`, `getCalendarDays()`, `isSelected()`, `isInRange()`, `isBoundaryDate()`, `isBoundaryStart/End()`, `selectDay()`, `clearDate()`, `confirmDate()`, `selectPauseStartDay()`, `selectPauseEndDay()`, `clearPauseStartDate()`, `confirmPauseStartDate()`, `isPauseStartBoundaryDate()`, `isPauseStartInRange()`, `isSelectedPauseEnd()`, `isPauseInRange()`, `isPauseRangeStart()`, `isPauseRangeEnd()`, `syncViewDates()` methods, `showStartPicker`/`showEndPicker`/`showPauseEndPicker`/`showPauseStartPicker` states, `popupTop`/`popupLeft` positioning, `startViewDate`/`endViewDate`/`pauseEndViewDate`/`pauseStartViewDate` view dates, `months` array, `weekDays` array. Added `DatePickerModule` + `DatePickerComponent` imports, `@ViewChild('subDatePicker')`/`@ViewChild('pauseDatePicker')`, `pushDatesToDatePickers()`, `onSubscriptionRangeSelect()`, `onSubscriptionRangeClear()`, `onPauseRangeSelect()`, `onPauseRangeClear()`, date-value getters. `onDocClick` now only closes status dropdown. `closeAllDropdowns()` closes lib date pickers via `isOpen` property
+- **CSS** (`subscriber-form.component.css`): Removed `.calendar-popup` fadeIn animation, added `::ng-deep .date-picker-trigger` styling to match form input height/padding
+- **Student Detail** (`student-detail.component.ts`): `buildPausePeriods()` now recognizes `PAUSE_REQUESTED` and `PAUSE_AUTO_STARTED` actions. Milestones builder includes `PAUSE_REQUESTED`/`PAUSE_AUTO_STARTED`. Events panel date rendering looks up holiday reason from `holidayMap` and pause reason from `pausePeriods`
+- **Subscriber table filter dropdown**: "Clear All" button changed from `text-gray-500` to `text-red-600`
+- **Reports service days-remaining** (`reports.service.ts`): Changed from `Math.ceil((effectiveEnd - Date.now()) / 86400000)` to `Math.floor((effectiveEnd - todayStartTs) / 86400000) + 1` — end date day itself counts fully
+
+### Fixed
+- **Subscriber expiry filter** (`subscriber-management.component.ts`): `filterByExpiry` changed `endTs > now` to `endTs >= todayStartTs` — subscribers expiring today now correctly included in 7-day filter
+- **Subscriber service expiry warning** (`subscriber.service.ts`): Now shows `'expires today'` when `daysUntilExpiry === 0`. Changed reference from `Date.now()` to `todayStartTs` for consistent boundary comparison
+- **Quick modal expired status** (`quick-modal.component.ts`): `now > sub.end_Date` → `todayStartTs > sub.end_Date` — subscriber not expired on their end date day
+- **Student search expired status** (`student-search.component.ts`): `Date.now() > sub.end_Date` → `todayStartTs > sub.end_Date` — same boundary fix
+- **Reports service expired/paused detection** (`reports.service.ts`): `now > sub.end_Date` → `todayStartTs > sub.end_Date`. `hasEndedPause` uses `todayStartTs` instead of `now`. Pause status check uses `now` for active window but boundary comparisons consistently use `todayStartTs`
+
 ---
 
 ## [Unreleased] (earlier)

@@ -118,19 +118,36 @@ const ACTION_COLORS: Record<string, { bg: string; text: string; icon: string }> 
   SUBSCRIPTION_RENEWED:   { bg: '#DCFCE7', text: '#1D9F00', icon: 'refresh' },
   SUBSCRIPTION_MODIFIED:  { bg: '#DBEAFE', text: '#155DFC', icon: 'edit' },
   SUBSCRIPTION_DELETED:   { bg: '#FFF1F2', text: '#C70036', icon: 'trash' },
+  PAUSE_REQUESTED:        { bg: '#F3E8FF', text: '#7C3AED', icon: 'pause' },
   PAUSE_STARTED:          { bg: '#FEF3C7', text: '#FE9A00', icon: 'pause' },
-  PAUSE_ENDED:          { bg: '#DCFCE7', text: '#1D9F00', icon: 'play' },
+  PAUSE_AUTO_STARTED:     { bg: '#DBEAFE', text: '#155DFC', icon: 'pause' },
+  PAUSE_ENDED:            { bg: '#DCFCE7', text: '#1D9F00', icon: 'play' },
   PAUSE_EXTENDED:         { bg: '#FEF3C7', text: '#FE9A00', icon: 'clock' },
+  HOLIDAY_MARKED:         { bg: '#F3E8FF', text: '#7C3AED', icon: 'flag' },
+  HOLIDAY_DELETED:        { bg: '#FFF1F2', text: '#C70036', icon: 'flag' },
+  TAP_REJECTED:           { bg: '#FFF1F2', text: '#C70036', icon: 'x' },
+  SCHEDULE_CREATED:       { bg: '#ECFEFF', text: '#0E7490', icon: 'calendar' },
+  SCHEDULE_MODIFIED:      { bg: '#ECFEFF', text: '#0E7490', icon: 'calendar' },
+  SCHEDULE_DELETED:       { bg: '#FFF1F2', text: '#C70036', icon: 'calendar' },
+  SUBSCRIPTION_EXPIRED:    { bg: '#FFF1F2', text: '#C70036', icon: 'alert' },
 };
 
 const ACTIVITY_COLORS: Record<string, { bg: string; text: string }> = {
   SUBSCRIPTION_CREATED:   { bg: '#DCFCE7', text: '#1D9F00' },
-  SUBSCRIPTION_MODIFIED:  { bg: '#DBEAFE', text: '#155DFC' },
   SUBSCRIPTION_RENEWED:   { bg: '#DCFCE7', text: '#1D9F00' },
+  SUBSCRIPTION_MODIFIED:  { bg: '#DBEAFE', text: '#155DFC' },
   SUBSCRIPTION_DELETED:   { bg: '#FFF1F2', text: '#C70036' },
+  PAUSE_REQUESTED:        { bg: '#F3E8FF', text: '#7C3AED' },
   PAUSE_STARTED:          { bg: '#FEF3C7', text: '#FE9A00' },
-  PAUSE_ENDED:          { bg: '#DCFCE7', text: '#1D9F00' },
+  PAUSE_AUTO_STARTED:     { bg: '#DBEAFE', text: '#155DFC' },
+  PAUSE_ENDED:            { bg: '#DCFCE7', text: '#1D9F00' },
   PAUSE_EXTENDED:         { bg: '#FEF3C7', text: '#FE9A00' },
+  HOLIDAY_MARKED:         { bg: '#F3E8FF', text: '#7C3AED' },
+  HOLIDAY_DELETED:        { bg: '#FFF1F2', text: '#C70036' },
+  TAP_REJECTED:           { bg: '#FFF1F2', text: '#C70036' },
+  SCHEDULE_CREATED:       { bg: '#ECFEFF', text: '#0E7490' },
+  SCHEDULE_MODIFIED:      { bg: '#ECFEFF', text: '#0E7490' },
+  SCHEDULE_DELETED:       { bg: '#FFF1F2', text: '#C70036' },
 };
 
 // ── Component ───────────────────────────────────────────────────────────────────
@@ -330,6 +347,10 @@ export class StudentDetailComponent implements OnChanges {
         this.overviewLoading = false;
         if (!data || !data.name) {
           this.studentNotFound = true;
+        }
+        // Rebuild milestones so the derived expiry entry reflects the end date
+        if (this.subscriptionHistory.length || this.changelogData.length) {
+          this.buildMilestones();
         }
         this.cdr.detectChanges();
       },
@@ -698,7 +719,10 @@ export class StudentDetailComponent implements OnChanges {
   }
 
   private buildMilestones() {
-    this.milestones = this.subscriptionHistory.map((e: any) => {
+    const entries: SubscriptionMilestone[] = [];
+
+    // 1. Subscription lifecycle events from history
+    for (const e of this.subscriptionHistory) {
       let title = '';
       let details = '';
       const d = e.details || {};
@@ -739,13 +763,23 @@ export class StudentDetailComponent implements OnChanges {
           details = e.reason || '';
       }
 
-      return {
-        date: e.timestamp || 0,
-        action: e.action,
-        title,
-        details,
-      };
-    });
+      entries.push({ date: e.timestamp || 0, action: e.action, title, details });
+    }
+
+    // 2. Derived expiry milestone (no backend log exists for this)
+    const subEndRaw = this.overview?.subscription?.endDate;
+    const subEnd = subEndRaw ? new Date(subEndRaw).getTime() : 0;
+    if (subEnd && Date.now() > subEnd && !entries.some(m => m.action === 'SUBSCRIPTION_EXPIRED')) {
+      entries.push({
+        date: subEnd,
+        action: 'SUBSCRIPTION_EXPIRED',
+        title: 'Subscription Expired',
+        details: `Plan ended on ${this.fmtDate(subEnd)}`,
+      });
+    }
+
+    entries.sort((a, b) => b.date - a.date);
+    this.milestones = entries;
   }
 
   private buildPausePeriods() {
@@ -846,6 +880,23 @@ export class StudentDetailComponent implements OnChanges {
     this.activityFilter = action;
   }
 
+  get recentActivityPreview(): ActivityEntry[] {
+    return this.recentActivity.slice(0, 6);
+  }
+
+  private static readonly ACTION_ORDER: string[] = [
+    'SUBSCRIPTION_CREATED', 'SUBSCRIPTION_RENEWED', 'SUBSCRIPTION_MODIFIED', 'SUBSCRIPTION_DELETED',
+    'PAUSE_REQUESTED', 'PAUSE_STARTED', 'PAUSE_AUTO_STARTED', 'PAUSE_ENDED', 'PAUSE_EXTENDED',
+    'HOLIDAY_MARKED', 'HOLIDAY_DELETED',
+    'TAP_REJECTED',
+    'SCHEDULE_CREATED', 'SCHEDULE_MODIFIED', 'SCHEDULE_DELETED',
+  ];
+
+  get activityFilterOptions(): string[] {
+    const present = new Set(this.activityEntries.map(e => e.action));
+    return StudentDetailComponent.ACTION_ORDER.filter(a => present.has(a));
+  }
+
   get filteredActivityEntries(): ActivityEntry[] {
     if (!this.activityFilter) return this.activityEntries;
     return this.activityEntries.filter(e => e.action === this.activityFilter);
@@ -939,10 +990,16 @@ export class StudentDetailComponent implements OnChanges {
       case 'CREATED': return 'plus';
       case 'RENEWED': return 'refresh';
       case 'MODIFIED': return 'edit';
-      case 'PAUSE_STARTED': return 'pause';
+      case 'PAUSE_STARTED':
+      case 'PAUSE_REQUESTED':
+      case 'PAUSE_AUTO_STARTED': return 'pause';
       case 'PAUSE_ENDED': return 'play';
       case 'PAUSE_EXTENDED': return 'clock';
       case 'DELETED': return 'trash';
+      case 'SCHEDULE_CREATED':
+      case 'SCHEDULE_MODIFIED':
+      case 'SCHEDULE_DELETED': return 'calendar';
+      case 'SUBSCRIPTION_EXPIRED': return 'alert';
       default: return 'circle';
     }
   }
@@ -957,7 +1014,8 @@ export class StudentDetailComponent implements OnChanges {
       'PAUSE_EXTENDED': 'PAUSE_EXTENDED',
       'DELETED': 'SUBSCRIPTION_DELETED',
     };
-    return this.actionColor(shortToFull[action] || action);
+    const fullAction = shortToFull[action] || action;
+    return this.actionColor(fullAction);
   }
 
   getMilestoneText(action: string): string {

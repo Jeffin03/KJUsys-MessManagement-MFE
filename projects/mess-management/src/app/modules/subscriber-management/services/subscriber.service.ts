@@ -91,23 +91,24 @@ export class SubscriberService {
     }).filter(Boolean).join('+');
 
     let status: 'Active' | 'Paused' | 'Lapsed' = 'Lapsed';
+    const now = Date.now();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartTs = todayStart.getTime();
+
     if (student.subscription) {
-      const now = new Date();
 
       // Use effective_End_Date if available (accounts for pause extensions), else fall back to end_Date
       const effectiveEnd = student.subscription.effective_End_Date || student.subscription.end_Date;
-      const effectiveEndDate = new Date(effectiveEnd);
 
-      if (effectiveEndDate < now) {
+      if (effectiveEnd < todayStartTs) {
         status = 'Lapsed';
       } else {
         const pauseStart = student.subscription.pauseStart_Date;
         const pauseEnd = student.subscription.pauseEnd_Date;
-        const pauseStartDate = pauseStart ? new Date(pauseStart) : null;
-        const pauseEndDate = pauseEnd ? new Date(pauseEnd) : null;
-        const isCurrentlyPaused = pauseStartDate && pauseEndDate &&
-          now >= pauseStartDate && now <= pauseEndDate;
-        const pauseExpired = pauseEndDate && pauseEndDate <= now;
+        const isCurrentlyPaused = pauseStart && pauseEnd &&
+          now >= pauseStart && now <= pauseEnd;
+        const pauseExpired = pauseEnd && pauseEnd < todayStartTs;
 
         if (pauseExpired) {
           status = 'Active';
@@ -125,10 +126,14 @@ export class SubscriberService {
     let expiryWarning = '';
     if (status === 'Active' && student.subscription) {
       const effectiveEnd = student.subscription.effective_End_Date || student.subscription.end_Date;
-      const now = Date.now();
-      const daysUntilExpiry = Math.ceil((effectiveEnd - now) / (1000 * 60 * 60 * 24));
-      if (daysUntilExpiry > 0 && daysUntilExpiry <= 7) {
-        expiryWarning = `expiry in ${daysUntilExpiry} day${daysUntilExpiry > 1 ? 's' : ''}`;
+      const diffMs = effectiveEnd - todayStartTs;
+      const daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      if (diffMs >= 0 && daysUntilExpiry <= 7) {
+        if (daysUntilExpiry === 0) {
+          expiryWarning = 'expires today';
+        } else {
+          expiryWarning = `expiry in ${daysUntilExpiry} day${daysUntilExpiry > 1 ? 's' : ''}`;
+        }
       }
     }
 

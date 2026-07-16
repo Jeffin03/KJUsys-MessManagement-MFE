@@ -48,7 +48,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ];
 
   tabs: TabItem[] = [
-    { id: 'dashboard', label: 'Dashboard', subtitle: 'Overview' },
+    { id: 'dashboard', label: 'Dashboard', subtitle: 'Dashboard Overview' },
     { id: 'subscriber', label: 'Subscriber Management', subtitle: 'Manage Subscribers' },
     { id: 'reports', label: 'Reports', subtitle: 'View Reports' }
   ];
