@@ -5,6 +5,16 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ## [Unreleased]
 
 ### Added
+- **Poll-based admin command UI in hardware settings modal**: Per-peripheral inline Test buttons (printer → Test, LCD → Test) with three states — static "Test", animated "Sending", and countdown `15s → 14s …` auto-clearing after timeout. `pendingCommandTimestamps` Map tracks command age; `markPendingCommand()`, `getPendingCommandSeconds()`, `hasPendingCommand()` drive the UX.
+- **`testPrinter()`, `testDisplay()`, `stopDevice()` in `HardwareManagementService`**: HTTP methods that POST to `HARDWARE_TEST_PRINTER` / `HARDWARE_TEST_DISPLAY` / `HARDWARE_STOP` endpoints. Backend queues the command for the next ESP32 poll cycle.
+- **`HARDWARE_TEST_PRINTER`, `HARDWARE_TEST_DISPLAY`, `HARDWARE_STOP` endpoint constants** in `api-endpoints.ts`.
+
+### Changed
+- **Hardware settings modal**: Test buttons moved from standalone action buttons in device card toolbar to inline next to each peripheral entry. Stop button removed entirely (device.stop enqueued from backend code only). `pendingCommandTimestamps`, countdown state, and 15s auto-clear added to component TS/HTML.
+
+### Fixed
+- **Environment manifest cache-busting**: `environment.dev.ts` and `environment.prod.ts` manifest version updated from `v=1782498691634` to `v=1784488083723` for fresh MFE manifest loading.
+
 - **dayPreference-aware dashboard stats**: `DashboardComponent` now splits active subscriber counts by `dayPreference` (all/weekday/weekend). `getExpectedActiveToday()` filters by current day type — absent count uses day-appropriate total instead of all active subscribers. Meal slot eligible counts respect day type (e.g. weekend-only subscribers count only on weekends).
 - **`expectedActiveToday` to Reports Dashboard KPI**: New KPI card replaces redundant "Absent Today" with "Expected Subscribers Today" — reflects dayPreference-filtered expected count. Anomaly KPI card and its data loading removed.
 - **`expectedActiveToday` field** to `DailyAnalytics` model with backend fallback.

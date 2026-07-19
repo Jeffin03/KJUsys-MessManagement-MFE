@@ -83,6 +83,19 @@ export class HardwareManagementService {
     );
   }
 
+  testPrinter(deviceId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_TEST_PRINTER(deviceId)}`, {});
+  }
+
+  testDisplay(deviceId: string, lcdLine1?: string, lcdLine2?: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_TEST_DISPLAY(deviceId)}`,
+      { lcd_line1: lcdLine1 || 'LCD TEST', lcd_line2: lcdLine2 || 'Hello, Mess!' });
+  }
+
+  stopDevice(deviceId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_STOP(deviceId)}`, {});
+  }
+
   rotateSecret(deviceId: string): Observable<{ newSecret: string; newSecretHash: string }> {
     return this.http.post<ApiResponse<{ newSecret: string; newSecretHash: string }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_ROTATE_SECRET(deviceId)}`, {})
       .pipe(
