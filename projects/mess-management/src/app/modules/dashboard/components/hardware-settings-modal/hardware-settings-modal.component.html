@@ -108,6 +108,26 @@
               <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" [style.background]="getPeripheralColor(getEffectivePeripheralStatus(device, p))"></span>
               <span class="text-xs" style="color:#4A5565;">{{ getPeripheralLabel(p.type) }}</span>
               <span class="text-xs" style="color:#86868B;">{{ getEffectivePeripheralStatus(device, p) }}</span>
+              <button *ngIf="device.state === 'active' && (p.type === 'printer' || p.type === 'lcd')"
+                class="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border transition-colors"
+                [class]="(p.type === 'printer' ? testingPrintDeviceId : testingDisplayDeviceId) === device._id
+                  ? 'bg-blue-50 text-blue-600 border-blue-200 cursor-wait'
+                  : hasPendingCommand(device._id)
+                    ? 'bg-amber-50 text-amber-600 border-amber-200'
+                    : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-700 cursor-pointer'"
+                [disabled]="hasPendingCommand(device._id) || (p.type === 'printer' ? testingPrintDeviceId : testingDisplayDeviceId) === device._id"
+                (click)="p.type === 'printer' ? testPrinter(device) : testDisplay(device)">
+                <ng-container *ngIf="!hasPendingCommand(device._id) && (p.type === 'printer' ? !testingPrintDeviceId : !testingDisplayDeviceId)">
+                  Test
+                </ng-container>
+                <ng-container *ngIf="(p.type === 'printer' ? testingPrintDeviceId : testingDisplayDeviceId) === device._id">
+                  <svg class="animate-spin" width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-dasharray="28" stroke-linecap="round"/></svg>
+                  Sending
+                </ng-container>
+                <ng-container *ngIf="hasPendingCommand(device._id) && (p.type === 'printer' ? testingPrintDeviceId !== device._id : testingDisplayDeviceId !== device._id)">
+                  {{ getPendingCommandSeconds(device._id) }}s
+                </ng-container>
+              </button>
             </div>
           </div>
         </div>

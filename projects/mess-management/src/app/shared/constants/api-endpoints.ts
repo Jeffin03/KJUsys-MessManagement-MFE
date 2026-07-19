@@ -50,6 +50,9 @@ export const API_ENDPOINTS = {
   HARDWARE_PAIR: '/hardware/pair',
   HARDWARE_CONFIRM: (id: string) => `/hardware/${id}/confirm`,
   HARDWARE_ROTATE_SECRET: (id: string) => `/hardware/${id}/rotate-secret`,
+  HARDWARE_TEST_PRINTER: (id: string) => `/hardware/${id}/test-printer`,
+  HARDWARE_TEST_DISPLAY: (id: string) => `/hardware/${id}/test-display`,
+  HARDWARE_STOP: (id: string) => `/hardware/${id}/stop`,
   HARDWARE_HEARTBEAT: '/hardware/heartbeat',
 
   // Display Config
