@@ -10,7 +10,7 @@ export interface MealSlot {
   name: string;
   code: string;
   icon: string;
-  status: 'Closed' | 'Live' | 'Upcoming';
+  status: 'Closed' | 'Live' | 'Upcoming' | 'Inactive';
   timeRange: string;
   total: number;
   hadMeal: number | null;

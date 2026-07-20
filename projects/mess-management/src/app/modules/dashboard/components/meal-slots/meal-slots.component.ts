@@ -28,6 +28,7 @@ export class MealSlotsComponent implements OnChanges {
       case 'Closed': return 'bg-[rgba(193,0,7,0.2)] text-[#C10007] rounded-[28px]';
       case 'Live': return 'bg-[#DCFCE7] text-[#1D9F00] border border-[#BBF7D0]';
       case 'Upcoming': return 'bg-[#FEF3C7] text-[#BB4D00] border border-[#FDE68A]';
+      case 'Inactive': return 'bg-[#ECD6FF] text-[#9922FE] border border-[#D8B4FE]';
       default: return '';
     }
   }

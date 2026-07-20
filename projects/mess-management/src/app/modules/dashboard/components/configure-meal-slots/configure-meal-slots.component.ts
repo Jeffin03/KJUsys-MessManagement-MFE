@@ -23,7 +23,7 @@ interface MealSlotConfig {
   code: string;
   icon: string;
   timeRange: string;
-  status: 'Closed' | 'Live' | 'Upcoming';
+  status: 'Closed' | 'Live' | 'Upcoming' | 'Inactive';
   start24: string;
   end24: string;
   daysAvailable: string[];
@@ -576,7 +576,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   endTimeSet = false;
 
   iconOptions = ['default', 'breakfast', 'lunch', 'snacks', 'dinner'];
-  statusOptions = ['Closed', 'Live', 'Upcoming'];
+  statusOptions = ['Closed', 'Live', 'Upcoming', 'Inactive'];
   daysAvailableOptions = ['weekday', 'weekend', 'holiday'];
 
   showStartPicker = false;
@@ -810,6 +810,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       case 'Closed': return 'bg-[#FEE2E2] text-[#D92C2B]';
       case 'Live': return 'bg-[#DCFCE7] text-[#1D9F00]';
       case 'Upcoming': return 'bg-[rgba(254,154,0,0.2)] text-[#BB4D00]';
+      case 'Inactive': return 'bg-[#ECD6FF] text-[#9922FE]';
       default: return '';
     }
   }
