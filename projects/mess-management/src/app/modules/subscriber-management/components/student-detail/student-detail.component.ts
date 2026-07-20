@@ -126,6 +126,7 @@ const ACTION_COLORS: Record<string, { bg: string; text: string; icon: string }> 
   HOLIDAY_MARKED:         { bg: '#F3E8FF', text: '#7C3AED', icon: 'flag' },
   HOLIDAY_DELETED:        { bg: '#FFF1F2', text: '#C70036', icon: 'flag' },
   TAP_REJECTED:           { bg: '#FFF1F2', text: '#C70036', icon: 'x' },
+  SUPER_USER_CREATED:     { bg: '#7C3AED33', text: '#7C3AED', icon: 'star' },
   SCHEDULE_CREATED:       { bg: '#ECFEFF', text: '#0E7490', icon: 'calendar' },
   SCHEDULE_MODIFIED:      { bg: '#ECFEFF', text: '#0E7490', icon: 'calendar' },
   SCHEDULE_DELETED:       { bg: '#FFF1F2', text: '#C70036', icon: 'calendar' },
@@ -145,6 +146,7 @@ const ACTIVITY_COLORS: Record<string, { bg: string; text: string }> = {
   HOLIDAY_MARKED:         { bg: '#F3E8FF', text: '#7C3AED' },
   HOLIDAY_DELETED:        { bg: '#FFF1F2', text: '#C70036' },
   TAP_REJECTED:           { bg: '#FFF1F2', text: '#C70036' },
+  SUPER_USER_CREATED:     { bg: '#7C3AED33', text: '#7C3AED' },
   SCHEDULE_CREATED:       { bg: '#ECFEFF', text: '#0E7490' },
   SCHEDULE_MODIFIED:      { bg: '#ECFEFF', text: '#0E7490' },
   SCHEDULE_DELETED:       { bg: '#FFF1F2', text: '#C70036' },
@@ -165,13 +167,19 @@ export class StudentDetailComponent implements OnChanges {
   @Output() back = new EventEmitter<void>();
 
   // ── Tab state ───────────────────────────────────────────────────────────────
-  tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'attendance', label: 'Attendance' },
-    { id: 'activity-history', label: 'Activity & History' },
-    { id: 'pause-comp', label: 'Pause & Comp' },
-  ];
   activeTab = 'overview';
+
+  get tabs() {
+    const base = [
+      { id: 'overview', label: 'Overview' },
+      { id: 'activity-history', label: 'Activity & History' },
+    ];
+    if (!this.isSuperUser) {
+      base.splice(1, 0, { id: 'attendance', label: 'Attendance' });
+      base.push({ id: 'pause-comp', label: 'Pause & Comp' });
+    }
+    return base;
+  }
 
   // ── API data ────────────────────────────────────────────────────────────────
   overview: StudentOverview | null = null;
@@ -180,6 +188,10 @@ export class StudentDetailComponent implements OnChanges {
   changelogData: ChangelogEntry[] = [];
   subscriptionHistory: any[] = [];
   pauseCompData: any = null;
+
+  get isSuperUser(): boolean {
+    return !!this.overview?.superUser;
+  }
 
   // ── Loading states ──────────────────────────────────────────────────────────
   overviewLoading = false;
@@ -390,6 +402,16 @@ export class StudentDetailComponent implements OnChanges {
   private computeOverviewStats() {
     if (!this.overview) return;
     let totalTaps = 0;
+    if (this.isSuperUser) {
+      for (const day of this.attendanceData) {
+        for (const meal of day.mealSlots) {
+          if (meal.tapped) totalTaps++;
+        }
+      }
+      this.overview.attendanceRate = 0;
+      this.overview.totalTaps = totalTaps;
+      return;
+    }
     let totalExpected = 0;
     for (const day of this.attendanceData) {
       if (!this.isApplicable(day.date)) continue;

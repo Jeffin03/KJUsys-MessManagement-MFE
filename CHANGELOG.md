@@ -5,79 +5,45 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ## [Unreleased]
 
 ### Added
-- **Poll-based admin command UI in hardware settings modal**: Per-peripheral inline Test buttons (printer → Test, LCD → Test) with three states — static "Test", animated "Sending", and countdown `15s → 14s …` auto-clearing after timeout. `pendingCommandTimestamps` Map tracks command age; `markPendingCommand()`, `getPendingCommandSeconds()`, `hasPendingCommand()` drive the UX.
-- **`testPrinter()`, `testDisplay()`, `stopDevice()` in `HardwareManagementService`**: HTTP methods that POST to `HARDWARE_TEST_PRINTER` / `HARDWARE_TEST_DISPLAY` / `HARDWARE_STOP` endpoints. Backend queues the command for the next ESP32 poll cycle.
-- **`HARDWARE_TEST_PRINTER`, `HARDWARE_TEST_DISPLAY`, `HARDWARE_STOP` endpoint constants** in `api-endpoints.ts`.
+- **Super User support in subscriber form**: Checkbox to toggle Super User status on add/edit. Confirmation popup warns before setting. When enabled, clears all meal/pause data. Super Users bypass subscription, meal slot, and day preference requirements.
+- **Super User status in subscriber table**: `'Super User'` added to status filter dropdown with purple badge color (`#7C3AED33` / `#7C3AED`).
+- **Super User banner in student detail**: Purple dashed banner shown for super users. Attendance, Pause & Comp tabs hidden. Taps counted without attendance rate.
+- **Super User in reports**: `StudentOverview` model includes `superUser` field. `subscription` is `undefined` for super users. Status mapped as `'super_user'`.
+- **Renew section in subscriber form**: Edit-mode-only section shown when subscription is near expiry or lapsed. Preset pills (1 Month, 3 Months, 6 Months, 1 Year). Calls `POST /students/:roll_number/renew`.
+- **Renew form date sync**: After successful renewal, `form.mealSlot.endDate` updated from API response (`new_end_Date`), date pickers refreshed, validation re-run.
+- **Renew for lapsed subscriptions**: Renew section now visible even when `daysRemaining <= 0` (lapsed), with "Subscription has lapsed — renew to reactivate" text.
+- **Renew error feedback**: `renewError` state displays API error messages below the renew section.
+- **Subscription duration presets**: 1 Month, 3 Months, 6 Months, 1 Year pill buttons below the subscription date picker.
+- **`pauseTouched` flag in subscriber form**: Pause section validation messages only appear after user interacts with pause fields (date picker or reason input), not on initial load.
+- **`resolveNumeric()` helper** in `ReportsService` and `SubscriberService`: Handles MongoDB `$numberLong` objects and numeric type coercion for timestamp fields.
+- **`SUPER_USER_CREATED` color entries** in `StudentDetailComponent` action/activity color maps (purple `#7C3AED`).
 
 ### Changed
-- **Hardware settings modal**: Test buttons moved from standalone action buttons in device card toolbar to inline next to each peripheral entry. Stop button removed entirely (device.stop enqueued from backend code only). `pendingCommandTimestamps`, countdown state, and 15s auto-clear added to component TS/HTML.
+- **Pause validation consolidated**: Two separate "Pause start date is required" / "Pause end date is required" messages replaced with single "Pause start and end required" line.
+- **Super User checkbox repositioned**: Moved to right side of form via `justify-end`.
+- **Email validation**: Added empty check before regex — shows "Email is required" instead of "Invalid email address" for blank input.
+- **Date validation**: `validateDates()` now returns `'Subscription period is required'` when dates are empty (previously returned `null`).
+- **`Subscriber.status` type**: Changed from `'Active' | 'Paused' | 'Lapsed'` union to `string` to accommodate `'Super User'`.
+- **`StudentSubscriptionSummary` model**: `startDate` and `endDate` changed from `string` to `number` (epoch millis).
+- **`StudentOverview` model**: `subscription` made optional, `superUser` field added.
+- **`subscriber-form.service.ts`**: `validateForm()` skips date/mealSlot validation for super users. `populateForm()` reads `superUser` from subscriber. `initializeForm()` defaults `superUser: false`.
+- **`subscriber.service.ts` `createSubscriber()`**: Early returns for super users without subscription data.
+- **`subscriber.service.ts` `updateSubscriber()`**: Includes `superUser` in payload, skips subscription merge when setting super user.
+- **`mapToSubscriber()`**: Uses `resolveNumeric()` for all timestamp fields. Super users get `'Super User'` status/mealPlan, empty expiry warning.
+- **`BackendStudent` interface**: `subscription` made optional, `superUser` field added.
 
 ### Fixed
-- **Environment manifest cache-busting**: `environment.dev.ts` and `environment.prod.ts` manifest version updated from `v=1782498691634` to `v=1784488083723` for fresh MFE manifest loading.
-
-- **dayPreference-aware dashboard stats**: `DashboardComponent` now splits active subscriber counts by `dayPreference` (all/weekday/weekend). `getExpectedActiveToday()` filters by current day type — absent count uses day-appropriate total instead of all active subscribers. Meal slot eligible counts respect day type (e.g. weekend-only subscribers count only on weekends).
-- **`expectedActiveToday` to Reports Dashboard KPI**: New KPI card replaces redundant "Absent Today" with "Expected Subscribers Today" — reflects dayPreference-filtered expected count. Anomaly KPI card and its data loading removed.
-- **`expectedActiveToday` field** to `DailyAnalytics` model with backend fallback.
-- **`dayPreference` field** to `StudentOverview` model and `ReportsService` mapping.
-- **Student Detail `not_applicable` status**: Overview cards, Attendance calendar, and subscription heatmap show muted "N/A" pills/gray backgrounds for dates outside the student's `dayPreference` (e.g. weekends for weekday-only subscribers). `isApplicable()` method filters attendance/meal summary computations.
-- **Student Detail `studentNotFound` empty state**: When API returns no data or errors, shows `<lib-empty-state>` with "Student Not Found" instead of a blank page.
-- **`parseBackendDate()` helper** in `DashboardService` — converts `dd-MM-yyyy` string (from backend `processResponseDocument`) to epoch millis for holiday calendar date-key mapping.
-- **Holiday calendar month-grouped accordion**: Click-to-view-detail panel replaced with single-expand accordion grouped by month. Most recent month auto-expands. Items show red left-strip (`#EF4444`) and holiday reason.
-- **Holiday calendar red color scheme**: Holiday cells use `#FEE2E2` background, `#991B1B` text, `#EF4444` borders and accents (replaced amber tones).
-- **Holiday calendar cell layout**: Cells have `3rem` height, `1px solid #E5E7EB` border, `6px` border-radius, backgrounds fill the full cell for selected/today/holiday states.
-
-### Changed
-- **Audit Tools subtabs**: Removed "Anomaly Detector" and "Subscription Audit" subtabs. Reordered to "Change Log" then "Pause Audit". Default tab is now Change Log. Removed `PillTabsModule`, `DashboardService`, `SubscriberService` imports/providers. Removed `SubscriptionIssue` interface, `PillTabItem`, anomaly/sub-audit columns, data, loading states, and all handler methods (`loadAnomalies()`, `onSeverityTabChange()`, `runSubscriptionAudit()`, `computeSubscriptionIssues()`).
-- **Changelog table default rows**: Reduced from 30 to 10 per page.
-- **Changelog filter options**: Removed `CARD_BLOCKED` and `CARD_UNBLOCKED` action types from dropdown and badge color map.
-- **Student Detail `ACTION_COLORS`/`ACTIVITY_COLORS`**: Removed `CARD_BLOCKED`/`CARD_UNBLOCKED` entries.
-- **`subscriber-management.component.ts`**: Query param `student` is no longer cleared on component init — navigation to `backFromStudentDetail()` handles it on explicit back navigation.
-- **Hardware settings modal**: Removed fixed footer (Close button) from bottom.
-- **Hardware modal pairing workflow reverted**: Removed "Pair via WiFi" button, pairing status panel, and all pairing state/methods from the modal component. `approvePending()` reverted to original toast+reload behavior. Only the MAC `.toUpperCase()` fix and service type changes remain.
-- **`HardwareManagementService.startPairing()` return type**: Updated from `{ windowExpiresAt }` to `{ code, expiresInMs }`.
-- **`HardwareManagementService.confirmDevice()` return type**: Updated from `HardwareDevice` to `{ status, hmacSecret, hmacSecretHash }`.
-- **MAC address auto-uppercase**: Device MAC input now auto-uppercases via `.toUpperCase()` for consistent formatting.
-
-### Fixed
-- **Holiday calendar not rendering seeded holidays**: `getHolidays()` now maps backend fields (`_id` → `id`, `date_Date` → `date`) with proper `dd-MM-yyyy` → millis parsing via `parseBackendDate()`. Previously `h.date` was `undefined` because the API returned `date_Date` as the key, causing `buildHolidayMap()` to skip all holidays.
-- **dayPreference not persisted on subscriber create**: `SubscriberFormComponent.ngOnChanges()` was replacing the entire form when `mealSlots` loaded asynchronously, discarding user input including `dayPreference`. Changed to only re-initialize on `initialData` changes (edit flow), with the form always initialized once in `ngAfterViewInit`.
-- **Add holiday form payload field name**: `DashboardService.createHoliday()` was sending `{ date: dateMillis, reason }` but backend expects `date_Date`. Fixed payload field to `date_Date`.
+- **Renew not persisting**: `onRenew()` now reads `res.responseData.data.new_end_Date` from API and updates `form.mealSlot.endDate` + date pickers. Previously the old end date was sent on subsequent "Update" click, overwriting the renewal.
+- **Renew hidden for lapsed subscriptions**: `showRenewSection` removed `remaining <= 0` guard — renew section now appears for both expiring and lapsed subscriptions.
+- **Renew silent failures**: Error handler now sets `renewError` with API message or fallback text.
+- **Pause validation messages showing on load**: Gated behind `pauseTouched` flag instead of `formTouched`, preventing messages from appearing when edit modal opens for a Paused subscriber.
+- **Validation error overwriting `firstName`**: Removed `errors.firstName = dateError` from `subscriber-form.service.ts` — date errors are handled separately via `dateError` in the component.
 
 ### Removed
-- **Recurring holiday repeat feature**: Removed after implementation — repeat type pills (None/Weekly/Monthly), weekly day-of-week toggle, monthly day-of-month auto-fill, optional repeat end date, and repeat badge in accordion list. `HolidayRecord.repeat`, `repeatDayOfWeek`, `repeatDayOfMonth`, `repeatEndDate` fields and corresponding `createHoliday()` parameters removed. Backend `markHoliday()` no longer stores repeat fields.
-
-### Removed
-- **Test printer/display buttons from hardware settings modal**: Removed LCD and Printer test buttons and peripheral test methods (`testPeripheral()`, `isTesting()`, `stopDevice()`) from `HardwareSettingsModalComponent`. Devices no longer support WebSocket-based test commands.
-- **Test on Hardware bars from display panel config**: Removed LCD and Printer "Test on Hardware" dropdown+button bars from `ConfigureMealSlotsComponent` display panel tab. Removed `loadHardwareDevices()`, `testLcdOnHardware()`, `testPrinterOnHardware()` methods and `HardwareManagementService` dependency.
-- **`sendTestCommand()`, `sendTestDisplay()`, `stopDevice()` from `HardwareManagementService`**: HTTP service methods removed — backend no longer supports WebSocket-based device push commands.
+- **Test printer/display buttons from hardware settings modal**: Removed inline "Test" buttons, `testingPrintDeviceId`/`testingDisplayDeviceId` state, `markPendingCommand()`, `getPendingCommandSeconds()`, `hasPendingCommand()`, `testPrinter()`, `testDisplay()` methods, and `pendingCommandTimestamps` map.
+- **`testPrinter()`, `testDisplay()` from `HardwareManagementService`**: HTTP methods removed.
 - **`HARDWARE_TEST_PRINTER`, `HARDWARE_TEST_DISPLAY`, `HARDWARE_STOP` API endpoint constants**: Removed from `api-endpoints.ts`.
-
-### Removed
-- **`card_blocked` from entire frontend**: Removed from `Subscriber`, `BackendStudent` interfaces, `subscriber.service.ts` mapping, `quick-modal.component.ts` cardStatus display, `reports.service.ts` overview mapping (always `'Active'`).
-- **Anomaly Detector subtab**: Entire anomaly detection UI, data models, severity pill filters, anomaly table columns, and API loading logic removed from Audit Tools.
-- **Subscription Audit subtab**: Entire subscription audit UI, data models, `SubscriptionIssue` interface, and audit computation logic removed from Audit Tools.
-- **Anomaly KPI card**: Removed from Reports Dashboard — including anomaly count fetch and KPI card display.
-- **`PillTabsModule` import**: No longer needed after anomaly subtab removal.
-- **Case-insensitive roll number input**: Student roll number field in export modal auto-uppercases typed text for better UX. Backend matches roll numbers case-insensitively.
-- **Copy-to-clipboard toasts in HMAC popup**: Copying HMAC Secret or Device Token now shows a toast notification confirming the copy. Icons revert after 2s to allow repeated copies.
-- **3am-pivot meal slot sorting utility** (`shared/constants/meal-sort.ts`): `compareMealStartTimes()`, `mealNameToMinutes()`, `timeToMinutes()`, `sortByMealTime()`. Meals before 3am (Midnight Snack, Late Night) sort after all others across the entire application.
-- **Meal slot sorting applied to**: `MealSlotService` (create/update), `DashboardService.getSchedules()`, `ConfigureMealSlotsComponent` (add/update + initial load), `ReportsService.getStudentAttendance()`, `StudentDetailComponent` (loadAttendance + buildMealSummary).
-- **Enhanced export modal with rich filters**: Reports Dashboard export modal redesigned with date range picker (`<lib-date-picker>`), multi-select meal slot dropdown (`<lib-dropdown-lib>`), comma-separated student roll number input, and Summary/Data sheet toggles.
-- **Multi-sheet Excel output**: Backend now generates 2-sheet workbooks — Summary (KPIs + per-meal-slot breakdown) and Data (full tap detail). Filter params: `mealSlots`, `statuses`, `rollNumbers`, `includeSummary`, `includeDetail`.
-- **Date picker in export modal**: Uses `<lib-date-picker>` from `@libs/date-picker` for consistent date range selection (replaced native `<input type="date">`).
-- **Meal slot multi-select dropdown**: `<lib-dropdown-lib>` from `@libs/dropdown-lib` with all 7 meal slot options sorted by 3am pivot (Early Breakfast, Breakfast, Brunch, Lunch, Dinner, Late Night, Midnight Snack).
-- **Sheet toggle switches**: Two checkbox-style toggles for including Summary and Data sheets, with visual state indicator.
-- **Export progress indicator**: Animated spinner with status text during report generation.
-- **Export output preview**: Shows which sheets will be included based on toggle state.
-
-### Changed
-- **Student-detail component moved**: Relocated from `reports/components/student-detail/` to `subscriber-management/components/student-detail/` — colocated with its only consumer. Updated all import paths.
-- **Breadcrumbs show roll number**: `subscriber-management.component.ts` breadcrumbs now dynamically include the selected student's roll number as a third crumb (e.g. `Hostel > Mess Management > 25MCAB24`).
-- **Student detail calendar design fixes**: Holiday/paused pills now sized as single meal slot (was full-width block). All meal/holiday/paused pills right-aligned in both weekly overview and monthly attendance calendar. Holiday color changed from blue (`#DBEAFE`/`#1E40AF`) to red (`#FEE2E2`/`#991B1B`). Heatmap strip removed from attendance calendar day cells.
-- **Hardware settings modal design refinements**: Increased subtitle margin-bottom (`mb-4`) for better spacing. Replaced `<lib-button>` copy buttons in HMAC popup with icon-only copy/check icons (16px, 32×32 button) — label and icon now use `flex justify-between`. Register Device button right-aligned. MAC address placeholder simplified to "Device MAC address".
-- **Export button relocated to sub-tabs header**: Export button moved from the dashboard card to the sub-tabs header row in `reports.component.html` using `flex justify-between` layout. `reports.component.ts` uses `@ViewChild(ReportsDashboardComponent)` to call `openExportModal()`. `ButtonComponent` added to `reports.module.ts`.
-- **Reports Dashboard component** (`reports-dashboard.component.ts`): Added `DatePickerModule` and `DropdownLibModule` imports. Rewrote export modal with enhanced filter state variables (`exportStartDate`, `exportEndDate`, `exportRollNumbersInput`, `selectedMealSlots`, `exportIncludeSummary`, `exportIncludeDetail`, `exportFormat`). Updated `onGenerateExport()` to build enhanced filter params with format selection. Added `closeExportModal()` with full state reset including format. Added `openExportModal()` public method. Removed standalone export card from dashboard.
-- **`ReportsService.triggerFilteredExport()`**: Updated params interface to accept `mealSlots?: string[]`, `statuses?: string[]`, `rollNumbers?: string[]`, `includeSummary?: boolean`, `includeDetail?: boolean`.
+- **`stopDevice()` from `HardwareManagementService`**: HTTP method removed.
 - **Hardcoded `availableMealSlots` reordered**: Reports dashboard dropdown now lists meals in 3am-pivot order (Early Breakfast → Midnight Snack).
 
 ### Removed

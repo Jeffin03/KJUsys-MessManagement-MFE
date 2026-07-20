@@ -319,66 +319,6 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
     });
   }
 
-  // ── Test & Diagnostics (queued for poll delivery) ──
-
-  testingPrintDeviceId = '';
-  testingDisplayDeviceId = '';
-
-  /** Tracks devices with a command pending poll delivery and the queue time. */
-  pendingCommandTimestamps = new Map<string, number>();
-
-  private markPendingCommand(deviceId: string): void {
-    this.pendingCommandTimestamps.set(deviceId, Date.now());
-    this.cdr.detectChanges();
-    // Auto-clear after 15s (ESP32 polls every 15s)
-    setTimeout(() => {
-      this.pendingCommandTimestamps.delete(deviceId);
-      this.cdr.detectChanges();
-    }, 15000);
-  }
-
-  getPendingCommandSeconds(deviceId: string): number {
-    const ts = this.pendingCommandTimestamps.get(deviceId);
-    if (!ts) return 0;
-    return Math.max(0, 15 - Math.floor((Date.now() - ts) / 1000));
-  }
-
-  hasPendingCommand(deviceId: string): boolean {
-    return this.pendingCommandTimestamps.has(deviceId);
-  }
-
-  testPrinter(device: HardwareDevice): void {
-    this.testingPrintDeviceId = device._id;
-    this.hwMgmt.testPrinter(device._id).subscribe({
-      next: () => {
-        this.testingPrintDeviceId = '';
-        this.markPendingCommand(device._id);
-        this.toast.success('Test print queued — device will respond within ~15s');
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.testingPrintDeviceId = '';
-        this.toast.error('Failed to queue test print');
-      }
-    });
-  }
-
-  testDisplay(device: HardwareDevice): void {
-    this.testingDisplayDeviceId = device._id;
-    this.hwMgmt.testDisplay(device._id).subscribe({
-      next: () => {
-        this.testingDisplayDeviceId = '';
-        this.markPendingCommand(device._id);
-        this.toast.success('Test display queued — LCD will update within ~15s');
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.testingDisplayDeviceId = '';
-        this.toast.error('Failed to queue test display');
-      }
-      });
-  }
-
   // ── Secret Rotation ──
 
   requestRotateSecret(device: HardwareDevice): void {

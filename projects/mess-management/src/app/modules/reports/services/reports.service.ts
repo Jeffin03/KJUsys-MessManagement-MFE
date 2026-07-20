@@ -194,26 +194,40 @@ export class ReportsService {
       }));
   }
 
+  private resolveNumeric(val: any): number {
+    if (typeof val === 'number') return val;
+    if (val && typeof val === 'object' && val.$numberLong) return Number(val.$numberLong);
+    return Number(val) || 0;
+  }
+
   getStudentOverview(rollNumber: string): Observable<StudentOverview> {
     return this.http
       .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(rollNumber)}`)
       .pipe(map(r => {
         const data = this.extractData(r);
         const student = data && data.student ? data.student : data;
+        const isSuperUser = !!student.superUser;
         const sub = student.subscription || {};
 
-        const status = (() => {
+        const endDate = this.resolveNumeric(sub.end_Date);
+        const effectiveEndDate = this.resolveNumeric(sub.effective_End_Date) || endDate;
+        const pauseStart = this.resolveNumeric(sub.pauseStart_Date);
+        const pauseEnd = this.resolveNumeric(sub.pauseEnd_Date);
+        const startDate = this.resolveNumeric(sub.start_Date);
+        const durationDays = this.resolveNumeric(sub.duration_days);
+
+        const status = isSuperUser ? 'super_user' : (() => {
           const now = Date.now();
           const todayStart = new Date();
           todayStart.setHours(0, 0, 0, 0);
           const todayStartTs = todayStart.getTime();
-          if (sub.pauseStart_Date && sub.pauseEnd_Date) {
-            if (now >= sub.pauseStart_Date && now <= sub.pauseEnd_Date) return 'paused';
+          if (pauseStart && pauseEnd) {
+            if (now >= pauseStart && now <= pauseEnd) return 'paused';
           }
-          if (sub.end_Date && todayStartTs > sub.end_Date) return 'expired';
-          const hasEndedPause = sub.pauseStart_Date && sub.pauseEnd_Date && todayStartTs > sub.pauseEnd_Date;
+          if (endDate && todayStartTs > endDate) return 'expired';
+          const hasEndedPause = pauseStart && pauseEnd && todayStartTs > pauseEnd;
           if (hasEndedPause) return 'active';
-          const hasFuturePause = sub.pauseStart_Date && sub.pauseEnd_Date && now < sub.pauseStart_Date;
+          const hasFuturePause = pauseStart && pauseEnd && now < pauseStart;
           if (hasFuturePause) return 'active';
           return sub.active ? 'active' : 'expired';
         })();
@@ -221,12 +235,13 @@ export class ReportsService {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const todayStartTs = todayStart.getTime();
-        const daysRemaining = sub.end_Date
-          ? Math.max(0, Math.floor(((sub.effective_End_Date || sub.end_Date) - todayStartTs) / 86400000) + 1)
+
+        const daysRemaining = endDate
+          ? Math.max(0, Math.floor((effectiveEndDate - todayStartTs) / 86400000) + 1)
           : 0;
 
-        const pausedDays = (sub.pauseStart_Date && sub.pauseEnd_Date)
-          ? Math.max(0, Math.round((sub.pauseEnd_Date - sub.pauseStart_Date) / 86400000))
+        const pausedDays = (pauseStart && pauseEnd)
+          ? Math.max(0, Math.round((pauseEnd - pauseStart) / 86400000))
           : 0;
 
         const meals: string[] = sub.meals || [];
@@ -238,13 +253,14 @@ export class ReportsService {
           email: student.email || '',
           cardStatus: 'Active',
           dayPreference: student.dayPreference || 'all',
-          subscription: {
+          superUser: isSuperUser,
+          subscription: isSuperUser ? undefined : {
             currentPlan: mealSlots.join(' + ') || 'None',
-            startDate: sub.start_Date || 0,
-            endDate: sub.end_Date || 0,
+            startDate,
+            endDate,
             status,
             daysRemaining,
-            totalDays: sub.duration_days || 0,
+            totalDays: durationDays,
             pausedDays,
             mealSlots,
           },

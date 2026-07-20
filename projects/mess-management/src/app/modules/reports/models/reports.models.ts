@@ -50,8 +50,8 @@ export interface PauseRecord {
 
 export interface StudentSubscriptionSummary {
   currentPlan: string;
-  startDate: string;
-  endDate: string;
+  startDate: number;
+  endDate: number;
   status: string;
   daysRemaining: number;
   totalDays: number;
@@ -65,7 +65,8 @@ export interface StudentOverview {
   email?: string;
   cardStatus: string;
   dayPreference?: string;
-  subscription: StudentSubscriptionSummary;
+  superUser?: boolean;
+  subscription?: StudentSubscriptionSummary;
   totalTaps: number;
   attendanceRate: number;
 }
