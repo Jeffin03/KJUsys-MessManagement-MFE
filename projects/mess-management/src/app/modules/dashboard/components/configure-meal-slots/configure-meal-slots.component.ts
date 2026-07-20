@@ -597,8 +597,9 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     const start = sH * 60 + sM;
     let end = eH * 60 + eM;
     if (end < start) end += 24 * 60;
-    if (cur > end) return 'Closed';
-    if (cur >= start && cur <= end) return 'Live';
+    const adjCur = cur < start ? cur + 24 * 60 : cur;
+    if (adjCur > end) return 'Closed';
+    if (adjCur >= start && adjCur <= end) return 'Live';
     return 'Upcoming';
   }
 

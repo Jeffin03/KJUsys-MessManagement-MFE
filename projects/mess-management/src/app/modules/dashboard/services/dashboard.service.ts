@@ -80,10 +80,16 @@ export class DashboardService {
           const meals = res.responseData?.data?.meals || [];
           return meals.map(m => {
             const now = new Date();
-            const currentHourStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const cur = now.getHours() * 60 + now.getMinutes();
+            const startParts = m.start.split(':').map(Number);
+            const endParts = m.end.split(':').map(Number);
+            const startMins = startParts[0] * 60 + startParts[1];
+            const endMins = endParts[0] * 60 + endParts[1];
+            const adjEnd = endMins < startMins ? endMins + 24 * 60 : endMins;
+            const adjCur = cur < startMins ? cur + 24 * 60 : cur;
             let status: 'Closed' | 'Live' | 'Upcoming' = 'Upcoming';
-            if (currentHourStr >= m.start && currentHourStr <= m.end) status = 'Live';
-            else if (currentHourStr > m.end) status = 'Closed';
+            if (adjCur > adjEnd) status = 'Closed';
+            else if (adjCur >= startMins && adjCur <= adjEnd) status = 'Live';
 
             return {
               name: m.meal.charAt(0) + m.meal.slice(1).toLowerCase(),

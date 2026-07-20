@@ -159,8 +159,12 @@ export class MealSlotService {
     if (!s.active) {
       status = 'Inactive';
     } else {
-      if (cur > this.toMins(end24)) status = 'Closed';
-      else if (cur >= this.toMins(start24) && cur <= this.toMins(end24)) status = 'Live';
+      const startMins = this.toMins(start24);
+      const endMins = this.toMins(end24);
+      const adjEnd = endMins < startMins ? endMins + 24 * 60 : endMins;
+      const adjCur = cur < startMins ? cur + 24 * 60 : cur;
+      if (adjCur > adjEnd) status = 'Closed';
+      else if (adjCur >= startMins && adjCur <= adjEnd) status = 'Live';
     }
 
     return {
