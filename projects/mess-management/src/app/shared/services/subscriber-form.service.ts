@@ -7,6 +7,7 @@ export interface SubscriberFormValue {
   lastName: string;
   email: string;
   roll_number: string;
+  superUser: boolean;
   mealSlot: {
     startDate: string;
     endDate: string;
@@ -104,7 +105,9 @@ export class SubscriberFormService {
       errors.lastName = 'Only letters are allowed';
     }
 
-    if (!emailRegex.test(form.email)) {
+    if (!form.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!emailRegex.test(form.email)) {
       errors.email = 'Invalid email address';
     }
 
@@ -112,10 +115,7 @@ export class SubscriberFormService {
       errors.roll_number = 'Roll number is required';
     }
 
-    const dateError = this.validateDates(form.mealSlot.startDate, form.mealSlot.endDate);
-    if (dateError) {
-      errors.firstName = dateError;
-    }
+    // Date errors are handled separately via validateDates() in the component
 
     if (form.mealSlot.status === 'Paused') {
       if (!form.pauseStartDate || !form.pauseStartDate.trim()) {
@@ -133,7 +133,7 @@ export class SubscriberFormService {
   }
 
   validateDates(start: string, end: string): string | null {
-    if (!start || !end) return null;
+    if (!start || !end) return 'Subscription period is required';
 
     const [sd, sm, sy] = start.split('/').map(Number);
     const [ed, em, ey] = end.split('/').map(Number);
@@ -155,6 +155,7 @@ export class SubscriberFormService {
       lastName: '',
       email: '',
       roll_number: '',
+      superUser: false,
       mealSlot: {
         startDate: '',
         endDate: '',
@@ -177,6 +178,7 @@ export class SubscriberFormService {
 
     form.email = subscriber.email || '';
     form.roll_number = subscriber.roll_number !== 'N/A' ? subscriber.roll_number : '';
+    form.superUser = !!subscriber.superUser;
 
     form.mealSlot.selectedMeals = (subscriber.mealNames || [])
       .map(mealName => {
@@ -228,6 +230,7 @@ export class SubscriberFormService {
     form.lastName = '';
     form.email = '';
     form.roll_number = '';
+    form.superUser = false;
     form.mealSlot.startDate = '';
     form.mealSlot.endDate = '';
     form.mealSlot.status = 'Active';

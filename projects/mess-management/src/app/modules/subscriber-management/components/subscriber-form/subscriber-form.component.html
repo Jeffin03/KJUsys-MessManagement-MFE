@@ -42,6 +42,19 @@
         </div>
     </div>
 
+    <!-- Super User Checkbox -->
+    <div class="flex items-center justify-end gap-3 mb-5 mt-1.5 cursor-pointer select-none" (click)="onSuperUserToggle()">
+        <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-all shrink-0"
+            [class.bg-blue-600]="form.superUser" [class.border-blue-600]="form.superUser"
+            [class.border-gray-300]="!form.superUser">
+            <svg *ngIf="form.superUser" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        <span class="text-xs font-semibold" style="color:#4A5565;">Super User</span>
+    </div>
+
+    <ng-container *ngIf="!form.superUser">
     <div class="text-xs font-semibold mb-3 mt-1.5" style="color:#4A5565;">Add New Meal Slots</div>
 
     <!-- Meal Slot Box -->
@@ -91,6 +104,19 @@
                     (dateRangeSelected)="onSubscriptionRangeSelect($event)"
                     (onClear)="onSubscriptionRangeClear()">
                 </lib-date-picker>
+                <div class="flex gap-1.5 mt-2">
+                    <button *ngFor="let p of presets" type="button"
+                        (click)="onPresetClick(p.months)"
+                        class="px-2.5 py-1 text-[10px] font-medium rounded-full border transition-colors"
+                        [class.bg-blue-600]="activePreset === p.months"
+                        [class.text-white]="activePreset === p.months"
+                        [class.border-blue-600]="activePreset === p.months"
+                        [class.bg-white]="activePreset !== p.months"
+                        [class.text-blue-600]="activePreset !== p.months"
+                        [class.border-blue-300]="activePreset !== p.months">
+                        {{ p.label }}
+                    </button>
+                </div>
             </div>
 
             <!-- Status -->
@@ -123,8 +149,7 @@
                 <!-- Pause Period -->
                 <div class="flex flex-col">
                     <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Pause Period</label>
-                    <p *ngIf="errors.pauseStartDate" class="mb-1 text-[10px]" style="color:#C70036;">{{ errors.pauseStartDate }}</p>
-                    <p *ngIf="errors.pauseEndDate" class="mb-1 text-[10px]" style="color:#C70036;">{{ errors.pauseEndDate }}</p>
+                    <p *ngIf="pauseTouched && (errors.pauseStartDate || errors.pauseEndDate)" class="mb-1 text-[10px]" style="color:#C70036;">Pause start and end required</p>
                     <lib-date-picker
                         #pauseDatePicker
                         [initialStartDate]="pauseStart"
@@ -141,10 +166,71 @@
                     <input
                         class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
                         style="color:#1D1D1F;" placeholder="e.g. Medical leave" [(ngModel)]="form.pauseReason"
-                        (input)="validateForm()" />
-                    <p *ngIf="errors.pauseReason" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.pauseReason }}</p>
+                        (input)="pauseTouched = true; validateForm()" />
+                    <p *ngIf="pauseTouched && errors.pauseReason" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.pauseReason }}</p>
                 </div>
             </div>
+        </div>
+
+          <!-- Renew Section (edit mode only, near expiry or lapsed) -->
+          <div *ngIf="showRenewSection && !renewSuccess" class="mt-5 border border-dashed border-red-300 rounded-[10px] px-5 py-4 bg-red-50/50">
+            <p class="text-xs font-semibold m-0 mb-3" style="color:#C70036;">
+              <ng-container *ngIf="daysRemaining > 0">Subscription expires in {{ daysRemaining }} days — renew now</ng-container>
+              <ng-container *ngIf="daysRemaining <= 0">Subscription has lapsed — renew to reactivate</ng-container>
+            </p>
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex gap-1.5">
+                <button *ngFor="let p of renewPresets" type="button"
+                  (click)="onRenewPresetClick(p.days)"
+                  class="px-2.5 py-1 text-[10px] font-medium rounded-full border transition-colors"
+                  style="color:#C81E1E;"
+                  [class.bg-red-50]="activeRenewPreset === p.days"
+                  [class.border-red-400]="activeRenewPreset === p.days"
+                  [class.bg-white]="activeRenewPreset !== p.days"
+                  [class.border-red-300]="activeRenewPreset !== p.days">
+                  {{ p.label }}
+                </button>
+              </div>
+              <div class="flex items-center gap-3 shrink-0">
+                <lib-button type="primary" label="Renew Now" [loading]="renewing" (onClick)="onRenew()"></lib-button>
+              </div>
+            </div>
+            <p *ngIf="renewError" class="text-[10px] mt-2 m-0" style="color:#C70036;">{{ renewError }}</p>
+          </div>
+          <div *ngIf="renewSuccess" class="mt-5 border border-dashed border-green-300 rounded-[10px] px-5 py-4 bg-green-50/50">
+            <p class="text-xs font-semibold m-0" style="color:#1D9F00;">Subscription renewed successfully!</p>
+          </div>
+    </div>
+    </ng-container>
+
+    <ng-container *ngIf="form.superUser">
+    <div class="border border-dashed border-blue-200 rounded-[10px] px-5 py-8 bg-blue-50/50 text-center">
+        <p class="text-sm font-semibold m-0" style="color:#155DFC;">This is a Super User</p>
+        <p class="text-xs mt-1.5 m-0" style="color:#6B7280;">Unrestricted access to all meal slots with no tap limits.</p>
+    </div>
+    </ng-container>
+</div>
+
+<!-- Super User Confirmation Popup -->
+<div *ngIf="showSuperUserConfirm" class="fixed z-[1001] flex items-center justify-center inset-0" style="background:rgba(0,0,0,.15);">
+    <div class="relative bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] w-full max-w-sm mx-4 px-8 py-8 flex flex-col items-center gap-5">
+
+        <button (click)="cancelSuperUser()"
+            class="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#374151] transition-colors text-lg leading-none p-1">✕</button>
+
+        <img src="assets/exclamation-circle.svg" class="w-16 h-16" />
+
+        <p class="text-[15px] font-semibold text-[#111827] text-center leading-6">
+            Are you sure you want to set {{ superUserConfirmName }} as Super User?
+        </p>
+
+        <p class="text-xs text-[#6B7280] text-center leading-5 -mt-2">
+            This user will have unrestricted access to all meal slots at all times with no tap limits. Only assign this role to trusted personnel.
+        </p>
+
+        <div class="flex gap-3 w-full *:flex-1 *:w-full">
+            <lib-button type="secondary" label="No, cancel" (onClick)="cancelSuperUser()"></lib-button>
+            <lib-button type="primary" label="Yes, set as Super User" (onClick)="confirmSuperUser()"></lib-button>
         </div>
     </div>
 </div>

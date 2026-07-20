@@ -58,6 +58,7 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
         'Active': { bg: '#155DFC33', text: '#155DFC' },
         'Paused': { bg: '#FE9A0033', text: '#FE9A00' },
         'Lapsed': { bg: '#FFF1F2', text: '#C70036' },
+        'Super User': { bg: '#7C3AED33', text: '#7C3AED' },
       },
     },
     {
@@ -91,6 +92,7 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
     { name: 'Active' },
     { name: 'Paused' },
     { name: 'Lapsed' },
+    { name: 'Super User' },
   ];
 
   expiryOptions = [

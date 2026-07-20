@@ -4,7 +4,7 @@ export interface Subscriber {
   email: string;
   roll_number: string;
   mealPlan: string;
-  status: 'Active' | 'Paused' | 'Lapsed';
+  status: string;
   joinedDate: string;
   // Additional fields for edit form
   startDate?: string; // DD/MM/YY format for form
@@ -15,4 +15,5 @@ export interface Subscriber {
   mealNames?: string[]; // Original meal names from backend
   expiryWarning?: string;
   dayPreference?: string;
+  superUser?: boolean;
 }
