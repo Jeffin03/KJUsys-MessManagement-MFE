@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Subscription, firstValueFrom, Observable, of, BehaviorSubject, filter, take, switchMap } from 'rxjs';
+import { Subscription, firstValueFrom, Observable, of, BehaviorSubject, filter, take, switchMap, interval } from 'rxjs';
 import { MealSlotsComponent } from './components/meal-slots/meal-slots.component';
 import { EntriesTableComponent } from './components/entries-table/entries-table.component';
 import { HardwareStatusComponent } from './components/hardware-status/hardware-status.component';
@@ -14,6 +14,7 @@ import { WebsocketService } from '../../shared/services/websocket.service';
 import { NetworkService } from '../../shared/services/network.service';
 import { ConnectionMonitorService } from '../../shared/services/connection-monitor.service';
 import { MealSlotService } from '../../shared/services/meal-slot.service';
+import { computeMealSlotStatus } from '../../shared/services/meal-slot-utils';
 import { BreadcrumbsTitleComponent } from '@libs/shared-ui';
 import { TabItem, TabsModule } from '@libs/tabs';
 import { QuickModalComponent } from '../../shared/components/quick-modal/quick-modal.component';
@@ -126,6 +127,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     );
 
     this.loadDataProgressively();
+
+    // Refresh meal slot status every 30 seconds so Live/Closed/Upcoming stays accurate
+    this.subscriptions.add(
+      this.ngZone.runOutsideAngular(() =>
+        interval(30_000).subscribe(() => {
+          if (this.mealSlots.length === 0) return;
+          const updated = this.mealSlots.map(slot => {
+            const status = computeMealSlotStatus(slot.startTime || '', slot.endTime || '', slot.status !== 'Inactive');
+            return { ...slot, status };
+          });
+          this.ngZone.run(() => {
+            this.mealSlots = updated;
+            this.cdr.detectChanges();
+          });
+        })
+      )
+    );
 
     console.log('test down');
   }

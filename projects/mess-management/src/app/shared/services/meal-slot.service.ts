@@ -5,6 +5,7 @@ import { map, catchError, take, tap, shareReplay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
 import { compareMealStartTimes } from '../constants/meal-sort';
+import { computeMealSlotStatus } from './meal-slot-utils';
 
 export interface BackendSchedule {
   _id: { $oid: string };
@@ -34,10 +35,11 @@ export interface MealSlotWithCode {
   code: string;
   icon: string;
   timeRange: string;
-  status: 'Closed' | 'Live' | 'Upcoming';
+  status: 'Closed' | 'Live' | 'Upcoming' | 'Inactive';
   start24: string;
   end24: string;
   startTime: number;
+  active: boolean;
 }
 
 @Injectable({
@@ -146,17 +148,22 @@ export class MealSlotService {
     );
   }
 
+  private getDayType(): 'weekday' | 'weekend' | 'holiday' {
+    const now = new Date();
+    const day = now.getDay();
+    if (day === 0 || day === 6) return 'weekend';
+    return 'weekday';
+  }
+
   private mapToMealSlot(s: BackendSchedule): MealSlotWithCode {
-    const start24 = s.schedule?.weekday?.start || '00:00';
-    const end24 = s.schedule?.weekday?.end || '00:00';
+    const dayType = this.getDayType();
+    const schedule = s.schedule?.[dayType] || s.schedule?.weekday || { start: '00:00', end: '00:00' };
+    const start24 = schedule.start;
+    const end24 = schedule.end;
     const [sH, sM] = start24.split(':').map(Number);
     const startTime = sH * 60 + sM;
 
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
-    let status: 'Closed' | 'Live' | 'Upcoming' = 'Upcoming';
-    if (cur > this.toMins(end24)) status = 'Closed';
-    else if (cur >= this.toMins(start24) && cur <= this.toMins(end24)) status = 'Live';
+    const status = computeMealSlotStatus(start24, end24, s.active);
 
     return {
       id: s._id.$oid,
@@ -167,7 +174,8 @@ export class MealSlotService {
       status,
       start24,
       end24,
-      startTime
+      startTime,
+      active: s.active
     };
   }
 

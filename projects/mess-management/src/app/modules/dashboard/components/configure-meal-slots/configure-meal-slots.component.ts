@@ -6,6 +6,7 @@ import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
 import { SharedToastService } from '@libs/shared-toast';
 import { ButtonComponent } from '@libs/shared-ui';
 import { MealSlotService } from '../../../../shared/services/meal-slot.service';
+import { computeMealSlotStatus } from '../../../../shared/services/meal-slot-utils';
 import { HolidayCalendarComponent } from './holiday-calendar.component';
 import { compareMealStartTimes, timeToMinutes } from '../../../../shared/constants/meal-sort';
 
@@ -23,7 +24,7 @@ interface MealSlotConfig {
   code: string;
   icon: string;
   timeRange: string;
-  status: 'Closed' | 'Live' | 'Upcoming';
+  status: 'Closed' | 'Live' | 'Upcoming' | 'Inactive';
   start24: string;
   end24: string;
   daysAvailable: string[];
@@ -576,7 +577,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   endTimeSet = false;
 
   iconOptions = ['default', 'breakfast', 'lunch', 'snacks', 'dinner'];
-  statusOptions = ['Closed', 'Live', 'Upcoming'];
+  statusOptions = ['Closed', 'Live', 'Upcoming', 'Inactive'];
   daysAvailableOptions = ['weekday', 'weekend', 'holiday'];
 
   showStartPicker = false;
@@ -587,18 +588,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   close() { this.closed.emit(); }
 
-  private computeStatus(start24: string, end24: string): 'Closed' | 'Live' | 'Upcoming' {
-    if (!start24 || !end24) return 'Upcoming';
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
-    const [sH, sM] = start24.split(':').map(Number);
-    const [eH, eM] = end24.split(':').map(Number);
-    const start = sH * 60 + sM;
-    let end = eH * 60 + eM;
-    if (end < start) end += 24 * 60;
-    if (cur > end) return 'Closed';
-    if (cur >= start && cur <= end) return 'Live';
-    return 'Upcoming';
+  private computeStatus(start24: string, end24: string, active: boolean = true): 'Closed' | 'Live' | 'Upcoming' | 'Inactive' {
+    return computeMealSlotStatus(start24, end24, active);
   }
 
   private to24(hour: number, min: number): string {
@@ -810,6 +801,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       case 'Closed': return 'bg-[#FEE2E2] text-[#D92C2B]';
       case 'Live': return 'bg-[#DCFCE7] text-[#1D9F00]';
       case 'Upcoming': return 'bg-[rgba(254,154,0,0.2)] text-[#BB4D00]';
+      case 'Inactive': return 'bg-[#ECD6FF] text-[#9922FE]';
       default: return '';
     }
   }
@@ -907,7 +899,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       meal: this.newSlot.name.toUpperCase(),
       code,
       icon: this.newSlot.icon,
-      active: true,
+      active: this.newSlot.status !== 'Inactive',
       schedule
     };
 
@@ -917,7 +909,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       // Update existing slot
       this.dashboardService.updateSchedule(slotId, payload).subscribe({
         next: (res: ApiResponse<{ schedule: BackendSchedule }>) => {
-          const status = this.computeStatus(s24, e24);
+          const status = this.computeStatus(s24, e24, this.newSlot.status !== 'Inactive');
           this.slots[currentIndex] = {
             id: slotId,
             name: this.newSlot.name,
@@ -947,7 +939,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       // Create new slot
       this.dashboardService.createSchedule(payload).subscribe({
         next: (res: ApiResponse<{ schedule: BackendSchedule }>) => {
-          const status = this.computeStatus(s24, e24);
+          const status = this.computeStatus(s24, e24, this.newSlot.status !== 'Inactive');
           this.slots.push({
             id: (res.responseData?.data?.schedule as any)?._id?.$oid || (res.responseData?.data as any)?._id?.$oid || undefined,
             name: this.newSlot.name,
@@ -1066,7 +1058,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
               code: s.code || '',
               icon: s.icon || s.meal.toLowerCase(),
               timeRange: `${start24} - ${end24}`,
-              status: this.computeStatus(start24, end24),
+              status: this.computeStatus(start24, end24, s.active !== false),
               start24,
               end24,
               daysAvailable
