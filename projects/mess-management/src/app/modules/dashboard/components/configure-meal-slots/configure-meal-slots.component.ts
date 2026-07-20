@@ -6,6 +6,7 @@ import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
 import { SharedToastService } from '@libs/shared-toast';
 import { ButtonComponent } from '@libs/shared-ui';
 import { MealSlotService } from '../../../../shared/services/meal-slot.service';
+import { computeMealSlotStatus } from '../../../../shared/services/meal-slot-utils';
 import { HolidayCalendarComponent } from './holiday-calendar.component';
 import { compareMealStartTimes, timeToMinutes } from '../../../../shared/constants/meal-sort';
 
@@ -588,19 +589,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   close() { this.closed.emit(); }
 
   private computeStatus(start24: string, end24: string, active: boolean = true): 'Closed' | 'Live' | 'Upcoming' | 'Inactive' {
-    if (!active) return 'Inactive';
-    if (!start24 || !end24) return 'Upcoming';
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
-    const [sH, sM] = start24.split(':').map(Number);
-    const [eH, eM] = end24.split(':').map(Number);
-    const start = sH * 60 + sM;
-    let end = eH * 60 + eM;
-    if (end < start) end += 24 * 60;
-    const adjCur = cur < start ? cur + 24 * 60 : cur;
-    if (adjCur > end) return 'Closed';
-    if (adjCur >= start && adjCur <= end) return 'Live';
-    return 'Upcoming';
+    return computeMealSlotStatus(start24, end24, active);
   }
 
   private to24(hour: number, min: number): string {

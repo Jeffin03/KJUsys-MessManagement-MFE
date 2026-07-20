@@ -4,6 +4,14 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 
 ## [Unreleased]
 
+### Fixed
+- **Meal slot "Live" status persisting after slot ends**: Status was computed once on page load and never refreshed. Added a 30-second interval in `DashboardComponent` that recalculates status for all meal slots.
+- **Meal slot status incorrect on non-IST browsers**: `computeMealSlotStatus` used `new Date()` (browser local time) but meal times are in IST. Now computes current time by applying the IST offset (+5:30) to UTC epoch and reading via `.getUTCHours()`/`.getUTCMinutes()` — timezone-independent.
+- **`MealSlotService.mapToMealSlot()` always used weekday schedule**: Now detects current day type and uses the appropriate `weekday`/`weekend` schedule.
+
+### Changed
+- **Status computation extracted** into shared `computeMealSlotStatus()` in `shared/services/meal-slot-utils.ts`. All three consumers (`DashboardService`, `MealSlotService`, `ConfigureMealSlotsComponent`) now call the same function.
+
 ### Added
 - **Super User support in subscriber form**: Checkbox to toggle Super User status on add/edit. Confirmation popup warns before setting. When enabled, clears all meal/pause data. Super Users bypass subscription, meal slot, and day preference requirements.
 - **Super User status in subscriber table**: `'Super User'` added to status filter dropdown with purple badge color (`#7C3AED33` / `#7C3AED`).

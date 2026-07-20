@@ -17,6 +17,7 @@ export interface MealSlot {
   thirdStat: number | null;
   thirdLabel: string;
   startTime?: string;
+  endTime?: string;
 }
 
 export interface HardwareDevice {

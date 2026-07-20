@@ -4,6 +4,7 @@ import { Observable, of } from 'rxjs';
 import { map, shareReplay, tap } from 'rxjs/operators';
 import { MealSlot, MealEntry, HardwareDevice } from '../../../shared/models/dashboard.models';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
+import { computeMealSlotStatus } from '../../../shared/services/meal-slot-utils';
 import { environment } from '../../../../environments/environment';
 import { timeToMinutes, compareMealStartTimes } from '../../../shared/constants/meal-sort';
 
@@ -79,17 +80,7 @@ export class DashboardService {
         map(res => {
           const meals = res.responseData?.data?.meals || [];
           return meals.map(m => {
-            const now = new Date();
-            const cur = now.getHours() * 60 + now.getMinutes();
-            const startParts = m.start.split(':').map(Number);
-            const endParts = m.end.split(':').map(Number);
-            const startMins = startParts[0] * 60 + startParts[1];
-            const endMins = endParts[0] * 60 + endParts[1];
-            const adjEnd = endMins < startMins ? endMins + 24 * 60 : endMins;
-            const adjCur = cur < startMins ? cur + 24 * 60 : cur;
-            let status: 'Closed' | 'Live' | 'Upcoming' = 'Upcoming';
-            if (adjCur > adjEnd) status = 'Closed';
-            else if (adjCur >= startMins && adjCur <= adjEnd) status = 'Live';
+            const status = computeMealSlotStatus(m.start, m.end, true);
 
             return {
               name: m.meal.charAt(0) + m.meal.slice(1).toLowerCase(),
@@ -101,7 +92,8 @@ export class DashboardService {
               hadMeal: null,
               thirdStat: null,
               thirdLabel: status === 'Closed' ? 'Skipped' : 'Pending',
-              startTime: m.start
+              startTime: m.start,
+              endTime: m.end
             };
            }).sort((a, b) => compareMealStartTimes(timeToMinutes(a.startTime), timeToMinutes(b.startTime)));
         })
