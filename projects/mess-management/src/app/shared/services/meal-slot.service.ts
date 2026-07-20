@@ -34,10 +34,11 @@ export interface MealSlotWithCode {
   code: string;
   icon: string;
   timeRange: string;
-  status: 'Closed' | 'Live' | 'Upcoming';
+  status: 'Closed' | 'Live' | 'Upcoming' | 'Inactive';
   start24: string;
   end24: string;
   startTime: number;
+  active: boolean;
 }
 
 @Injectable({
@@ -154,9 +155,13 @@ export class MealSlotService {
 
     const now = new Date();
     const cur = now.getHours() * 60 + now.getMinutes();
-    let status: 'Closed' | 'Live' | 'Upcoming' = 'Upcoming';
-    if (cur > this.toMins(end24)) status = 'Closed';
-    else if (cur >= this.toMins(start24) && cur <= this.toMins(end24)) status = 'Live';
+    let status: 'Closed' | 'Live' | 'Upcoming' | 'Inactive' = 'Upcoming';
+    if (!s.active) {
+      status = 'Inactive';
+    } else {
+      if (cur > this.toMins(end24)) status = 'Closed';
+      else if (cur >= this.toMins(start24) && cur <= this.toMins(end24)) status = 'Live';
+    }
 
     return {
       id: s._id.$oid,
@@ -167,7 +172,8 @@ export class MealSlotService {
       status,
       start24,
       end24,
-      startTime
+      startTime,
+      active: s.active
     };
   }
 

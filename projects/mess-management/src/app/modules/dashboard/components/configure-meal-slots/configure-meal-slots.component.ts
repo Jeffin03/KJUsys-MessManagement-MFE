@@ -587,7 +587,8 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   close() { this.closed.emit(); }
 
-  private computeStatus(start24: string, end24: string): 'Closed' | 'Live' | 'Upcoming' {
+  private computeStatus(start24: string, end24: string, active: boolean = true): 'Closed' | 'Live' | 'Upcoming' | 'Inactive' {
+    if (!active) return 'Inactive';
     if (!start24 || !end24) return 'Upcoming';
     const now = new Date();
     const cur = now.getHours() * 60 + now.getMinutes();
@@ -908,7 +909,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       meal: this.newSlot.name.toUpperCase(),
       code,
       icon: this.newSlot.icon,
-      active: true,
+      active: this.newSlot.status !== 'Inactive',
       schedule
     };
 
@@ -918,7 +919,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       // Update existing slot
       this.dashboardService.updateSchedule(slotId, payload).subscribe({
         next: (res: ApiResponse<{ schedule: BackendSchedule }>) => {
-          const status = this.computeStatus(s24, e24);
+          const status = this.computeStatus(s24, e24, this.newSlot.status !== 'Inactive');
           this.slots[currentIndex] = {
             id: slotId,
             name: this.newSlot.name,
@@ -948,7 +949,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
       // Create new slot
       this.dashboardService.createSchedule(payload).subscribe({
         next: (res: ApiResponse<{ schedule: BackendSchedule }>) => {
-          const status = this.computeStatus(s24, e24);
+          const status = this.computeStatus(s24, e24, this.newSlot.status !== 'Inactive');
           this.slots.push({
             id: (res.responseData?.data?.schedule as any)?._id?.$oid || (res.responseData?.data as any)?._id?.$oid || undefined,
             name: this.newSlot.name,
@@ -1067,7 +1068,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
               code: s.code || '',
               icon: s.icon || s.meal.toLowerCase(),
               timeRange: `${start24} - ${end24}`,
-              status: this.computeStatus(start24, end24),
+              status: this.computeStatus(start24, end24, s.active !== false),
               start24,
               end24,
               daysAvailable
