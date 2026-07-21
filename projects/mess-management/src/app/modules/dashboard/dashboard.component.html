@@ -62,7 +62,7 @@
       </div>
 
       <!-- Meal Slots -->
-      <app-meal-slots [mealSlots]="mealSlots" (configurationSaved)="refreshMealSlots()"></app-meal-slots>
+      <app-meal-slots [mealSlots]="mealSlots" [isHoliday]="isHoliday" (configurationSaved)="refreshMealSlots()"></app-meal-slots>
 
       <!-- Bottom Row: Table + Hardware -->
       <div class="flex gap-4">

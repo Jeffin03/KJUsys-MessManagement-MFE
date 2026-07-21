@@ -74,12 +74,16 @@ export class DashboardService {
 
   constructor(private http: HttpClient) { }
 
-  getSchedules(bypassCache: boolean = false): Observable<MealSlot[]> {
+  getSchedules(bypassCache: boolean = false): Observable<{ meals: MealSlot[]; isHoliday: boolean }> {
     const request = this.http.get<ApiResponse<{ date: string, day_type: string, meals: any[] }>>(`${this.baseUrl}${API_ENDPOINTS.SCHEDULE_TODAY}`)
       .pipe(
         map(res => {
+          const dayType = res.responseData?.data?.day_type || 'weekday';
+          const isHoliday = dayType === 'holiday';
           const meals = res.responseData?.data?.meals || [];
-          return meals.map(m => {
+          return {
+            isHoliday,
+            meals: meals.map(m => {
             const status = computeMealSlotStatus(m.start, m.end, true);
 
             return {
@@ -95,7 +99,8 @@ export class DashboardService {
               startTime: m.start,
               endTime: m.end
             };
-           }).sort((a, b) => compareMealStartTimes(timeToMinutes(a.startTime), timeToMinutes(b.startTime)));
+           }).sort((a, b) => compareMealStartTimes(timeToMinutes(a.startTime), timeToMinutes(b.startTime)))
+          };
         })
       );
 
