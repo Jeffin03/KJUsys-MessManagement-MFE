@@ -4,6 +4,15 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 
 ## [Unreleased]
 
+### Added
+- **Holiday-aware meal slot badge**: When today is a configured holiday and a meal slot's `daysAvailable` doesn't include `'holiday'`, a yellow **Holiday** badge replaces the original status badge in the Configure Meal Slots modal.
+- **Current month holidays in Holiday Calendar**: The Holidays Configured section now shows holidays for the currently viewed calendar month at the top, with an empty state variant when none exist. The accordion hides that month to avoid duplication.
+- **Delete confirmation modal for holidays**: Replaced native `confirm()` dialog with the project-standard inline delete modal (exclamation icon, cancel/confirm buttons).
+
+### Changed
+- **Holiday accordion default state**: Accordion months now start collapsed instead of auto-expanding the first month.
+- **Holiday Configured scroll**: Removed inner `max-h-[320px]` scroll — the modal's own scroll container handles overflow.
+
 ### Fixed
 - **Export file naming**: Report exports now use descriptive filenames reflecting the export configuration (e.g. `mess.today.2026-07-21.xlsx`, `mess.report.2026-07-01-to-2026-07-21.breakfast-lunch.students.2026-07-21.xlsx`) instead of generic `report-YYYY-MM-DD.xlsx`.
 - **Meal slot "Live" status persisting after slot ends**: Status was computed once on page load and never refreshed. Added a 30-second interval in `DashboardComponent` that recalculates status for all meal slots.
