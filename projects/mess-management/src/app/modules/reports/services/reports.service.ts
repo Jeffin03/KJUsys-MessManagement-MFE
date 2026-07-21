@@ -389,6 +389,7 @@ export class ReportsService {
           totalTaps: raw?.totalTaps || 0,
           totalActiveSubscribers: raw?.totalActiveSubscribers || 0,
           expectedActiveToday: raw?.expectedActiveToday ?? (raw?.totalActiveSubscribers || 0),
+          absentCount: raw?.absentCount || 0,
           pausedCount: raw?.pausedCount || 0,
           expiredCount: raw?.expiredCount || 0,
           mealDistribution: dist.map((m: any) => ({

@@ -81,6 +81,7 @@ export interface DailyAnalytics {
   totalTaps: number;
   totalActiveSubscribers: number;
   expectedActiveToday: number;
+  absentCount: number;
   pausedCount: number;
   expiredCount: number;
   mealDistribution: MealDistribution[];

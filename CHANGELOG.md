@@ -5,11 +5,13 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ## [Unreleased]
 
 ### Fixed
+- **Export file naming**: Report exports now use descriptive filenames reflecting the export configuration (e.g. `mess.today.2026-07-21.xlsx`, `mess.report.2026-07-01-to-2026-07-21.breakfast-lunch.students.2026-07-21.xlsx`) instead of generic `report-YYYY-MM-DD.xlsx`.
 - **Meal slot "Live" status persisting after slot ends**: Status was computed once on page load and never refreshed. Added a 30-second interval in `DashboardComponent` that recalculates status for all meal slots.
 - **Meal slot status incorrect on non-IST browsers**: `computeMealSlotStatus` used `new Date()` (browser local time) but meal times are in IST. Now computes current time by applying the IST offset (+5:30) to UTC epoch and reading via `.getUTCHours()`/`.getUTCMinutes()` — timezone-independent.
 - **`MealSlotService.mapToMealSlot()` always used weekday schedule**: Now detects current day type and uses the appropriate `weekday`/`weekend` schedule.
 
 ### Changed
+- **Absent Today card**: Now uses `absentCount` from backend API instead of computing `expectedActiveToday - totalTaps` client-side. Backend accurately counts students who missed all their subscribed meal slots.
 - **Status computation extracted** into shared `computeMealSlotStatus()` in `shared/services/meal-slot-utils.ts`. All three consumers (`DashboardService`, `MealSlotService`, `ConfigureMealSlotsComponent`) now call the same function.
 
 ### Added

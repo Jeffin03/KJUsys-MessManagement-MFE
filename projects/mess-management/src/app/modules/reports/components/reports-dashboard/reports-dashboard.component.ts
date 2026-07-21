@@ -318,7 +318,7 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
         this.kpiCards[0].value = analytics.totalTaps;
         this.kpiCards[1].value = analytics.totalActiveSubscribers;
         this.kpiCards[2].value = analytics.expectedActiveToday;
-        this.kpiCards[3].value = Math.max(0, analytics.expectedActiveToday - analytics.totalTaps);
+        this.kpiCards[3].value = analytics.absentCount;
         this.kpiCards[4].value = analytics.pausedCount;
 
         this.cdr.detectChanges();
@@ -388,8 +388,7 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const ext = this.exportFormat === 'csv' ? 'csv' : 'xlsx';
-        a.download = `report-${new Date().toISOString().slice(0, 10)}.${ext}`;
+        a.download = this.buildExportFilename();
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 100);
         this.toast.success('Export downloaded');
@@ -401,6 +400,36 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private buildExportFilename(): string {
+    const ext = this.exportFormat === 'csv' ? 'csv' : 'xlsx';
+    const date = new Date().toISOString().slice(0, 10);
+    const parts: string[] = ['mess'];
+
+    if (this.exportReportType === 'today') {
+      parts.push('today');
+    } else {
+      parts.push('report');
+    }
+
+    if (this.exportStartDate && this.exportEndDate) {
+      const from = this.exportStartDate.toISOString().slice(0, 10);
+      const to = this.exportEndDate.toISOString().slice(0, 10);
+      parts.push(`${from}-to-${to}`);
+    }
+
+    if (this.selectedMealSlots.length > 0) {
+      const slotNames = this.selectedMealSlots.map((s: any) => s.id.toLowerCase()).join('-');
+      parts.push(slotNames);
+    }
+
+    if (this.exportRollNumbersInput.trim()) {
+      parts.push('students');
+    }
+
+    parts.push(date);
+    return `${parts.join('.')}.${ext}`;
   }
 
   closeExportModal() {
