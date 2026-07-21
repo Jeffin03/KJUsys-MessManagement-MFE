@@ -218,7 +218,7 @@ export class DashboardService {
           else if (data?.holidays) items = data.holidays;
           else if (data?.results) items = data.results;
           return items.map((h: any) => ({
-            id: h._id || h.id || '',
+            id: (typeof h._id === 'object' ? h._id?.$oid : h._id) || h.id || '',
             date: parseBackendDate(h.date_Date),
             reason: h.reason || '',
           }));
