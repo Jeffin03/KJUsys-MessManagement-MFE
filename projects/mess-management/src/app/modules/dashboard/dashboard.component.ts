@@ -76,6 +76,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ];
 
   mealSlots: MealSlot[] = [];
+  isHoliday = false;
 
   recentEntries: MealEntry[] = [];
 
@@ -285,7 +286,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.activeByDayPreference = activeByDayPreference;
   }
 
-  private processSchedules(schedules: MealSlot[]): void {
+  private processSchedules(scheduleData: { meals: MealSlot[]; isHoliday: boolean }): void {
+    this.isHoliday = scheduleData.isHoliday;
+    const schedules = scheduleData.meals;
     if (schedules && schedules.length > 0) {
       const day = new Date().getDay();
       const isWeekend = day === 0 || day === 6;

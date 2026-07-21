@@ -586,9 +586,16 @@ export class HolidayCalendarComponent implements OnInit {
   }
 
   deleteHoliday(id: string) {
+    if (!id) {
+      console.error('deleteHoliday called with empty id');
+      return;
+    }
+    if (!confirm('Are you sure you want to delete this holiday?')) return;
     this.dashboardService.deleteHoliday(id).subscribe({
       next: () => this.loadHolidays(),
-      error: () => {}
+      error: (err) => {
+        console.error('Failed to delete holiday', id, err);
+      }
     });
   }
 }

@@ -13,6 +13,7 @@ import { ButtonComponent } from '@libs/shared-ui';
 })
 export class MealSlotsComponent implements OnChanges {
   @Input() mealSlots: MealSlot[] = [];
+  @Input() isHoliday = false;
   @Output() configurationSaved = new EventEmitter<void>();
   isConfigureOpen = false;
   hovering = false;
