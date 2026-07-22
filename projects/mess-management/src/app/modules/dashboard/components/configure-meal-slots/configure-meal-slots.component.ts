@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, HostListener, ElementRef, OnChanges, OnDestroy, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService, ApiResponse, BackendSchedule, DisplayConfig } from '../../services/dashboard.service';
+import { DashboardService, ApiResponse, BackendSchedule, DisplayConfig, HolidayRecord } from '../../services/dashboard.service';
 import { SubTabsModule, SubTabItem } from '@libs/sub-tabs';
 import { SharedToastService } from '@libs/shared-toast';
 import { ButtonComponent } from '@libs/shared-ui';
@@ -560,6 +560,23 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   }
 
   slots: MealSlotConfig[] = [];
+  holidays: HolidayRecord[] = [];
+
+  isTodayHoliday(): boolean {
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return this.holidays.some(h => {
+      const ts = typeof h.date === 'string' ? parseInt(h.date, 10) : h.date;
+      if (!ts) return false;
+      const d = new Date(ts);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return key === todayKey;
+    });
+  }
+
+  isSlotHolidayInactive(slot: MealSlotConfig): boolean {
+    return this.isTodayHoliday() && !slot.daysAvailable.includes('holiday');
+  }
 
   newSlot = {
     name: '',
@@ -1042,6 +1059,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges) {
     if (changes['isOpen'] && this.isOpen) {
       document.body.style.overflow = 'hidden';
+      this.dashboardService.getHolidays().subscribe(data => this.holidays = data);
       this.dashboardService.getRawSchedules().subscribe({
         next: (res: ApiResponse<{ schedules: BackendSchedule[] }>) => {
           const rawSchedules = res.responseData?.data?.schedules || [];

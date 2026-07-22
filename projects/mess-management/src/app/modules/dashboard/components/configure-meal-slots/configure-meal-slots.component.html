@@ -101,11 +101,15 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                                <span *ngIf="!isSlotHolidayInactive(slot)" class="px-3 py-1 rounded-full text-xs font-semibold"
                                     [ngClass]="getStatusClass(slot.status)">
                                     <span *ngIf="slot.status === 'Live'"
                                         class="live-dot-breathe inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle"></span>
                                     {{ slot.status }}
+                                </span>
+                                <span *ngIf="isSlotHolidayInactive(slot)"
+                                    class="px-3 py-1 rounded-full text-xs font-semibold bg-[#FFF3CD] text-[#856404]">
+                                    Holiday
                                 </span>
                                 <button (click)="editSlot(i)" title="Edit"
                                     class="flex items-center justify-center w-8 h-8 rounded-lg border border-[#E5E7EB] bg-[#FAFAFB] hover:bg-gray-50">

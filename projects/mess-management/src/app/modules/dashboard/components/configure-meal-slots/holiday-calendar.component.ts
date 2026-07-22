@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ButtonComponent } from '@libs/shared-ui';
+import { ButtonComponent, EmptyStateComponent } from '@libs/shared-ui';
 import { DashboardService, HolidayRecord } from '../../services/dashboard.service';
 
 interface CalendarDay {
@@ -18,7 +18,7 @@ interface HolidayGroup {
 @Component({
   selector: 'app-holiday-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, EmptyStateComponent],
   template: `
     <div class="flex flex-col gap-5">
 
@@ -132,10 +132,36 @@ interface HolidayGroup {
         <div class="px-5 py-3 bg-[#F9FAFB] border-b border-[#E5E7EB]">
           <span class="text-xs font-semibold text-[#111827]">Holidays Configured</span>
         </div>
-        <div class="overflow-y-auto max-h-[320px]">
+        <div>
+          <!-- Current Month -->
+          <div class="px-5 pt-4 pb-1">
+            <span class="text-xs font-semibold text-[#6B7280]">{{ currentMonthLabel }}</span>
+          </div>
+          <div *ngIf="!loading && currentMonthHolidays.length > 0" class="flex flex-col px-5 pb-3 gap-2">
+            <div *ngFor="let holiday of currentMonthHolidays" class="flex rounded-lg border border-[#E5E7EB] overflow-hidden">
+              <div class="w-1 flex-shrink-0" style="background:#EF4444"></div>
+              <div class="flex items-center justify-between flex-1 px-3 py-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-medium text-[#6B7280] min-w-[60px]">{{ formatHolidayDate(holiday.date) }}</span>
+                  <span class="text-xs font-medium text-[#111827]">{{ holiday.reason }}</span>
+                </div>
+                <button (click)="requestDeleteHoliday(holiday.id, holiday.reason); $event.stopPropagation()"
+                    class="text-xs font-medium text-[#C70036] hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="!loading && currentMonthHolidays.length === 0">
+            <lib-empty-state type="no-results" title="No holidays in this month" subtext="Use the calendar above to add a holiday."></lib-empty-state>
+          </div>
+
+          <!-- Divider -->
+          <div *ngIf="nonCurrentMonthGroups.length > 0" class="border-t border-[#E5E7EB] mx-5"></div>
+
           <!-- Month-Grouped Holiday Accordion -->
-          <div *ngIf="!loading && groupedHolidays.length > 0" class="flex flex-col gap-2 p-4">
-            <div *ngFor="let group of groupedHolidays"
+          <div *ngIf="!loading && nonCurrentMonthGroups.length > 0" class="flex flex-col gap-2 p-4">
+            <div *ngFor="let group of nonCurrentMonthGroups"
                  class="border border-[#E5E7EB] rounded-xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
               <div (click)="toggleMonth(group.monthKey)"
                    class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-[#F9FAFB] transition-colors select-none">
@@ -153,7 +179,7 @@ interface HolidayGroup {
                       <span class="text-xs font-medium text-[#6B7280] min-w-[60px]">{{ formatHolidayDate(holiday.date) }}</span>
                       <span class="text-xs font-medium text-[#111827]">{{ holiday.reason }}</span>
                     </div>
-                    <button (click)="deleteHoliday(holiday.id); $event.stopPropagation()"
+                    <button (click)="requestDeleteHoliday(holiday.id, holiday.reason); $event.stopPropagation()"
                         class="text-xs font-medium text-[#C70036] hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50">
                       Delete
                     </button>
@@ -177,6 +203,24 @@ interface HolidayGroup {
 
       <!-- Loading -->
       <div *ngIf="loading" class="text-xs text-[#6B7280] text-center py-4">Loading holidays...</div>
+
+      <!-- Delete Confirmation Popup -->
+      <div *ngIf="showDeleteConfirmPopup" class="fixed z-[100] flex items-center justify-center inset-0" style="background:rgba(0,0,0,.15);">
+        <div class="relative bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] w-full max-w-xs mx-4 px-8 py-8 flex flex-col items-center gap-5">
+          <button (click)="cancelDeleteHoliday()"
+              class="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#374151] transition-colors text-lg leading-none p-1">
+              ✕
+          </button>
+          <img src="assets/exclamation-circle.svg" class="w-16 h-16" />
+          <p class="text-[15px] font-semibold text-[#111827] text-center leading-6">
+              Are you sure you want to delete {{ pendingDeleteHolidayReason }}?
+          </p>
+          <div class="flex gap-3 w-full *:flex-1 *:w-full">
+              <lib-button type="secondary" label="No, cancel" (onClick)="cancelDeleteHoliday()"></lib-button>
+              <lib-button type="primary" label="Confirm" (onClick)="confirmDeleteHoliday()"></lib-button>
+          </div>
+        </div>
+      </div>
 
     </div>
   `,
@@ -351,6 +395,9 @@ export class HolidayCalendarComponent implements OnInit {
   showAddForm = false;
   newHolidayDate = '';
   newHolidayReason = '';
+  showDeleteConfirmPopup = false;
+  pendingDeleteHolidayId = '';
+  pendingDeleteHolidayReason = '';
 
   weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -414,9 +461,6 @@ export class HolidayCalendarComponent implements OnInit {
       .map(([monthKey, data]) => ({ monthKey, ...data }));
 
     this.expandedMonths.clear();
-    if (this.groupedHolidays.length > 0) {
-      this.expandedMonths.add(this.groupedHolidays[0].monthKey);
-    }
   }
 
   toggleMonth(monthKey: string) {
@@ -446,6 +490,26 @@ export class HolidayCalendarComponent implements OnInit {
   private dateFromKey(key: string): Date {
     const [y, m, d] = key.split('-').map(Number);
     return new Date(y, m - 1, d);
+  }
+
+  get currentMonthHolidays(): HolidayRecord[] {
+    const year = this.calendarViewDate.getFullYear();
+    const month = this.calendarViewDate.getMonth();
+    return this.holidays.filter(h => {
+      const ts = typeof h.date === 'string' ? parseInt(h.date, 10) : h.date;
+      if (!ts) return false;
+      const d = new Date(ts);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+  }
+
+  get currentMonthLabel(): string {
+    return this.calendarViewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+
+  get nonCurrentMonthGroups(): HolidayGroup[] {
+    const currentKey = `${this.calendarViewDate.getFullYear()}-${String(this.calendarViewDate.getMonth() + 1).padStart(2, '0')}`;
+    return this.groupedHolidays.filter(g => g.monthKey !== currentKey);
   }
 
   get calendarDays(): CalendarDay[] {
@@ -585,16 +649,31 @@ export class HolidayCalendarComponent implements OnInit {
     });
   }
 
-  deleteHoliday(id: string) {
-    if (!id) {
-      console.error('deleteHoliday called with empty id');
-      return;
-    }
-    if (!confirm('Are you sure you want to delete this holiday?')) return;
-    this.dashboardService.deleteHoliday(id).subscribe({
-      next: () => this.loadHolidays(),
+  requestDeleteHoliday(id: string, reason: string) {
+    this.pendingDeleteHolidayId = id;
+    this.pendingDeleteHolidayReason = reason;
+    this.showDeleteConfirmPopup = true;
+    this.cdr.detectChanges();
+  }
+
+  cancelDeleteHoliday() {
+    this.showDeleteConfirmPopup = false;
+    this.pendingDeleteHolidayId = '';
+    this.pendingDeleteHolidayReason = '';
+  }
+
+  confirmDeleteHoliday() {
+    if (!this.pendingDeleteHolidayId) return;
+    this.dashboardService.deleteHoliday(this.pendingDeleteHolidayId).subscribe({
+      next: () => {
+        this.showDeleteConfirmPopup = false;
+        this.pendingDeleteHolidayId = '';
+        this.pendingDeleteHolidayReason = '';
+        this.loadHolidays();
+      },
       error: (err) => {
-        console.error('Failed to delete holiday', id, err);
+        console.error('Failed to delete holiday', this.pendingDeleteHolidayId, err);
+        this.showDeleteConfirmPopup = false;
       }
     });
   }
