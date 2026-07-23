@@ -1,7 +1,7 @@
-<div class="px-7 pt-6 pb-5" (click)="closeAllDropdowns()">
+<div class="px-4 sm:px-7 pt-6 pb-5" (click)="closeAllDropdowns()">
 
     <!-- Row 1 -->
-    <div class="grid grid-cols-2 gap-5 mb-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
         <div class="flex flex-col">
             <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">First Name</label>
             <input
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Row 2 -->
-    <div class="grid grid-cols-2 gap-5 mb-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
         <div class="flex flex-col">
             <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">E-mail</label>
             <input
@@ -59,7 +59,7 @@
 
     <!-- Meal Slot Box -->
     <div class="border border-gray-200 rounded-[10px] px-5 pt-[18px] pb-5 bg-gray-50">
-        <div class="grid grid-cols-2 gap-4 mb-[22px]">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-[22px]">
             <div>
                 <lib-dropdown-lib
                     #mealSlotsDropdown
@@ -90,7 +90,7 @@
         </div>
 
         <!-- Date + Status Row -->
-        <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <p *ngIf="dateError" class="col-span-2 text-[10px] mt-1" style="color:#C70036;">
                 {{ dateError }}
             </p>
@@ -141,7 +141,7 @@
         <!-- Pause Details (shown when status is Paused) -->
         <div *ngIf="form.mealSlot.status === 'Paused'" class="mt-5 border border-gray-200 rounded-[10px] px-5 py-5 bg-white shadow-sm">
             <div class="text-xs font-semibold mb-3.5" style="color:#1D1D1F;">Pause Details</div>
-            <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Pause Period -->
                 <div class="flex flex-col">
                     <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Pause Period</label>

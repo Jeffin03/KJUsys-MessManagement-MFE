@@ -49,3 +49,8 @@
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+@media (max-width: 639px) {
+  .cal-holiday { background-color: #FEE2E2 !important; }
+  .cal-paused  { background-color: #FEF3C7 !important; }
+}

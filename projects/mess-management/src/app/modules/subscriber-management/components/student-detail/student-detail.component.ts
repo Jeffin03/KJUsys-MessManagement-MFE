@@ -1100,4 +1100,16 @@ export class StudentDetailComponent implements OnChanges {
   readonly dayLabels = DAY_LABELS;
   readonly monthLabels = MONTH_LABELS;
   readonly Math = Math;
+
+  private readonly slotCodeMap: Record<string, string> = {
+    'Breakfast': 'BRK',
+    'Brunch': 'BRN',
+    'Lunch': 'LNCH',
+    'Snacks': 'SNK',
+    'Dinner': 'DNR',
+  };
+
+  slotCode(name: string): string {
+    return this.slotCodeMap[name] || name.substring(0, 4).toUpperCase();
+  }
 }

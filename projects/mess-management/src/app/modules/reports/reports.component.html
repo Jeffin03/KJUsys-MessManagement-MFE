@@ -7,7 +7,7 @@
       <lib-tabs [tabs]="tabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-tabs>
     </div>
 
-    <div class="mb-5 flex items-center justify-between">
+    <div class="grid grid-cols-[1fr_auto] items-center mb-5 gap-3">
       <lib-sub-tabs [tabs]="subTabs" [activeTabId]="activeSubTab" (tabChange)="onSubTabChange($event)"></lib-sub-tabs>
       <lib-button *ngIf="activeSubTab === 'dashboard'" type="primary" label="Export" (onClick)="onExportClick()"></lib-button>
     </div>

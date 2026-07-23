@@ -5,10 +5,38 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ## [Unreleased]
 
 ### Added
+- **Responsive layout for mess-management module**: All components under `projects/mess-management/` now adapt across mobile, tablet, and desktop viewports.
+- **Calendar cell tint on mobile**: Holiday/paused cells use background color tinting on mobile instead of badge labels (hidden via `sm:hidden`).
+- **`slotCode()` helper** in `StudentDetailComponent`: Maps meal slot names to short codes (BRK, LNCH, SNK, DNR, BRN) for compact rendering.
+- **Calendar mobile-only CSS**: `.cal-holiday` / `.cal-paused` classes apply tinted backgrounds only below `640px` via `@media (max-width: 639px)`.
 - **Skeleton screens**: Shimmer loading placeholders for student detail (overview stats cards, detail grid, 7-day attendance), dashboard stats cards, quick modal, hardware settings modal, and holiday calendar. All loading flags initialized as `true` so skeletons are the initial render state.
 - **Error state tracking**: `overviewError`, `attendanceError`, `changelogError`, `historyError`, `pauseError` variables added to student detail; `loadError` in holiday calendar. Error callbacks updated to capture `err` object for future UI use.
 - **`countEligibleDays()` in `SubscriberService`** and **`ReportsService`**: Computes eligible days client-side based on day preference (weekday/weekend/all), used by subscriber form renew threshold and reports days-remaining.
 - **`loadHolidays` error handler in student detail**: Added silent `error: () => {}` to prevent unhandled RxJS notification.
+
+### Changed
+- **Dashboard layout**: Stats cards grid `grid-cols-4` → `grid-cols-2 lg:grid-cols-4`. Hardware status and entries table stacked vertically on mobile (`flex-col lg:flex-row`) with `order` classes — hardware above entries on mobile, original side-by-side on desktop.
+- **Meal slots header**: Switched from flex to `grid grid-cols-[1fr_auto]` so the Configure button stays right-aligned and the title/subtitle text wraps naturally when space is tight.
+- **Meal slot card stats**: Font sizes responsive (`text-[24px] sm:text-[36px]`).
+- **Meal slots grid**: `grid-cols-3 xl:grid-cols-4` → `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`.
+- **Entries table**: Added `overflow-x-auto` wrapper and `min-w-[500px]` for horizontal scroll on mobile. Header stacks on mobile (`flex-col sm:flex-row`).
+- **Subscriber table**: Enabled `stickyActions` for sticky right-aligned action column with horizontal scroll. Search/filter inputs use `w-full sm:w-[343px]` and `w-[160px] sm:w-[200px]`.
+- **Subscriber stats grid**: `grid-cols-4` → `grid-cols-2 lg:grid-cols-4`.
+- **Subscriber form**: All `grid-cols-2` rows → `grid-cols-1 sm:grid-cols-2`. Padding `px-7` → `px-4 sm:px-7`.
+- **Add/Edit subscriber modals**: Fixed height `h-[720px]` → `max-h-[90vh]`. Header/footer padding `px-7` → `px-4 sm:px-7`.
+- **Hardware settings modal**: Removed inline `style="height:600px"`, uses `max-h-[90vh]` only. Header padding responsive. Added `sm:max-w-2xl`.
+- **Configure meal slots modal**: Removed inline `style="height:800px"`, uses `max-h-[90vh]`. Form rows `grid-cols-3` → `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`. LCD panel `w-[340px]` → `w-full max-w-[340px]`. Token customization `grid-cols-2` → `grid-cols-1 lg:grid-cols-2`. Header/footer padding responsive.
+- **Student detail**: Stats grids `grid-cols-4` → `grid-cols-2 lg:grid-cols-4`. Detail grid `grid-cols-3` → `grid-cols-1 sm:grid-cols-2 md:grid-cols-3`. Attendance stats `grid-cols-5` → `grid-cols-2 sm:grid-cols-3 md:grid-cols-5`. Calendar grid wrapped in `overflow-x-auto` with `min-w-[700px]`. Calendar cell sizing `min-h-[120px]` → `min-h-[60px] sm:min-h-[120px]`. Date text `text-lg` → `text-sm sm:text-lg`. Section headers stack on mobile (`flex-col sm:flex-row`). Pause table `min-w-[600px]`.
+- **Student detail calendar meals**: Desktop shows badges vertically on right; mobile shows nothing in calendar cells.
+- **Reports landing**: `grid-cols-4` → `grid-cols-1 sm:grid-cols-3`. Card `h-[127px]` → `min-h-[127px]`.
+- **Reports sub-tabs + export button**: Switched to `grid grid-cols-[1fr_auto]` for consistent two-column layout at all sizes.
+- **Reports dashboard KPI grid**: `grid-cols-5` → `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`. Export modal fixed height removed → `max-h-[90vh]`. Export modal uses `max-w-[calc(100vw-2rem)]` for mobile.
+- **Audit tools**: Section headers stack on mobile. Card/sub-tab padding responsive.
+- **All lib-table instances**: `stickyActions` enabled across subscriber-table, student-detail activity, student-search, reports-dashboard, and audit-tools.
+
+### Fixed
+- **Configure button position on mobile**: Meal-slots Configure button was left-aligned on small screens due to text length — fixed with CSS grid layout.
+- **Reports export button position on mobile**: Same grid fix applied to sub-tabs + export button row.
 
 ### Changed
 - **Status dropdown in subscriber form**: Replaced custom hand-built dropdown with `lib-dropdown-lib` (single select) for consistency with other dropdowns.

@@ -1,7 +1,7 @@
 <div class="mb-5">
     <!-- Section Header -->
-    <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-2">
+    <div class="grid grid-cols-[1fr_auto] items-center mb-3 gap-x-3 gap-y-1">
+        <div class="flex flex-wrap items-center gap-2">
             <span class="text-sm font-semibold" style="color:#111827;">Meal Slots</span>
             <span *ngIf="isHoliday" class="text-xs" style="color:#747474;">· Holiday</span>
             <span *ngIf="!isHoliday" class="text-xs" style="color:#747474;">· {{ mealSlots.length }} slot{{ mealSlots.length !== 1 ? 's' : '' }} configured for today</span>
@@ -10,7 +10,7 @@
     </div>
 
     <!-- Cards -->
-    <div class="grid grid-cols-3 xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <div *ngFor="let slot of mealSlots" class="rounded-xl px-4 py-5"
             style="background:#FFFFFF; border:1px solid #E5E7EB; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
             [attr.data-meal-slot]="slot.name">
@@ -45,8 +45,8 @@
                 <!-- Total -->
                 <div class="flex flex-col items-center">
                     <div class="flex items-center justify-center h-[42px]">
-                        <p class="font-bold text-center"
-                            style="color:#155DFC; font-size:36px; line-height:25.19px; letter-spacing:-0.19px; margin:0;">
+                        <p class="font-bold text-center text-[24px] sm:text-[36px]"
+                            style="color:#155DFC; line-height:25.19px; letter-spacing:-0.19px; margin:0;">
                             {{ slot.total }}
                         </p>
                     </div>
@@ -57,8 +57,8 @@
                 <div class="flex flex-col items-center">
                     <div class="flex items-center justify-center h-[42px]">
                         <ng-container *ngIf="slot.hadMeal !== null; else dashHad">
-                            <p class="font-bold"
-                                style="color:#1D9F00; font-size:36px; line-height:25.19px; letter-spacing:-0.19px; margin:0;">
+                            <p class="font-bold text-[24px] sm:text-[36px]"
+                                style="color:#1D9F00; line-height:25.19px; letter-spacing:-0.19px; margin:0;">
                                 {{ slot.hadMeal }}
                             </p>
                         </ng-container>
@@ -76,9 +76,9 @@
                 <div class="flex flex-col items-center">
                     <div class="flex items-center justify-center h-[42px]">
                         <ng-container *ngIf="slot.thirdStat !== null; else dashThird">
-                            <p class="font-bold"
+                            <p class="font-bold text-[24px] sm:text-[36px]"
                                 [ngClass]="slot.thirdLabel === 'Pending' ? 'text-[#FE9A00]' : 'text-[#D92C2B]'"
-                                style="font-size:36px; line-height:25.19px; letter-spacing:-0.19px; margin:0;">
+                                style="line-height:25.19px; letter-spacing:-0.19px; margin:0;">
                                 {{ slot.thirdStat }}
                             </p>
                         </ng-container>

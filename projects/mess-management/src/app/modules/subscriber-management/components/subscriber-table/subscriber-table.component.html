@@ -1,5 +1,5 @@
 <div class="flex items-center gap-3 mb-6 flex-wrap">
-  <div class="flex items-center border border-gray-300 rounded-lg px-4 h-[40px] w-[343px] bg-white gap-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+  <div class="flex items-center border border-gray-300 rounded-lg px-4 h-[40px] w-full sm:w-[343px] bg-white gap-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
     <img src="assets/search icon.svg" class="w-4 h-4 flex-shrink-0" alt="search" />
     <input #searchInput type="text"
       class="border-none outline-none text-xs font-normal text-text-main w-full bg-transparent focus:ring-0"
@@ -18,7 +18,7 @@
     <!-- Trigger -->
     <div
       (click)="toggleFilterPanel($event)"
-      class="flex items-center justify-between border rounded-lg px-3 py-2 text-xs transition-all min-h-[42px] cursor-pointer bg-white hover:bg-slate-50 border-gray-300 w-[200px]"
+      class="flex items-center justify-between border rounded-lg px-3 py-2 text-xs transition-all min-h-[42px] cursor-pointer bg-white hover:bg-slate-50 border-gray-300 w-[160px] sm:w-[200px]"
       [class.ring-2]="showFilterPanel"
       [class.ring-blue-50]="showFilterPanel"
       [class.border-blue-300]="showFilterPanel"
@@ -41,8 +41,7 @@
 
     <!-- Dropdown -->
     <div *ngIf="showFilterPanel"
-      class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded-lg z-[9999] flex flex-col overflow-hidden shadow-xl"
-      style="width: 300px;"
+      class="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg z-[9999] flex flex-col overflow-hidden shadow-xl w-[280px] sm:w-[300px]"
       (click)="$event.stopPropagation()">
 
       <!-- Search -->
@@ -164,7 +163,7 @@
   [pagination]="paginationConfig"
   [clientPagination]="clientPaginationMode"
   [showToolbar]="false"
-  [stickyActions]="false"
+  [stickyActions]="true"
   (onPrimaryAction)="onPrimaryAction($event)"
   (onPageChange)="onPageChange($event)"
   (onItemsPerPageChange)="onSizeChange($event)"

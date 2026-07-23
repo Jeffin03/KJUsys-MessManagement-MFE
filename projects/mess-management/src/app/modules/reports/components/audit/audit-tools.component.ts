@@ -24,15 +24,15 @@ interface SubTabItem { id: string; label: string; count?: number; }
       </div>
 
       <div class="flex flex-col bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden">
-        <div class="border-b border-[#E5E7EB] px-6 py-4">
+        <div class="border-b border-[#E5E7EB] px-4 sm:px-6 py-4">
           <lib-sub-tabs [tabs]="subTabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-sub-tabs>
         </div>
 
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
 
           <!-- ══════ Pause Audit ══════ -->
           <div *ngIf="activeTab === 'pause-audit'">
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
               <span class="text-xs font-semibold text-[#111827]">Pause Compensation Audit</span>
               <lib-button type="primary" label="Run Audit" (onClick)="runAudit()" [loading]="pauseAuditLoading"></lib-button>
             </div>
@@ -46,7 +46,7 @@ interface SubTabItem { id: string; label: string; count?: number; }
               [data]="pauseAuditData"
               [loading]="pauseAuditLoading"
               [showToolbar]="false"
-              [stickyActions]="false"
+              [stickyActions]="true"
               [clientPagination]="true"
               [pagination]="{ currentPage: 1, itemsPerPage: 10, totalItems: pauseAuditData.length, totalPages: Math.ceil(pauseAuditData.length / 10) }"
             ></lib-table>
@@ -57,7 +57,7 @@ interface SubTabItem { id: string; label: string; count?: number; }
 
           <!-- ══════ Change Log ══════ -->
           <div *ngIf="activeTab === 'changelog'">
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
               <span class="text-xs font-semibold text-[#111827]">Change Log Explorer</span>
               <lib-button type="secondary" label="Export" (onClick)="exportChangelog()"></lib-button>
             </div>
@@ -101,7 +101,7 @@ interface SubTabItem { id: string; label: string; count?: number; }
               [data]="changelogData"
               [loading]="changelogLoading"
               [showToolbar]="false"
-              [stickyActions]="false"
+              [stickyActions]="true"
               [clientPagination]="true"
               [pagination]="{ currentPage: 1, itemsPerPage: 10, totalItems: changelogData.length, totalPages: Math.ceil(changelogData.length / 10) || 1 }"
             ></lib-table>

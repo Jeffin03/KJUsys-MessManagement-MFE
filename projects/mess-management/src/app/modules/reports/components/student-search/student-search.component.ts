@@ -41,7 +41,7 @@ import type { TableColumn, PrimaryAction } from '@libs/table';
         [data]="results"
         [loading]="loading"
         [showToolbar]="false"
-        [stickyActions]="false"
+        [stickyActions]="true"
         [clientPagination]="true"
         [pagination]="{ currentPage: 1, itemsPerPage: 20, totalItems: results.length, totalPages: 1 }"
         [primaryActions]="primaryActions"
