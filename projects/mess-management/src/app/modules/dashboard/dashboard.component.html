@@ -15,6 +15,14 @@
     <!-- Stats Cards -->
     <div class="grid grid-cols-4 gap-4 mb-5">
 
+        <!-- Skeleton Stats -->
+        <ng-container *ngIf="isLoading">
+          <div *ngFor="let s of [1,2,3,4]" class="skel-card"></div>
+        </ng-container>
+
+        <!-- Actual Stats -->
+        <ng-container *ngIf="!isLoading && !errorMessage">
+
         <!-- Total Subscribers -->
         <div
           class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-4 pt-[22px] pb-[39px] h-[127px] box-border">
@@ -58,6 +66,7 @@
           <p class="font-bold text-[36px] leading-none tracking-[-0.19px] text-[#111827] mt-[9px]">{{ stats[3].value }}
           </p>
         </div>
+        </ng-container>
 
       </div>
 

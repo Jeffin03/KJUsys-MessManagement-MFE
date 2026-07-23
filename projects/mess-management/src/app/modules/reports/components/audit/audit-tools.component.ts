@@ -161,6 +161,7 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
         'SCHEDULE_CREATED': { bg: '#ECFEFF', text: '#0E7490' },
         'SCHEDULE_MODIFIED': { bg: '#ECFEFF', text: '#0E7490' },
         'SCHEDULE_DELETED': { bg: '#FEF2F2', text: '#C70036' },
+        'SUPER_USER_CREATED': { bg: '#F3E8FF', text: '#7C3AED' },
       }
     },
     { key: 'description', label: 'DESCRIPTION', minWidth: '300px' },

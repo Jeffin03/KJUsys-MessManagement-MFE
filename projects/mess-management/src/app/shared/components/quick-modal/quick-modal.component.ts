@@ -30,7 +30,19 @@ interface QuickStudent {
         </div>
 
         <div class="px-7 py-5">
-          <div *ngIf="loading" class="py-8 text-center text-xs text-[#6B7280]">Loading...</div>
+          <div *ngIf="loading" class="space-y-4 py-2">
+            <div class="flex items-center gap-4">
+              <div class="w-11 h-11 rounded-full" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:qskel 1.4s infinite linear"></div>
+              <div class="flex flex-col gap-1.5">
+                <div class="h-3.5 w-24 rounded" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:qskel 1.4s infinite linear"></div>
+                <div class="h-2.5 w-16 rounded" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:qskel 1.4s infinite linear"></div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div *ngFor="let s of [1,2,3,4]" class="h-14 rounded-lg" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:qskel 1.4s infinite linear"></div>
+            </div>
+          </div>
+          <style>@keyframes qskel { 0%{background-position:200% 0} 100%{background-position:-200% 0} }</style>
           <div *ngIf="error" class="py-8 text-center text-xs text-[#C70036]">{{ error }}</div>
           <div *ngIf="!loading && !error && student" class="space-y-5">
             <div class="flex items-center gap-4">

@@ -99,9 +99,7 @@ export class SubscriberFormService {
       errors.firstName = 'Only letters are allowed';
     }
 
-    if (!form.lastName.trim()) {
-      errors.lastName = 'Last name is required';
-    } else if (!nameRegex.test(form.lastName)) {
+    if (form.lastName.trim() && !nameRegex.test(form.lastName)) {
       errors.lastName = 'Only letters are allowed';
     }
 

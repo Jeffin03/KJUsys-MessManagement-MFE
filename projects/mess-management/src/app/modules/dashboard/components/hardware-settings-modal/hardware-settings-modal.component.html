@@ -50,7 +50,16 @@
       <div class="px-7 py-4">
         <h3 class="text-xs font-semibold mb-3" style="color:#1D1D1F;">Registered Devices</h3>
 
-        <div *ngIf="isLoading" class="text-center py-8 text-xs" style="color:#86868B;">Loading devices...</div>
+        <div *ngIf="isLoading" class="space-y-3 py-2">
+          <div *ngFor="let s of [1,2,3]" class="flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-100">
+            <div class="w-2 h-2 rounded-full flex-shrink-0" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:hskel 1.4s infinite linear"></div>
+            <div class="flex flex-col gap-1.5 flex-1">
+              <div class="h-3.5 w-32 rounded" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:hskel 1.4s infinite linear"></div>
+              <div class="h-2.5 w-48 rounded" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:hskel 1.4s infinite linear"></div>
+            </div>
+          </div>
+        </div>
+        <style>@keyframes hskel { 0%{background-position:200% 0} 100%{background-position:-200% 0} }</style>
 
         <div *ngIf="!isLoading && devices.length === 0" class="pt-2">
           <lib-empty-state type="no-results" title="No devices registered" subtext="Register a device above to get started."></lib-empty-state>

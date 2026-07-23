@@ -62,6 +62,7 @@
         <div class="grid grid-cols-2 gap-4 mb-[22px]">
             <div>
                 <lib-dropdown-lib
+                    #mealSlotsDropdown
                     label="Meal Slots"
                     placeholder="Select meal slots"
                     [singleSelection]="false"
@@ -75,6 +76,7 @@
             </div>
             <div>
                 <lib-dropdown-lib
+                    #daysDropdown
                     label="Days"
                     placeholder="Select days"
                     [singleSelection]="true"
@@ -120,30 +122,24 @@
             </div>
 
             <!-- Status -->
-            <div class="flex flex-col relative">
-                <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Status</label>
-                <div class="h-[42px] border border-gray-200 rounded-lg px-3 text-xs bg-white cursor-pointer flex items-center justify-between hover:border-gray-300"
-                    (click)="toggleStatus($event)">
-                    <span [style.color]="!form.mealSlot.status ? '#86868B' : '#1D1D1F'">{{ form.mealSlot.status || 'Select status' }}</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                </div>
-                <div *ngIf="showStatus"
-                    class="absolute top-[calc(100%+6px)] left-0 z-[999] bg-white rounded-[10px] w-full shadow-[0_8px_24px_rgba(0,0,0,0.10)] border border-gray-200 overflow-hidden"
-                    (click)="$event.stopPropagation()">
-                    <div *ngFor="let s of ['Active','Paused']"
-                        class="px-3 py-2.5 text-xs cursor-pointer hover:bg-gray-100" style="color:#1D1D1F;"
-                        (click)="form.mealSlot.status = s; showStatus = false; validateForm()">
-                        {{ s }}
-                    </div>
-                </div>
+            <div>
+                <lib-dropdown-lib
+                    #statusDropdown
+                    label="Status"
+                    placeholder="Select status"
+                    [singleSelection]="true"
+                    [data]="statusOptions"
+                    idField="id"
+                    textField="label"
+                    [selectedItems]="selectedStatusItems"
+                    (selectionChange)="onStatusChange($event)">
+                </lib-dropdown-lib>
             </div>
 
         </div>
 
         <!-- Pause Details (shown when status is Paused) -->
-        <div *ngIf="form.mealSlot.status === 'Paused'" class="mt-5">
+        <div *ngIf="form.mealSlot.status === 'Paused'" class="mt-5 border border-gray-200 rounded-[10px] px-5 py-5 bg-white shadow-sm">
             <div class="text-xs font-semibold mb-3.5" style="color:#1D1D1F;">Pause Details</div>
             <div class="grid grid-cols-2 gap-4">
                 <!-- Pause Period -->
@@ -172,34 +168,43 @@
             </div>
         </div>
 
-          <!-- Renew Section (edit mode only, near expiry or lapsed) -->
-          <div *ngIf="showRenewSection && !renewSuccess" class="mt-5 border border-dashed border-red-300 rounded-[10px] px-5 py-4 bg-red-50/50">
-            <p class="text-xs font-semibold m-0 mb-3" style="color:#C70036;">
-              <ng-container *ngIf="daysRemaining > 0">Subscription expires in {{ daysRemaining }} days — renew now</ng-container>
-              <ng-container *ngIf="daysRemaining <= 0">Subscription has lapsed — renew to reactivate</ng-container>
-            </p>
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex gap-1.5">
-                <button *ngFor="let p of renewPresets" type="button"
-                  (click)="onRenewPresetClick(p.days)"
-                  class="px-2.5 py-1 text-[10px] font-medium rounded-full border transition-colors"
-                  style="color:#C81E1E;"
-                  [class.bg-red-50]="activeRenewPreset === p.days"
-                  [class.border-red-400]="activeRenewPreset === p.days"
-                  [class.bg-white]="activeRenewPreset !== p.days"
-                  [class.border-red-300]="activeRenewPreset !== p.days">
-                  {{ p.label }}
-                </button>
-              </div>
-              <div class="flex items-center gap-3 shrink-0">
-                <lib-button type="primary" label="Renew Now" [loading]="renewing" (onClick)="onRenew()"></lib-button>
-              </div>
+        <!-- Renew Section (edit mode only, near expiry or lapsed) -->
+        <div *ngIf="showRenewSection && !showRenewForm" class="mt-5 flex justify-end">
+            <lib-button type="secondary" label="Renew Now" (onClick)="openRenewForm()"></lib-button>
+        </div>
+
+        <!-- Renew Form (expanded) -->
+        <div *ngIf="showRenewForm" class="mt-5 border border-gray-200 rounded-[10px] px-5 py-5 bg-white shadow-sm">
+            <div class="text-xs font-semibold mb-3.5" style="color:#1D1D1F;">Renew Subscription</div>
+            <div class="flex flex-col">
+                <lib-date-picker
+                    #renewDatePicker
+                    [initialStartDate]="renewStartDate"
+                    [initialEndDate]="renewEndDate"
+                    placeholder="Select renewal period"
+                    (dateRangeSelected)="onRenewRangeSelect($event)"
+                    (onClear)="onRenewRangeClear()">
+                </lib-date-picker>
+                <div class="flex gap-1.5 mt-2">
+                    <button *ngFor="let p of renewPresets" type="button"
+                        (click)="onRenewPresetClick(p.months)"
+                        class="px-2.5 py-1 text-[10px] font-medium rounded-full border transition-colors"
+                        [class.bg-blue-600]="activeRenewPreset === p.months"
+                        [class.text-white]="activeRenewPreset === p.months"
+                        [class.border-blue-600]="activeRenewPreset === p.months"
+                        [class.bg-white]="activeRenewPreset !== p.months"
+                        [class.text-blue-600]="activeRenewPreset !== p.months"
+                        [class.border-blue-300]="activeRenewPreset !== p.months">
+                        {{ p.label }}
+                    </button>
+                </div>
             </div>
             <p *ngIf="renewError" class="text-[10px] mt-2 m-0" style="color:#C70036;">{{ renewError }}</p>
-          </div>
-          <div *ngIf="renewSuccess" class="mt-5 border border-dashed border-green-300 rounded-[10px] px-5 py-4 bg-green-50/50">
-            <p class="text-xs font-semibold m-0" style="color:#1D9F00;">Subscription renewed successfully!</p>
-          </div>
+            <div class="flex justify-end gap-3 mt-4">
+                <lib-button type="secondary" label="Cancel" (onClick)="cancelRenewForm()"></lib-button>
+                <lib-button type="primary" label="Confirm" [loading]="renewing" (onClick)="confirmRenew()"></lib-button>
+            </div>
+        </div>
     </div>
     </ng-container>
 

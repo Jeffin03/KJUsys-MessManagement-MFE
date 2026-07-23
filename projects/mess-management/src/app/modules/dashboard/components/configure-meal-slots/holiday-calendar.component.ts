@@ -202,7 +202,16 @@ interface HolidayGroup {
       </div>
 
       <!-- Loading -->
-      <div *ngIf="loading" class="text-xs text-[#6B7280] text-center py-4">Loading holidays...</div>
+      <div *ngIf="loading" class="space-y-2 py-2">
+        <div *ngFor="let s of [1,2,3]" class="flex items-center gap-3 px-3 py-2.5 rounded-lg">
+          <div class="h-4 w-4 rounded" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:holskel 1.4s infinite linear"></div>
+          <div class="flex flex-col gap-1 flex-1">
+            <div class="h-3 w-40 rounded" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:holskel 1.4s infinite linear"></div>
+            <div class="h-2.5 w-24 rounded" style="background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:holskel 1.4s infinite linear"></div>
+          </div>
+        </div>
+      </div>
+      <style>@keyframes holskel { 0%{background-position:200% 0} 100%{background-position:-200% 0} }</style>
 
       <!-- Delete Confirmation Popup -->
       <div *ngIf="showDeleteConfirmPopup" class="fixed z-[100] flex items-center justify-center inset-0" style="background:rgba(0,0,0,.15);">
@@ -387,7 +396,8 @@ export class HolidayCalendarComponent implements OnInit {
   holidayMap = new Map<string, HolidayRecord[]>();
   groupedHolidays: HolidayGroup[] = [];
   expandedMonths: Set<string> = new Set();
-  loading = false;
+  loading = true;
+  loadError: any = null;
 
   calendarViewDate: Date = new Date();
   selectedDate: Date | null = null;
@@ -412,6 +422,7 @@ export class HolidayCalendarComponent implements OnInit {
 
   private loadHolidays() {
     this.loading = true;
+    this.loadError = null;
     this.dashboardService.getHolidays().subscribe({
       next: data => {
         this.holidays = data;
@@ -420,8 +431,9 @@ export class HolidayCalendarComponent implements OnInit {
         this.loading = false;
         this.cdr.detectChanges();
       },
-      error: () => {
+      error: err => {
         this.loading = false;
+        this.loadError = err;
         this.cdr.detectChanges();
       }
     });

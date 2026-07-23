@@ -160,6 +160,7 @@ const ACTIVITY_COLORS: Record<string, { bg: string; text: string }> = {
   imports: [CommonModule, RouterModule, FormsModule, SubTabsModule, ButtonComponent, EmptyStateComponent, TableModule],
   providers: [ReportsService],
   templateUrl: './student-detail.component.html',
+  styleUrls: ['./student-detail.component.css'],
 })
 export class StudentDetailComponent implements OnChanges {
   @Input() rollNumber = '';
@@ -193,13 +194,18 @@ export class StudentDetailComponent implements OnChanges {
     return !!this.overview?.superUser;
   }
 
-  // ── Loading states ──────────────────────────────────────────────────────────
-  overviewLoading = false;
+  // ── Loading & error states ─────────────────────────────────────────────────
+  overviewLoading = true;
+  overviewError: any = null;
   studentNotFound = false;
-  attendanceLoading = false;
-  changelogLoading = false;
-  historyLoading = false;
-  pauseLoading = false;
+  attendanceLoading = true;
+  attendanceError: any = null;
+  changelogLoading = true;
+  changelogError: any = null;
+  historyLoading = true;
+  historyError: any = null;
+  pauseLoading = true;
+  pauseError: any = null;
   activityFilterLoading = false;
 
   // ── Overview: Student Profile ──────────────────────────────────────────────
@@ -351,6 +357,7 @@ export class StudentDetailComponent implements OnChanges {
 
   private loadOverview() {
     this.overviewLoading = true;
+    this.overviewError = null;
     this.studentNotFound = false;
     this.reportsService.getStudentOverview(this.rollNumber).subscribe({
       next: data => {
@@ -366,9 +373,9 @@ export class StudentDetailComponent implements OnChanges {
         }
         this.cdr.detectChanges();
       },
-      error: () => {
+      error: err => {
         this.overviewLoading = false;
-        this.studentNotFound = true;
+        this.overviewError = err;
         this.cdr.detectChanges();
       }
     });
@@ -376,6 +383,7 @@ export class StudentDetailComponent implements OnChanges {
 
   private loadAttendance(from?: string, to?: string) {
     this.attendanceLoading = true;
+    this.attendanceError = null;
     this.reportsService.getStudentAttendance(this.rollNumber, from, to).subscribe({
       next: data => {
         // Sort meal slots with 3am pivot for every day
@@ -395,7 +403,7 @@ export class StudentDetailComponent implements OnChanges {
         this.computeOverviewStats();
         this.cdr.detectChanges();
       },
-      error: () => { this.attendanceLoading = false; this.cdr.detectChanges(); }
+      error: err => { this.attendanceLoading = false; this.attendanceError = err; this.cdr.detectChanges(); }
     });
   }
 
@@ -437,6 +445,7 @@ export class StudentDetailComponent implements OnChanges {
 
   private loadChangelog() {
     this.changelogLoading = true;
+    this.changelogError = null;
     this.reportsService.getStudentChangelog(this.rollNumber, 100).subscribe({
       next: data => {
         this.changelogData = data;
@@ -445,12 +454,13 @@ export class StudentDetailComponent implements OnChanges {
         this.buildActivityEntries();
         this.cdr.detectChanges();
       },
-      error: () => { this.changelogLoading = false; this.cdr.detectChanges(); }
+      error: err => { this.changelogLoading = false; this.changelogError = err; this.cdr.detectChanges(); }
     });
   }
 
   private loadSubscriptionHistory() {
     this.historyLoading = true;
+    this.historyError = null;
     this.reportsService.getStudentSubscriptionHistory(this.rollNumber).subscribe({
       next: data => {
         this.subscriptionHistory = data;
@@ -459,12 +469,13 @@ export class StudentDetailComponent implements OnChanges {
         this.buildPausePeriods();
         this.cdr.detectChanges();
       },
-      error: () => { this.historyLoading = false; this.cdr.detectChanges(); }
+      error: err => { this.historyLoading = false; this.historyError = err; this.cdr.detectChanges(); }
     });
   }
 
   private loadPauseComp() {
     this.pauseLoading = true;
+    this.pauseError = null;
     this.reportsService.getStudentPauseComp(this.rollNumber).subscribe({
       next: data => {
         this.pauseCompData = data;
@@ -472,7 +483,7 @@ export class StudentDetailComponent implements OnChanges {
         this.mergePauseCompData();
         this.cdr.detectChanges();
       },
-      error: () => { this.pauseLoading = false; this.cdr.detectChanges(); }
+      error: err => { this.pauseLoading = false; this.pauseError = err; this.cdr.detectChanges(); }
     });
   }
 
@@ -485,6 +496,7 @@ export class StudentDetailComponent implements OnChanges {
           this.holidayMap.set(ds, h.reason);
         }
       },
+      error: () => {},
     });
   }
 

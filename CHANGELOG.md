@@ -5,6 +5,26 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ## [Unreleased]
 
 ### Added
+- **Skeleton screens**: Shimmer loading placeholders for student detail (overview stats cards, detail grid, 7-day attendance), dashboard stats cards, quick modal, hardware settings modal, and holiday calendar. All loading flags initialized as `true` so skeletons are the initial render state.
+- **Error state tracking**: `overviewError`, `attendanceError`, `changelogError`, `historyError`, `pauseError` variables added to student detail; `loadError` in holiday calendar. Error callbacks updated to capture `err` object for future UI use.
+- **`countEligibleDays()` in `SubscriberService`** and **`ReportsService`**: Computes eligible days client-side based on day preference (weekday/weekend/all), used by subscriber form renew threshold and reports days-remaining.
+- **`loadHolidays` error handler in student detail**: Added silent `error: () => {}` to prevent unhandled RxJS notification.
+
+### Changed
+- **Status dropdown in subscriber form**: Replaced custom hand-built dropdown with `lib-dropdown-lib` (single select) for consistency with other dropdowns.
+- **Pause section styling**: Separated into independent bordered container (`border border-gray-200 rounded-[10px] px-5 py-5 bg-white shadow-sm`).
+- **Renew section redesign**: Initial state shows a "Renew Now" secondary button; expands to date picker + month-based preset pills (1M, 3M, 6M, 1Y) + Cancel/Confirm buttons. Presets changed from day-based (`{ days: 30 }`) to month-based (`{ months: 1 }`). Uses `SharedToastService.success()` for renewal confirmation instead of inline success message.
+- **Add/Edit subscriber modal height**: Increased from `700px` to `720px`.
+- **Student detail "Meal Slots"**: Changed to "Day Preference" with human-readable labels (Weekdays Only / Weekends Only / All Days).
+- **Last name validation relaxed**: Only validates format if provided; no longer required.
+- **`SUPER_USER_CREATED` color** added to `audit-tools` badge color map (purple `#F3E8FF` / `#7C3AED`).
+- **Hardware status heading**: Renamed "System Uptime" to "System Status".
+
+### Fixed
+- **Loading states initialized as `true`**: Skeleton screens now appear immediately on component mount instead of showing empty content briefly before snapping to loaded state.
+- **Overview error no longer forces "Student Not Found"**: Error handler sets `overviewError` instead of unconditionally setting `studentNotFound = true`.
+
+### Added
 - **Holiday-aware meal slot badge**: When today is a configured holiday and a meal slot's `daysAvailable` doesn't include `'holiday'`, a yellow **Holiday** badge replaces the original status badge in the Configure Meal Slots modal.
 - **Current month holidays in Holiday Calendar**: The Holidays Configured section now shows holidays for the currently viewed calendar month at the top, with an empty state variant when none exist. The accordion hides that month to avoid duplication.
 - **Delete confirmation modal for holidays**: Replaced native `confirm()` dialog with the project-standard inline delete modal (exclamation icon, cancel/confirm buttons).
