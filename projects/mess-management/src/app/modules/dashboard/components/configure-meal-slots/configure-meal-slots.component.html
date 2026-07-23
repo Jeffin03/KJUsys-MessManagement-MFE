@@ -55,11 +55,10 @@
 
     <!-- Modal: outer clips corners, inner scrolls -->
     <div
-        class="relative w-full max-w-2xl mx-4 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] flex flex-col bg-white"
-        style="height:800px; max-height:90vh;">
+        class="relative w-full max-w-lg sm:max-w-2xl mx-4 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] flex flex-col bg-white max-h-[90vh]">
 
         <!-- Fixed Header -->
-        <div class="px-7 pt-5 bg-white border-b border-[#E5E7EB] flex-shrink-0">
+        <div class="px-4 sm:px-7 pt-5 bg-white border-b border-[#E5E7EB] flex-shrink-0">
             <div class="flex items-start justify-between">
                 <div>
                     <h2 class="text-sm font-semibold text-[#111827]">Configure Meal Slots</h2>
@@ -131,7 +130,7 @@
                         <div (click)="closeAllDropdowns()" class="rounded-xl p-5 bg-[#F5F5F7]" id="meal-slot-form">
 
                         <!-- Row 1 -->
-                        <div class="grid grid-cols-3 gap-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
                             <!-- Meal Name -->
                             <div>
@@ -218,7 +217,7 @@
                         </div>
 
                         <!-- Row 2 -->
-                        <div class="grid grid-cols-3 gap-6 mt-8">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
 
                             <!-- Start Time -->
                             <div class="relative">
@@ -430,7 +429,7 @@
 
                     <!-- LCD Panel Preview -->
                     <div class="flex flex-col items-center mb-8">
-                        <div class="relative w-[340px]">
+                        <div class="relative w-full max-w-[340px]">
                             <img src="assets/LCD Panel.svg" class="w-full" />
                             <!-- Text overlay -->
                             <div class="absolute inset-0 flex flex-col items-center pt-[12px]">
@@ -611,9 +610,9 @@
             </ng-container>
 
             <ng-container *ngIf="activeTab === 'tokenCustomization'">
-                <div class="px-7 py-6">
+                <div class="px-4 sm:px-7 py-6">
 
-                    <div class="grid grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Left Form -->
                         <div class="rounded-xl border border-[#F5F5F7] bg-[#FAFAFC] p-5 flex flex-col gap-4">
                             <div *ngFor="let section of tokenConfig.sections; let i = index; let first = first; let last = last"

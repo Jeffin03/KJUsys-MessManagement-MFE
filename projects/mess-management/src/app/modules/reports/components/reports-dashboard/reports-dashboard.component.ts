@@ -33,13 +33,13 @@ interface KpiCard {
     <div class="flex flex-col gap-5">
 
       <!-- KPI Row -->
-      <div class="grid grid-cols-5 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <div *ngFor="let card of kpiCards"
-          class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-4 pt-[22px] pb-[39px] h-[127px] box-border">
+          class="flex flex-col rounded-xl bg-white border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-4 pt-[22px] pb-[39px] min-h-[127px] box-border">
           <div class="flex items-center gap-2">
             <span class="text-xs font-medium text-[#6B7280]">{{ card.label }}</span>
           </div>
-          <p class="font-bold text-[36px] leading-none tracking-[-0.19px] mt-[9px]"
+          <p class="font-bold text-[24px] sm:text-[36px] leading-none tracking-[-0.19px] mt-[9px]"
              [class.text-[#111827]]="!card.accent"
              [class.text-[#155DFC]]="card.accent === 'blue'"
              [class.text-[#007A55]]="card.accent === 'green'"
@@ -53,20 +53,20 @@ interface KpiCard {
 
       <!-- Live Taps Table -->
       <div class="bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-        <div class="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
+        <div class="px-4 sm:px-6 py-4 border-b border-[#E5E7EB] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-[#111827]">Live Tap Activity</span>
             <span class="text-[10px] font-medium text-[#6B7280]">Today's transactions</span>
           </div>
         </div>
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
           <lib-table
             [columns]="tapColumns"
             [data]="tapData"
             [loading]="tapsLoading"
             [showToolbar]="true"
             [showSearch]="true"
-            [stickyActions]="false"
+            [stickyActions]="true"
             [clientPagination]="true"
             [pagination]="{ currentPage: 1, itemsPerPage: 10, totalItems: tapData.length, totalPages: Math.ceil(tapData.length / 10) }"
           ></lib-table>
@@ -80,12 +80,11 @@ interface KpiCard {
       <div *ngIf="showExportModal"
         class="fixed inset-0 bg-black/55 z-[1000] flex items-center justify-center p-4"
         (click)="closeExportModal()">
-        <div class="relative w-full max-w-2xl mx-4 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] flex flex-col bg-white"
-          style="height:680px; max-height:90vh;"
+        <div class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-2xl rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.15)] flex flex-col bg-white max-h-[90vh]"
           (click)="$event.stopPropagation()">
 
           <!-- Fixed Header -->
-          <div class="px-7 pt-5 bg-white border-b border-[#E5E7EB] rounded-t-2xl flex-shrink-0">
+          <div class="px-4 sm:px-7 pt-5 bg-white border-b border-[#E5E7EB] rounded-t-2xl flex-shrink-0">
             <div class="flex items-start justify-between">
               <div>
                 <span class="text-sm font-semibold text-[#111827]">Export Report</span>
@@ -98,12 +97,12 @@ interface KpiCard {
           </div>
 
           <!-- Scrollable Content -->
-          <div class="overflow-y-auto flex-1 bg-white p-7 space-y-5">
+          <div class="overflow-y-auto flex-1 bg-white p-4 sm:p-7 space-y-4 sm:space-y-5">
 
             <!-- Report Type -->
             <div>
               <label class="block text-[10px] font-medium text-[#6B7280] mb-1.5">REPORT TYPE</label>
-              <div class="flex gap-2">
+              <div class="flex flex-wrap gap-2">
                 <button (click)="exportReportType = 'today'"
                   class="px-3 py-1.5 text-[10px] font-semibold rounded-full transition-colors"
                   [class]="exportReportType === 'today' ? 'bg-[#EEF2FF] text-[#155DFC]' : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'">
@@ -120,7 +119,7 @@ interface KpiCard {
             <!-- Format -->
             <div>
               <label class="block text-[10px] font-medium text-[#6B7280] mb-1.5">FORMAT</label>
-              <div class="flex gap-2">
+              <div class="flex flex-wrap gap-2">
                 <button (click)="exportFormat = 'xlsx'"
                   class="px-3 py-1.5 text-[10px] font-semibold rounded-full transition-colors"
                   [class]="exportFormat === 'xlsx' ? 'bg-[#EEF2FF] text-[#155DFC]' : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'">
@@ -171,7 +170,7 @@ interface KpiCard {
 
             <!-- Include toggles + Output -->
             <div>
-              <div class="flex gap-6 mb-4">
+              <div class="flex flex-wrap gap-3 sm:gap-6 mb-4">
                 <label class="flex items-center gap-2.5 cursor-pointer">
                   <div class="relative">
                     <input type="checkbox" [(ngModel)]="exportIncludeSummary"
@@ -219,7 +218,7 @@ interface KpiCard {
             </div>
 
             <!-- Actions -->
-            <div class="flex justify-end gap-3">
+            <div class="flex flex-row justify-end gap-3">
               <lib-button type="secondary" label="Cancel" (onClick)="closeExportModal()"></lib-button>
               <lib-button type="primary" label="Generate & Download" (onClick)="onGenerateExport()"
                 [disabled]="generatingExport || (!exportIncludeSummary && !exportIncludeDetail)"
