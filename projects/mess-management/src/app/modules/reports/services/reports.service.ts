@@ -27,6 +27,27 @@ export class ReportsService {
 
   constructor(private http: HttpClient) {}
 
+  private countEligibleDays(startTs: number, endTs: number, dayPreference: string): number {
+    if (!startTs || !endTs || endTs < startTs) return 0;
+    let count = 0;
+    const current = new Date(startTs);
+    current.setHours(0, 0, 0, 0);
+    const end = new Date(endTs);
+    end.setHours(0, 0, 0, 0);
+    while (current <= end) {
+      const day = current.getDay();
+      if (dayPreference === 'weekday') {
+        if (day >= 1 && day <= 5) count++;
+      } else if (dayPreference === 'weekend') {
+        if (day === 0 || day === 6) count++;
+      } else {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return count;
+  }
+
   private extractData<T>(response: ReportsResponse<T>): T {
     return response.responseData.data;
   }
@@ -236,8 +257,9 @@ export class ReportsService {
         todayStart.setHours(0, 0, 0, 0);
         const todayStartTs = todayStart.getTime();
 
-        const daysRemaining = endDate
-          ? Math.max(0, Math.floor((effectiveEndDate - todayStartTs) / 86400000) + 1)
+        const dayPreference = student.dayPreference || 'all';
+        const daysRemaining = endDate && effectiveEndDate >= todayStartTs
+          ? this.countEligibleDays(todayStartTs, effectiveEndDate, dayPreference)
           : 0;
 
         const pausedDays = (pauseStart && pauseEnd)

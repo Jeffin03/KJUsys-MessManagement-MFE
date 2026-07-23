@@ -21,6 +21,7 @@ import { ButtonComponent } from '@libs/shared-ui';
 import { MealSlotWithCode } from '../../../../shared/services/meal-slot.service';
 import { SubscriberFormService, SubscriberFormValue, ValidationErrors } from '../../../../shared/services/subscriber-form.service';
 import { SubscriberService } from '../../services/subscriber.service';
+import { SharedToastService } from '@libs/shared-toast';
 
 @Component({
   selector: 'app-subscriber-form',
@@ -35,16 +36,9 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     this.onCancel();
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocClick(e: MouseEvent) {
-    const target = e.target as HTMLElement;
-    if (!target.closest('.date-picker-trigger') && !target.closest('.calendar-popup')) {
-      this.showStatus = false;
-    }
-  }
-
   @ViewChild('subDatePicker') subDatePicker?: DatePickerComponent;
   @ViewChild('pauseDatePicker') pauseDatePicker?: DatePickerComponent;
+  @ViewChild('renewDatePicker') renewDatePicker?: DatePickerComponent;
 
   @Input() mealSlots: MealSlotWithCode[] = [];
   @Input() initialData?: SubscriberFormValue;
@@ -83,7 +77,6 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
 
   mealSlotsError = '';
   dateError = '';
-  showStatus = false;
 
   showSuperUserConfirm = false;
   superUserConfirmName = '';
@@ -100,16 +93,18 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   activePreset: number | null = null;
 
   renewPresets = [
-    { label: '1 Month', days: 30 },
-    { label: '3 Months', days: 90 },
-    { label: '6 Months', days: 180 },
-    { label: '1 Year', days: 365 },
+    { label: '1 Month', months: 1 },
+    { label: '3 Months', months: 3 },
+    { label: '6 Months', months: 6 },
+    { label: '1 Year', months: 12 }
   ];
-  activeRenewPreset = 30;
+  activeRenewPreset: number | null = 30;
   renewDays = 30;
   renewing = false;
-  renewSuccess = false;
   renewError = '';
+  showRenewForm = false;
+  renewStartDate: Date | null = null;
+  renewEndDate: Date | null = null;
 
   get isEditMode(): boolean {
     return !!this.initialData;
@@ -120,8 +115,8 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     const startTs = this.formService.parseDate(this.form.mealSlot.startDate);
     const endTs = this.formService.parseDate(this.form.mealSlot.endDate);
     if (!startTs || !endTs) return 30;
-    const totalDays = Math.round((endTs - startTs) / (1000 * 60 * 60 * 24));
-    return totalDays > 90 ? 30 : 15;
+    const totalEligible = this.subscriberService.countEligibleDays(startTs, endTs, this.form.mealSlot.dayPreference || 'all');
+    return totalEligible > 90 ? 30 : 15;
   }
 
   get daysRemaining(): number {
@@ -130,9 +125,8 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     if (!endTs) return 0;
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const diff = endTs - todayStart.getTime();
-    if (diff < 0) return 0;
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    if (endTs < todayStart.getTime()) return 0;
+    return this.subscriberService.countEligibleDays(todayStart.getTime(), endTs, this.form.mealSlot.dayPreference || 'all');
   }
 
   get showRenewSection(): boolean {
@@ -142,12 +136,60 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     return remaining < this.renewThreshold;
   }
 
-  onRenewPresetClick(days: number): void {
-    this.activeRenewPreset = days;
-    this.renewDays = days;
+  openRenewForm(): void {
+    this.showRenewForm = true;
+    this.activeRenewPreset = 30;
+    this.renewStartDate = null;
+    this.renewEndDate = null;
+    this.renewDays = 30;
   }
 
-  onRenew(): void {
+  cancelRenewForm(): void {
+    this.showRenewForm = false;
+    this.renewError = '';
+  }
+
+  onRenewPresetClick(months: number): void {
+    this.activeRenewPreset = months;
+    const today = new Date();
+    const startDate = this.renewStartDate || today;
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + months);
+    this.renewStartDate = startDate;
+    this.renewEndDate = endDate;
+    this.renewDays = this.subscriberService.countEligibleDays(startDate.getTime(), endDate.getTime(), this.form.mealSlot.dayPreference || 'all');
+    this.pushRenewDatesToDatePicker();
+  }
+
+  private pushRenewDatesToDatePicker(): void {
+    if (!this.renewDatePicker) return;
+    const start = this.renewStartDate ? new Date(this.renewStartDate.getFullYear(), this.renewStartDate.getMonth(), this.renewStartDate.getDate()) : null;
+    const end = this.renewEndDate ? new Date(this.renewEndDate.getFullYear(), this.renewEndDate.getMonth(), this.renewEndDate.getDate()) : null;
+    this.renewDatePicker.confirmedStartDate = start;
+    this.renewDatePicker.confirmedEndDate = end;
+    this.renewDatePicker.tempStartDate = start;
+    this.renewDatePicker.tempEndDate = end;
+    if (start) {
+      this.renewDatePicker.calendarViewDate = new Date(start.getFullYear(), start.getMonth(), 1);
+    }
+    this.cdr.detectChanges();
+  }
+
+  onRenewRangeSelect(range: { from: Date; to: Date | null }): void {
+    this.activeRenewPreset = null;
+    this.renewStartDate = range.from;
+    this.renewEndDate = range.to;
+    if (range.from && range.to) {
+      this.renewDays = this.subscriberService.countEligibleDays(range.from.getTime(), range.to.getTime(), this.form.mealSlot.dayPreference || 'all');
+    }
+  }
+
+  onRenewRangeClear(): void {
+    this.renewStartDate = null;
+    this.renewEndDate = null;
+  }
+
+  confirmRenew(): void {
     if (this.renewing) return;
     this.renewing = true;
     this.renewError = '';
@@ -156,7 +198,8 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
       next: (res: any) => {
         this.zone.run(() => {
           this.renewing = false;
-          this.renewSuccess = true;
+          this.showRenewForm = false;
+          this.toastService.success('Subscription renewed successfully!');
           const newEndMillis = res?.responseData?.data?.new_end_Date;
           if (newEndMillis) {
             this.form.mealSlot.endDate = this.formatDateFromMillis(newEndMillis);
@@ -176,11 +219,20 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     });
   }
 
+  statusOptions = [
+    { id: 'Active', label: 'Active' },
+    { id: 'Paused', label: 'Paused' }
+  ];
+
   dayOptions = [
     { id: 'all', label: 'All Days' },
     { id: 'weekday', label: 'Weekdays Only' },
     { id: 'weekend', label: 'Weekends Only' }
   ];
+
+  get selectedStatusItems(): any[] {
+    return this.statusOptions.filter(s => s.id === this.form.mealSlot.status);
+  }
 
   get selectedMealSlotItems(): any[] {
     return this.mealSlots.filter(s => this.form.mealSlot.selectedMeals.includes(s.name.toLowerCase()));
@@ -200,11 +252,17 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     this.validateForm();
   }
 
+  onStatusChange(selected: any[]): void {
+    this.form.mealSlot.status = selected.length > 0 ? selected[0].id : 'Active';
+    this.validateForm();
+  }
+
   constructor(
     private formService: SubscriberFormService,
     private subscriberService: SubscriberService,
     private cdr: ChangeDetectorRef,
-    private zone: NgZone
+    private zone: NgZone,
+    private toastService: SharedToastService
   ) {}
 
   ngAfterViewInit(): void {
@@ -264,7 +322,6 @@ onSubmit(): void {
   }
 
   closeAllDropdowns(): void {
-    this.showStatus = false;
     if (this.subDatePicker) this.subDatePicker.isOpen = false;
     if (this.pauseDatePicker) this.pauseDatePicker.isOpen = false;
   }
@@ -296,11 +353,6 @@ onSubmit(): void {
 
   cancelSuperUser(): void {
     this.showSuperUserConfirm = false;
-  }
-
-  toggleStatus(e: Event): void {
-    e.stopPropagation();
-    this.showStatus = !this.showStatus;
   }
 
   private pushDatesToDatePickers(): void {

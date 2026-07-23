@@ -78,6 +78,27 @@ export class SubscriberService {
     );
   }
 
+  countEligibleDays(startTs: number, endTs: number, dayPreference: string): number {
+    if (!startTs || !endTs || endTs < startTs) return 0;
+    let count = 0;
+    const current = new Date(startTs);
+    current.setHours(0, 0, 0, 0);
+    const end = new Date(endTs);
+    end.setHours(0, 0, 0, 0);
+    while (current <= end) {
+      const day = current.getDay();
+      if (dayPreference === 'weekday') {
+        if (day >= 1 && day <= 5) count++;
+      } else if (dayPreference === 'weekend') {
+        if (day === 0 || day === 6) count++;
+      } else {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return count;
+  }
+
   private resolveNumeric(val: any): number {
     if (typeof val === 'number') return val;
     if (val && typeof val === 'object' && val.$numberLong) return Number(val.$numberLong);
