@@ -25,13 +25,15 @@ Micro-frontend application for the KJUsys Mess Management System. Built with **A
 
 ## Architecture Overview
 
-The frontend is a **Webpack Module Federation remote** (port 4201) that exposes three modules to the KJUsys shell (port 4200). It uses:
+The frontend is a **Webpack Module Federation remote** (port 4201) that exposes three components + one NgModule to the KJUsys shell (port 4200). It uses:
 
 - **Standalone components** (Angular 16) with lazy-loaded NgModule wrappers
 - **NgRx** for state (via shared auth lib)
 - **WebSocket** for real-time tap and hardware-status updates
 - **Hash-based routing** (`HashLocationStrategy`)
-- **Dynamic backend URL resolution** via `ConfigLoaderService` (supports dev-mode GitHub gist override, local storage cache, and server probing)
+- **Dynamic backend URL resolution** via `ConfigLoaderService` (supports dev-mode localStorage override, GitHub gist background fetch, and server probing)
+- **Responsive layout** across mobile, tablet, and desktop viewports
+- **Skeleton loading screens** for all major async data views
 
 **Build order dependencies:** Shared libraries (`@libs/*`) must be compiled to `dist/libs/` before the app builds.
 
@@ -43,37 +45,34 @@ The frontend is a **Webpack Module Federation remote** (port 4201) that exposes 
 
 | Feature | Component | Description |
 |---|---|---|
-| **Stats Overview** | `StatsBarComponent` | 4 stat cards: Total Subscribers, Active Subscriptions, Total Meals Served Today, Absent Today |
-| **Meal Slot Status** | `MealSlotsComponent` | Live/Upcoming/Closed meal slots with animated counters, real-time updates via WebSocket |
-| **Configure Meal Slots** | `ConfigureMealSlotsComponent` | Modal with 3 sub-tabs: |
-| | | **Meal Slots** — Add/edit/delete meal schedules with time pickers, overlap validation; each slot has an "Available Days" multi-select (weekday / weekend / holiday) so owners can decide which day types a meal runs on |
-| | | **Display Panel** — LCD message templates per tap scenario with variable substitution (`"name"`, `"rollno"`, `"meal"`, `"status"`) and device test |
-| | | **Token Customization** — Receipt/token layout configuration with printer test |
-| **Recent Tap Activity** | `EntriesTableComponent` | Table of recent RFID taps (Subscriber, Roll Number, Meal Slot, Time, Status) |
-| **Hardware Status** | `HardwareStatusComponent` | Device list with online/offline indicators, uptime bar, response time, last sync |
-| **Hardware Settings** | `HardwareSettingsModalComponent` | Full device lifecycle: list, pair (2-min window), confirm, test peripherals (LCD/Printer/Buzzer/Relay), rename, delete, rotate HMAC secret, emergency stop |
+| **Stats Overview** | `StatsBarComponent` | 4 stat cards: Total Subscribers, Active Subscriptions, Total Meals Served Today, Absent Today. Skeleton loading on initial fetch. |
+| **Meal Slot Status** | `MealSlotsComponent` | Live/Upcoming/Closed meal slots with animated counters. Status computed from weekday/weekend/holiday schedule. Holiday badge shown for closed slots on holidays. 30-second auto-refresh of slot status. |
+| **Configure Meal Slots** | `ConfigureMealSlotsComponent` | Modal with 3 sub-tabs: **Meal Slots** — add/edit/delete meal schedules with time pickers, overlap validation, day-type multi-select (weekday/weekend/holiday); **Display Panel** — LCD message templates with variable substitution and device test; **Token Customization** — receipt/token layout configuration with printer test. |
+| **Recent Tap Activity** | `EntriesTableComponent` | Last 24h tap records (Name, Roll Number, Meal Slot, Time, Status). Capped at 15 visible rows. "View all" routes to Reports Dashboard. |
+| **Hardware Status** | `HardwareStatusComponent` | Device list with online/offline indicators, peripherals expanded into separate entries, server uptime bar, response time. |
+| **Hardware Settings** | `HardwareSettingsModalComponent` | Flat layout (no sub-tabs): "Register New Device" form at top + "Registered Devices" list below. Device lifecycle: register, connect (direct, returns HMAC secret + token), confirm, rename, rotate HMAC secret, delete. Shows HMAC secret + device token after registration/rotation. |
+| **Holiday Calendar** | `HolidayCalendarComponent` | Calendar view of mess holidays. Add/delete holidays with inline confirmation modal. Holiday list with accordion grouped by month. |
 
 ### 2. Subscriber Management Module (`/kjusys/subscriber-management`)
 
 | Feature | Component | Description |
 |---|---|---|
-| **Subscriber Stats** | `SubscriberStatsComponent` | Total, Active, Paused, Lapsed counts |
-| **Subscriber Table** | `SubscriberTableComponent` | Paginated, searchable, filterable table with columns: Subscriber, Roll Number, Meal Plan, Status (colored badge), Joined Date (with expiry warning for subscribers expiring within 7 days). Custom filter panel with checkbox selections for meal slots and status, plus radio selection for expiry range (7/15/30 days). Export to CSV. |
-| **Add Subscriber** | `AddSubscriberModalComponent` | Form with name, email, roll number, meal slot multi-select (via `<lib-dropdown-lib>`), day preference dropdown (All Days / Weekdays Only / Weekends Only), start/end dates, status dropdown, pause start/end dates, pause reason |
-| **Edit Subscriber** | `EditSubscriberModalComponent` | Pre-populated form for editing existing subscribers |
-| **Subscriber Form** | `SubscriberFormComponent` | Reusable form with `<lib-dropdown-lib>` multi-select for meal slots, day preference dropdown, custom-built date pickers, validation, conditional pause start/end date fields, pause reason input. On save, the subscription end date is automatically extended to skip any holidays within the subscription period. |
-| **ID Card Preview** | `SubscriberCardPreviewComponent` | Front/back card design with Mess Pass branding, roll number, terms & conditions |
-| **Card Modal** | `SubscriberCardModalComponent` | Post-creation preview of subscriber's ID card |
-| **Student Detail** | `StudentDetailComponent` | Full student profile: overview cards (plan, status, card, attendance), subscription history with timeline, tap activity log, change log, and pause compensation card showing taps-during-pause with conditional styling. Accessed inline via the table "View" action or deep-linked from the quick modal with `?student=X` query param. |
+| **Subscriber Stats** | `SubscriberStatsComponent` | Total, Active, Paused, Lapsed, Super User counts. |
+| **Subscriber Table** | `SubscriberTableComponent` | Paginated, searchable, filterable table with sticky actions column. Columns: Subscriber, Roll Number, Meal Plan, Status (colored badge), Joined Date (with expiry warning for subs expiring within 7 days). Filters: meal slot multi-select, status multi-select (inc. Super User with purple badge), expiry range (7/15/30 days). Export to CSV. |
+| **Add Subscriber** | `AddSubscriberModalComponent` | Form with name, email, roll number, meal slot multi-select (`<lib-dropdown-lib>`), day preference dropdown (All Days / Weekdays Only / Weekends Only), subscription date range (`<lib-date-picker>`), status dropdown, super user checkbox (with warning popup). Pause section: start/end date range + reason. |
+| **Edit Subscriber** | `EditSubscriberModalComponent` | Pre-populated form with **Renew section** (shown when near expiry or lapsed): month-based preset pills (1M, 3M, 6M, 1Y) + Cancel/Confirm. Renewals persist `end_Date` from API response. |
+| **Subscriber Form** | `SubscriberFormComponent` | Reusable form with `<lib-dropdown-lib>` multi-select for meal slots, `<lib-date-picker>` range pickers, day preference dropdown, super user toggle, conditional pause section. On save, `end_Date` is automatically extended by holiday count within the subscription range. Server-computes `duration_days`. |
+| **ID Card Preview** | `SubscriberCardPreviewComponent` | Front/back card design with Mess Pass branding, roll number, terms & conditions. |
+| **Card Modal** | `SubscriberCardModalComponent` | Post-creation preview of subscriber's ID card. |
+| **Student Detail** | `StudentDetailComponent` | Full student profile with 5-tab layout: **Overview** (plan, status, card, attendance, super user banner), **Attendance** (GitHub-style heatmap with color-coded cells — present/partial/absent/holiday/paused — with day tap drill-down), **Subscription History** (timeline with milestones for CREATED, RENEWED, MODIFIED, PAUSE_STARTED/ENDED/EXTENDED, PAUSE_REQUESTED, PAUSE_AUTO_STARTED), **Activity Log** (changelog with action filter chips), **Compensation / Pause** (pause periods with status badges, compensated days, taps-during-pause). Skeleton loading, error states, empty states. |
 
 ### 3. Reports Module (`/kjusys/reports`)
 
 | Feature | Component | Description |
 |---|---|---|
-| **Analytics Dashboard** | `AnalyticsDashboardComponent` | Daily overview with total taps, active/paused/expired subscriber counts, and meal distribution bread chart showing real tap-to-subscriber ratios per meal slot. Optional date range filter queries historical tap data. |
-| **Holiday Calendar** | `HolidayCalendarComponent` | Calendar view of mess holidays fetched from backend, with date formatting via Angular `date` pipe. |
-| **Audit Tools** | `AuditToolsComponent` | Three sub-tabs: **Pause Audit** — table of paused subscriptions showing tap activity during pause periods; **Anomalies** — irregular tap events (blocked card taps, unsubscribed meal taps); **Change Log** — subscription modification history. |
-| **Quick Modal** | `QuickModalComponent` | Shared floating-action-button modal for quick student lookup from any page. Uses `Router.navigate()` with queryParams, fetches and displays student overview (name, roll, plan, status, card, attendance, date range).
+| **Analytics Dashboard** | `ReportsDashboardComponent` | KPI cards (meals served, active subscribers, absent, paused, anomalies), meal distribution bread chart, Live Tap Activity table with client pagination. Export Report modal with type selector (Full Report / Tap Activity / Analytics / Audit / Paused), format (CSV/Excel), optional student roll number, and date range. |
+| **Audit Tools** | `AuditToolsComponent` | Three sub-tabs: **Pause Audit** — table of paused subscriptions with tap activity during pause; **Anomalies** — irregular tap events (unsubscribed meal taps, lapsed taps); **Change Log** — global subscription modification history with action filter dropdown (includes SCHEDULE_CREATED/MODIFIED/DELETED, TAP_REJECTED, HOLIDAY_DELETED). |
+| **Quick Modal** | `QuickModalComponent` | Floating-action-button modal for quick student lookup from any page. Fetches and displays student overview (name, roll, plan, status, card, attendance rate from last 6 months). |
 
 ---
 
@@ -91,14 +90,14 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 
 | Method | Endpoint | Service | Purpose |
 |---|---|---|---|
-| GET | `/students?search=&page=&size=&plan=&status=` | `SubscriberService` | Paginated subscriber list with filters |
-| GET | `/students/expiring` | `SubscriberService` | Subscribers expiring soon |
+| GET | `/students?search=&page=&size=&plan=&status=` | `SubscriberService` | Paginated subscriber list with filters (status supports comma-separated, includes "Super User") |
+| GET | `/students/expiring?days=` | `SubscriberService` | Subscribers expiring soon |
 | GET | `/students/lookup/:roll_number` | `SubscriberService` | Quick lookup for registration flow |
 | GET | `/students/:roll_number` | `SubscriberService` | Single subscriber by roll number |
-| POST | `/students` | `SubscriberService` | Create new subscriber. Body: supports `pauseReason`, `pauseStart_Date`, `pauseEnd_Date`. |
-| PUT | `/students/:roll_number` | `SubscriberService` | Update subscriber. Merges subscription fields; extends `end_Date` by pause duration when resuming from pause. Body: supports `pauseReason`, `pauseStart_Date`, `pauseEnd_Date`. |
-| DELETE | `/students/:roll_number` | `SubscriberService` | Delete subscriber |
-| POST | `/students/:roll_number/renew` | `SubscriberService` | Renew subscription |
+| POST | `/students` | `SubscriberService` | Create subscriber. Supports `superUser`, `pauseReason`, `pauseStart_Date`, `pauseEnd_Date`, `dayPreference`. |
+| PUT | `/students/:roll_number` | `SubscriberService` | Update subscriber. Server-computes `duration_days`. Supports `superUser`, `dayPreference`, pause fields. |
+| DELETE | `/students/:roll_number` | `SubscriberService` | Delete subscriber (cascade-cleans orphaned data server-side) |
+| POST | `/students/:roll_number/renew` | `SubscriberService` | Renew subscription. Sends month-based presets (1M/3M/6M/1Y). |
 | POST | `/students/:roll_number/pause` | `SubscriberService` | Pause subscription |
 
 ### Schedule (Meal Slots)
@@ -110,14 +109,15 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 | POST | `/schedule` | `MealSlotService` / `DashboardService` | Create meal schedule |
 | PUT | `/schedule/:id` | `MealSlotService` / `DashboardService` | Update meal schedule |
 | DELETE | `/schedule/:id` | `MealSlotService` / `DashboardService` | Delete meal schedule |
-| POST | `/schedule/holiday` | `ReportsService` | Create holiday record |
-| DELETE | `/schedule/holiday/:id` | `ReportsService` | Delete holiday record |
+| POST | `/schedule/holiday` | `DashboardService` | Create holiday record |
+| DELETE | `/schedule/holiday/:id` | `DashboardService` | Delete holiday record |
+| GET | `/schedule/holidays` | `DashboardService` | All mess holiday records |
 
 ### Taps
 
 | Method | Endpoint | Service | Purpose |
 |---|---|---|---|
-| GET | `/taps?meal=` | `DashboardService` | Today's tap entries |
+| GET | `/taps?meal=` | `DashboardService` | Last 24h tap entries (rolling window) |
 
 ### Hardware Status & Management
 
@@ -125,18 +125,16 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 |---|---|---|---|
 | GET | `/hardware-status` | `DashboardService` | Devices status + server stats |
 | GET | `/hardware` | `HardwareManagementService` | List all devices |
+| POST | `/hardware/connect` | `HardwareManagementService` | Direct connect — registers device in active state with HMAC secret. Returns `{ device, hmacSecret, hmacSecretHash }`. |
+| POST | `/hardware` | `HardwareManagementService` | Register device (pending state) |
 | GET | `/hardware/:id` | `HardwareManagementService` | Single device |
-| POST | `/hardware` | `HardwareManagementService` | Register device |
 | PUT | `/hardware/:id` | `HardwareManagementService` | Update device |
 | DELETE | `/hardware/:id` | `HardwareManagementService` | Delete device |
 | POST | `/hardware/start-pairing` | `HardwareManagementService` | Open pairing window |
 | POST | `/hardware/pair` | `HardwareManagementService` | Pair device by MAC + code |
-| POST | `/hardware/:id/confirm` | `HardwareManagementService` | Confirm/activate device |
-| POST | `/hardware/:id/test-printer` | `HardwareManagementService` | Test printer |
-| POST | `/hardware/:id/test-display` | `HardwareManagementService` | Test LCD display |
-| POST | `/hardware/:id/rotate-secret` | `HardwareManagementService` | Rotate HMAC secret |
-| POST | `/hardware/:id/stop` | `HardwareManagementService` | Emergency stop |
-| POST | `/hardware/:id/heartbeat` | — | Device heartbeat (device → server) |
+| POST | `/hardware/:id/confirm` | `HardwareManagementService` | Confirm/activate device (generates HMAC secret + hash) |
+| POST | `/hardware/heartbeat` | — | Device heartbeat (device → server, rate-limited) |
+| POST | `/hardware/:id/rotate-secret` | `HardwareManagementService` | Rotate HMAC secret. Returns `{ newSecret, newSecretHash }`. |
 
 ### Display Configuration
 
@@ -151,20 +149,18 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 | Method | Endpoint | Service | Purpose |
 |---|---|---|---|
 | GET | `/reports/today` | `DashboardService` | Today's meal report with per-meal breakdown |
-| GET | `/reports/analytics?from=&to=` | `ReportsService` | Analytics aggregate: total taps, active/paused/expired subscriber counts, meal distribution with tapCount/subscriberCount per slot. Optional date range filters tap data; subscriber counts are current snapshot. |
-| GET | `/schedule/holidays` | `ReportsService` | All mess holiday records (used by HolidayCalendarComponent and for holiday-aware subscription duration) |
-| GET | `/reports/students?search=` | `ReportsService` | Search students by roll number or name (regex), returns student list with subscription status and raw document data |
-| GET | `/reports/students/:rollNumber/overview` | `ReportsService` | Single student overview: profile, subscription details, card status, total taps, attendance rate |
-| GET | `/reports/students/:rollNumber/taps?meal=&from=&to=` | `ReportsService` | Student tap history with optional meal/date filters |
-| GET | `/reports/students/:rollNumber/attendance` | `ReportsService` | Student attendance summary per meal slot |
-| GET | `/reports/students/:rollNumber/changelog` | `ReportsService` | Subscription modification history for a student |
-| GET | `/reports/students/:rollNumber/history` | `ReportsService` | Complete subscription history records |
-| GET | `/reports/pause-audit` | `ReportsService` | Pause audit: all paused subscriptions with tapsDuringPause count and compensatedDays |
-| GET | `/reports/anomalies` | `ReportsService` | Irregular tap events: blocked-card taps, unsubscribed-meal taps, lapsed-student taps |
-| GET | `/reports/changelog` | `ReportsService` | Global change log across all subscriptions |
+| GET | `/reports/analytics?from=&to=` | `ReportsService` | Analytics aggregate: total taps, active/paused/expired/absent counts, expected active today (dayPreference-aware), meal distribution with tapCount/subscriberCount per slot |
+| GET | `/reports/pause-audit` | `ReportsService` | Pause audit: all paused subscriptions with tapsDuringPause and compensatedDays |
+| GET | `/reports/anomalies` | `ReportsService` | Irregular tap events: unsubscribed-meal taps, lapsed-student taps |
 | GET | `/reports/exports` | — | List export records |
 | GET | `/reports/exports/:date` | — | Download export Excel file by date |
-| POST | `/reports/export/trigger` | — | Manual export trigger |
+| POST | `/reports/export/trigger` | `ReportsService` | Trigger export with filters (type, format, mealSlots, statuses, rollNumbers, date range). Returns file directly. |
+| GET | `/students/:roll_number/taps` | `ReportsService` | Student tap history (defaults to last 30 days) |
+| GET | `/students/:roll_number/attendance` | `ReportsService` | Student attendance summary per meal slot |
+| GET | `/students/:roll_number/changelog` | `ReportsService` | Subscription modification history for a student |
+| GET | `/students/:roll_number/pause-comp` | `ReportsService` | Pause compensation: pause window, status, taps-during-pause, compensated days |
+| GET | `/students/:roll_number/subscription-history` | `ReportsService` | Complete subscription history records |
+| GET | `/changelog` | `ReportsService` | Global change log (up to 500 entries, client-side filtered by roll number, action, date range) |
 
 ---
 
@@ -172,17 +168,17 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 
 | Service | Location | Purpose |
 |---|---|---|
-| `DashboardService` | `modules/dashboard/services/` | Fetches schedules, taps, hardware status, display configs |
-| `SubscriberService` | `modules/subscriber-management/services/` | Full subscriber CRUD with backend mapping. On create/update, fetches holidays from `/schedule/holidays` and extends `end_Date` / `duration_days` by the number of holidays in the subscription range (holiday countdown skip). Sends `dayPreference` in the payload. |
-| `MealSlotService` | `shared/services/` | Cached meal slot CRUD with `BehaviorSubject` + 5-min stale time |
-| `SubscriberFormService` | `shared/services/` | Form validation, date parsing (DD/MM/YY ↔ timestamp), meal plan ↔ codes mapping, pause start/end date and pause reason validation. Manages `selectedMeals: string[]` and `dayPreference: 'all' | 'weekday' | 'weekend'` on the form value. |
-| `HardwareManagementService` | `shared/services/` | All hardware lifecycle operations |
+| `DashboardService` | `modules/dashboard/services/` | Fetches schedules, taps, hardware status, display configs, holidays |
+| `SubscriberService` | `modules/subscriber-management/services/` | Full subscriber CRUD with backend mapping. Fetches holidays to extend subscription duration (holiday countdown skip). Sends `dayPreference`, `superUser`, pause fields in payload. Contains `countEligibleDays()` for client-side day-preference-aware day counting. |
+| `MealSlotService` | `shared/services/` | Cached meal slot CRUD with `BehaviorSubject` + 5-min stale time. Day-type-aware schedule selection. |
+| `SubscriberFormService` | `shared/services/` | Form validation, date parsing (DD/MM/YY ↔ timestamp), meal plan ↔ codes mapping, pause start/end date and pause reason validation. Manages `selectedMeals: string[]`, `dayPreference`, `superUser` on form value. |
+| `HardwareManagementService` | `shared/services/` | All hardware lifecycle operations: register, connect, pair, confirm, heartbeat, rotate-secret |
 | `WebsocketService` | `shared/services/` | Raw WebSocket connection with auto-reconnect |
 | `ConnectionMonitorService` | `shared/services/` | Server health polling, server-down alerts with retry |
-| `ConfigLoaderService` | `environments/` | Dynamic backend URL resolution at bootstrap: applies cached/localhost URL immediately, then fetches GitHub Gist asynchronously in background and probes server |
+| `ConfigLoaderService` | `environments/` | Dynamic backend URL resolution at bootstrap: applies cached/localhost URL immediately, fetches GitHub Gist in background and probes server |
 | `NetworkService` | `shared/services/` | Browser online/offline monitoring with Wi-Fi alerts |
 | `NetworkInterceptor` | `shared/services/` | HTTP interceptor: detects 502-504/status 0 as server-down |
-| `ReportsService` | `modules/reports/services/` | All reports API calls: student search/overview/taps/attendance/changelog/history, analytics dashboard, holidays, pause audit, anomalies, global changelog. Maps backend snake_case responses to camelCase models and performs nested array extraction. |
+| `ReportsService` | `modules/reports/services/` | All reports API calls: student taps/attendance/changelog/history/pause-comp, analytics dashboard, holidays, pause audit, anomalies, global changelog. Maps backend snake_case to camelCase, performs nested array extraction, client-side changelog filtering. |
 
 ---
 
@@ -192,10 +188,13 @@ Connection to `ws://{host}/kjusys-api/mess-management/ws`
 
 | Event | Direction | Payload | Component Reaction |
 |---|---|---|---|
-| `tap.new` | Server → Client | `{ event: "tap.new", data: { ... } }` | Dashboard: live-update meal slot counts, add row to recent entries |
-| `tap.duplicate` | Server → Client | `{ event: "tap.duplicate", data: { ... } }` | Dashboard: show duplicate indication |
-| `hardware.status` | Server → Client | `{ event: "hardware.status", data: { ... } }` | Dashboard: update device status indicators |
 | `connected` | Server → Client | `{ event: "connected", message: "..." }` | WebSocketService: confirm connection |
+| `tap.new` | Server → Client | `{ event: "tap.new", data: { roll_number, name, meal, time, token, ... } }` | Dashboard: live-update meal slot counts, add row to recent entries |
+| `hardware.status` | Server → Client | `{ event: "hardware.status", data: { hardware: [...], serverUptimeSeconds, responseTimeMs } }` | Dashboard: update device status indicators (every 30s) |
+| `hardware.device-discovered` | Server → Client | `{ event: "hardware.device-discovered", data: { deviceId, name, macAddress } }` | Hardware settings: show newly paired device |
+
+| Event | Direction | Data | Purpose |
+|---|---|---|---|
 | `get.hardware.status` | Client → Server | `{ event: "get.hardware.status" }` | Sent on connect to request initial status |
 
 ---
@@ -207,34 +206,39 @@ AppComponent
 ├── NavigationComponent (router-outlet shell)
 │   ├── [Route: /kjusys/dashboard]
 │   │   └── DashboardComponent
-│   │       ├── StatsBarComponent (4 stat cards)
-│   │       ├── MealSlotsComponent (live slot grid, min 3 / max 4 cols)
-│   │       │   └── ConfigureMealSlotsComponent (modal + day-type multi-select)
-│   │       ├── EntriesTableComponent (recent taps)
-│   │       ├── HardwareStatusComponent (devices + server stats)
-│   │       │   └── HardwareSettingsModalComponent (full device mgmt)
+│   │       ├── StatsBarComponent (4 stat cards, skeleton loading)
+│   │       ├── MealSlotsComponent (live slot grid, 1-4 cols, 30s auto-refresh)
+│   │       │   └── ConfigureMealSlotsComponent (modal: meal slots / display / token)
+│   │       ├── EntriesTableComponent (recent taps, 15-row cap)
+│   │       ├── HardwareStatusComponent (devices + peripherals + server stats)
+│   │       │   └── HardwareSettingsModalComponent (flat layout: register + device list)
+│   │       ├── HolidayCalendarComponent (calendar + accordion)
 │   │       └── lib-tabs (Dashboard / Subscriber Management / Reports)
 │   │
 │   ├── [Route: /kjusys/subscriber-management]
 │   │   └── SubscriberManagementComponent
 │   │       ├── SubscriberStatsComponent (counts)
-│   │       ├── SubscriberTableComponent (table + filters + pagination)
+│   │       ├── SubscriberTableComponent (table + filters + pagination, sticky actions)
 │   │       │   └── StudentDetailComponent (inline when "View" is clicked)
+│   │       │       ├── [Tab] Overview (stats, super user banner, detail grid)
+│   │       │       ├── [Tab] Attendance (heatmap, per-day drill-down)
+│   │       │       ├── [Tab] Subscription History (timeline milestones)
+│   │       │       ├── [Tab] Activity Log (changelog, filter chips)
+│   │       │       └── [Tab] Compensation / Pause (pause periods, comp details)
 │   │       ├── AddSubscriberModalComponent
-│   │       │   └── SubscriberFormComponent
+│   │       │   └── SubscriberFormComponent (lib-dropdown-lib, lib-date-picker)
 │   │       ├── EditSubscriberModalComponent
-│   │       │   └── SubscriberFormComponent
+│   │       │   └── SubscriberFormComponent (renew section with month presets)
 │   │       ├── SubscriberCardPreviewComponent
 │   │       └── SubscriberCardModalComponent
 │   │
 │   └── [Route: /kjusys/reports]
 │       └── ReportsComponent
-│           ├── AnalyticsDashboardComponent (sub-tab: analytics)
-│           ├── HolidayCalendarComponent (sub-tab: holidays)
-│           └── AuditToolsComponent (sub-tab: audit)
+│           ├── ReportsDashboardComponent (KPI cards + tap table + export modal)
+│           └── AuditToolsComponent (sub-tabs: pause-audit, anomalies, changelog)
 │               ├── Pause Audit (sub-sub-tab: pause-audit)
 │               ├── Anomalies (sub-sub-tab: anomalies)
-│               └── Change Log (sub-sub-tab: changelog)
+│               └── Change Log (sub-sub-tab: changelog, client-side filtered)
 │
 └── [Global]
     └── QuickModalComponent (floating action button + modal)
@@ -244,7 +248,7 @@ AppComponent
 
 ## MFE Manifest (Exposed Modules)
 
-Exposed in `webpack.config.js` and registered in `mf.manifest.json`:
+Exposed in `webpack.config.js` and `webpack.prod.config.js`:
 
 | Exposed Module | Angular Artifact | Route Path |
 |---|---|---|
@@ -263,7 +267,7 @@ Exposed in `webpack.config.js` and registered in `mf.manifest.json`:
 | `/login` | `SharedAuthComponent` (from `@libs/shared-auth`) | Login page |
 | `/kjusys/dashboard` | `DashboardModule` (lazy) | `DashboardComponent` |
 | `/kjusys/subscriber-management` | `SubscriberManagementModule` (lazy) | `SubscriberManagementComponent` |
-| `/kjusys/reports` | `ReportsModule` (lazy) | `ReportsComponent` (sub-tabs: analytics, audit, holidays) |
+| `/kjusys/reports` | `ReportsModule` (lazy) | `ReportsComponent` (sub-tabs: analytics, audit) |
 | Deep-link via `?student=<rollNumber>` query param | SubscriberManagementModule | Opens `StudentDetailComponent` inline from any route |
 
 ---
@@ -275,10 +279,12 @@ Exposed in `webpack.config.js` and registered in `mf.manifest.json`:
 | `shared-auth` | `@libs/shared-auth` | `SharedAuthComponent`, `SharedToastService` |
 | `http-common` | `@libs/http-common` | `HttpCommonService` |
 | `shared-ui` | `@libs/shared-ui` | `BreadcrumbsTitleComponent`, `EmptyStateComponent`, `ButtonComponent` |
+| `shared-toast` | `@libs/shared-toast` | Toast notifications for renew success, errors |
 | `tabs` | `@libs/tabs` | `TabsModule`, `TabItem` |
 | `sub-tabs` | `@libs/sub-tabs` | `SubTabsModule`, `SubTabItem` |
 | `table` | `@libs/table` | `TableModule`, `TableColumn`, `PaginationConfig` |
 | `dropdown-lib` | `@libs/dropdown-lib` | Multi-select dropdown for meal slot/status filters |
+| `date-picker` | `@libs/date-picker` | Range date pickers for subscription and pause dates |
 | `alert` | `@libs/alert` | `AlertService` for connection alerts |
 | `left-menu-lib` | `@libs/left-menu-lib` | Sidebar navigation |
 | `menu-header-lib` | `@libs/menu-header-lib` | Top header bar |
@@ -334,7 +340,7 @@ interface Subscriber {
   email: string;
   roll_number: string;
   mealPlan: string;       // e.g. "Breakfast+Lunch+Dinner"
-  status: 'Active' | 'Paused' | 'Lapsed';
+  status: string;         // 'Active' | 'Paused' | 'Lapsed' | 'Super User'
   joinedDate: string;
   startDate?: string;     // DD/MM/YY
   endDate?: string;       // DD/MM/YY
@@ -344,6 +350,7 @@ interface Subscriber {
   expiryWarning?: string;  // "expiry in N days" for active subs within 7 days
   mealNames?: string[];
   dayPreference?: string;  // 'all' | 'weekday' | 'weekend'
+  superUser?: boolean;
 }
 ```
 
@@ -362,15 +369,15 @@ Six environment variants in `projects/mess-management/src/environments/`:
 | `environment.demo.ts` | `true` | Demo server |
 | `environment.local-server.ts` | `true` | Local server |
 
-**`ConfigLoaderService`** dynamically resolves the backend URL at bootstrap by checking (in order):
+**`ConfigLoaderService`** dynamically resolves the backend URL at bootstrap:
 1. Dev mode flag (`localStorage.kjusys_devMode`) — uses `http://localhost:8080` immediately
 2. LocalStorage cache (previously resolved URL) — applied immediately, non-blocking
-3. GitHub Gist raw URL — fetched asynchronously in background; if a different URL is returned, swaps to it and probes the server
+3. GitHub Gist raw URL — fetched asynchronously in background; if different, swaps and probes
 4. Localhost fallback — used if nothing else resolves
 
 ---
 
-## Production Servors
+## Production Servers
 
 Located in `prod-server/`:
 
@@ -395,85 +402,4 @@ Located in `prod-server/`:
 
 ---
 
-## Changelog
-
-### 2026-07-02 — Student detail revamp, attendance pipeline, pause tracking
-
-**Student detail component — complete revamp:**
-- Replaced inline template (`template: \`...\``) with full standalone 476-line HTML file using TailwindCSS layout
-- Introduced 5-tab layout: **Overview**, **Attendance** (table), **Subscription History** (timeline + pause periods), **Activity Log** (changelog with filter chips), **Compensation / Pause**
-- Added weekly and yearly **GitHub-style heatmap** with color-coded cells (`present` → green, `partial` → light green, `absent` → grey, `holiday` → blue, `paused` → amber)
-- Month labels and day-of-week axis rendered above the heatmap grid
-- **Day tap detail drill-down**: clicking a heatmap cell shows per-meal breakdown (tapped/untapped/holiday/paused with timestamps) in a detail panel
-- **Subscription timeline** — milestone view with icon + color-coded entries for CREATED, RENEWED, MODIFIED, PAUSE_STARTED, PAUSE_ENDED, PAUSE_EXTENDED, DELETED
-- **Pause periods** tab — lists all pause periods with active/completed status badges, compensated days, taps-during-pause with conditional styling
-- **Activity log** — changelog entries displayed with action filter chips (All / Created / Renewed / Modified / Pause Started / Pause Ended / Pause Extended) for quick filtering
-- **Empty states** — `<lib-empty-state>` component shown when tabs have no data (loading, no attendance, no history, no activity)
-- Expiry countdown shown in overview for subscriptions expiring within 7 days
-- `@Input() refreshTrigger` — incremented by parent after successful edit to force full data reload (`loadAllData()` → overview, attendance, changelog, subscription history, pause compensation)
-- `ChangeDetectorRef.detectChanges()` on all async callbacks to ensure template updates
-
-**Quick modal — attendance rate:**
-- Added `loadAttendance()` method fetching last 6 months of attendance data from `/reports/students/:rollNumber/attendance`
-- Reads `status` field from attendance records (present/absent/holiday/paused), skips holidays and pauses, computes `attendanceRate = totalPresent / totalExpected × 100`
-- Replaces the previously hardcoded `attendanceRate: 0`
-
-**Reports service — changelog description:**
-- `getStudentChangelog()` now generates human-readable descriptions:
-  - Meal diffs: `"Added: BREAKFAST | Removed: DINNER"` when meals array changes
-  - Pause started: `"Paused: 2/7/26 → 21/7/26"` with pause date range
-  - Pause ended: `"Subscription auto-resumed after pause period ended"`
-  - Pause extended: `"Pause extended: 21/7/26 → 28/7/26"` with date range
-  - Falls back to `l.reason` if provided
-
-**Pause activity tracking (PAUSE_STARTED / PAUSE_ENDED / PAUSE_EXTENDED):**
-- Added constants `ACTION_COLORS` and `ACTIVITY_COLORS` with badge colors/icons for all action types including pause events
-- `buildMilestones()` renders timeline entries for all pause actions
-- `getMilestoneIcon()` returns appropriate icons (`play` for resumed, `clock` for extended, `pause` for started)
-- `milestoneColor()` maps short action names to full constants via `shortToFull` lookup table
-- HTML filter chips include `PAUSE_STARTED`, `PAUSE_ENDED`, `PAUSE_EXTENDED`
-
-**Subscriber management:**
-- Added `detailRefreshKey` counter — incremented after successful `updateSubscriber()` to trigger `StudentDetailComponent` data reload via `refreshTrigger` input binding
-- `StudentOverview` model: added `email` field
-
-### 2026-07-02 — Meal slot day-types, subscriber dropdowns, holiday countdown skip
-
-**Meal slots — Available Days:**
-- Added "Available Days" multi-select to ConfigureMealSlotsComponent (weekday / weekend / holiday)
-- Each meal slot now stores which day types it runs on; the schedule payload only includes selected day types
-- Dashboard grid changed from fixed `grid-cols-4` to `grid-cols-3 xl:grid-cols-4` (min 3, max 4 columns)
-
-**Subscriber form — Dropdowns:**
-- Replaced checkbox list with `<lib-dropdown-lib>` multi-select for meal slots
-- Added day preference dropdown (All Days / Weekdays Only / Weekends Only) side by side with meal slots
-- `SubscriberFormValue.mealSlot` restructured: removed dynamic `[key: string]: boolean` in favour of `selectedMeals: string[]` + `dayPreference: string`
-- Payload now includes `dayPreference` on create/update
-
-**Holiday countdown skip:**
-- `SubscriberService.createSubscriber()` and `updateSubscriber()` now fetch holidays from `/schedule/holidays` and extend `end_Date` / `duration_days` by the number of holidays in the range — subscriptions automatically skip holiday dates in the countdown
-
-**Modal height & scrolling:**
-- Add/Edit subscriber modals set to `h-[800px]` with `flex flex-col` layout (fixed header/footer, scrollable form body)
-- `dropdown-lib` scroll listener fixed: no longer closes the dropdown when scrolling within an `overflow-y-auto` parent that contains it
-
-### 2026-07-02 — Endpoint & CDR cleanup
-
-**Purged endpoints (no frontend UI planned):**
-- `GET /settings`, `PUT /settings` — removed entire settings infrastructure (subrouter, handler, service, constants)
-- `POST /students/:roll_number/block`, `POST /students/:roll_number/unblock` — removed routes, handlers, constants (may be re-added if card blocking is needed later)
-- `DELETE /display-config/:meal` — removed route and handler (display configs managed via PUT only)
-
-**Bug fix:**
-- `PUT /students/:roll_number/renew` → `POST` (frontend was sending wrong HTTP method)
-- `PUT /students/:roll_number/pause` → `POST` (frontend was sending wrong HTTP method)
-
-**Change detection:**
-- Added `ChangeDetectorRef` with `detectChanges()` / `markForCheck()` to:
-  - `SubscriberStatsComponent` — `OnPush` strategy + input setter
-  - `SubscriberTableComponent`
-  - `SubscriberCardModalComponent`
-  - `SubscriberCardPreviewComponent`
-  - `MealSlotsComponent` (dashboard)
-  - `HardwareStatusComponent` (dashboard)
-- Parent `SubscriberManagementComponent`: added `cdr.detectChanges()` after background stats fetch to ensure stats cards render
+For the full changelog, see [CHANGELOG.md](./CHANGELOG.md).
