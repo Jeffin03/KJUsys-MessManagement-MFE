@@ -5,8 +5,10 @@ import { Subscriber } from '../models/subscriber';
 export interface SubscriberFormValue {
   firstName: string;
   lastName: string;
-  email: string;
-  roll_number: string;
+  class_section: string;
+  hostel_name: string;
+  hostel_warden: string;
+  admission_number: string;
   superUser: boolean;
   mealSlot: {
     startDate: string;
@@ -23,8 +25,10 @@ export interface SubscriberFormValue {
 export interface ValidationErrors {
   firstName: string;
   lastName: string;
-  email: string;
-  roll_number: string;
+  class_section: string;
+  hostel_name: string;
+  hostel_warden: string;
+  admission_number: string;
   pauseEndDate: string;
   pauseStartDate: string;
   pauseReason: string;
@@ -83,15 +87,16 @@ export class SubscriberFormService {
     const errors: ValidationErrors = {
       firstName: '',
       lastName: '',
-      email: '',
-      roll_number: '',
+      class_section: '',
+      hostel_name: '',
+      hostel_warden: '',
+      admission_number: '',
       pauseEndDate: '',
       pauseStartDate: '',
       pauseReason: ''
     };
 
-    const nameRegex = /^[A-Za-z ]+$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const nameRegex = /^[A-Za-zA-Z ]+$/;
 
     if (!form.firstName.trim()) {
       errors.firstName = 'First name is required';
@@ -103,14 +108,20 @@ export class SubscriberFormService {
       errors.lastName = 'Only letters are allowed';
     }
 
-    if (!form.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!emailRegex.test(form.email)) {
-      errors.email = 'Invalid email address';
+    if (!form.class_section.trim()) {
+      errors.class_section = 'Class & Section is required';
     }
 
-    if (!form.roll_number.trim()) {
-      errors.roll_number = 'Roll number is required';
+    if (!form.hostel_name.trim()) {
+      errors.hostel_name = 'Hostel name is required';
+    }
+
+    if (!form.hostel_warden.trim()) {
+      errors.hostel_warden = 'Hostel warden name is required';
+    }
+
+    if (!form.admission_number.trim()) {
+      errors.admission_number = 'Admission number is required';
     }
 
     // Date errors are handled separately via validateDates() in the component
@@ -151,8 +162,10 @@ export class SubscriberFormService {
     return {
       firstName: '',
       lastName: '',
-      email: '',
-      roll_number: '',
+      class_section: '',
+      hostel_name: '',
+      hostel_warden: '',
+      admission_number: '',
       superUser: false,
       mealSlot: {
         startDate: '',
@@ -174,8 +187,10 @@ export class SubscriberFormService {
     form.firstName = nameParts[0] || '';
     form.lastName = nameParts.slice(1).join(' ') || '';
 
-    form.email = subscriber.email || '';
-    form.roll_number = subscriber.roll_number !== 'N/A' ? subscriber.roll_number : '';
+    form.class_section = (subscriber.class + ' ' + subscriber.div).trim();
+    form.hostel_name = subscriber.hostel_name || '';
+    form.hostel_warden = subscriber.hostel_warden || '';
+    form.admission_number = subscriber.admission_number !== 'N/A' ? subscriber.admission_number : '';
     form.superUser = !!subscriber.superUser;
 
     form.mealSlot.selectedMeals = (subscriber.mealNames || [])
@@ -226,8 +241,10 @@ export class SubscriberFormService {
   resetForm(form: SubscriberFormValue, mealSlots: MealSlotWithCode[]): void {
     form.firstName = '';
     form.lastName = '';
-    form.email = '';
-    form.roll_number = '';
+    form.class_section = '';
+    form.hostel_name = '';
+    form.hostel_warden = '';
+    form.admission_number = '';
     form.superUser = false;
     form.mealSlot.startDate = '';
     form.mealSlot.endDate = '';

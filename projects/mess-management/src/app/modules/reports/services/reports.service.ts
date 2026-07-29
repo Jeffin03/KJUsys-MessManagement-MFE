@@ -52,18 +52,18 @@ export class ReportsService {
     return response.responseData.data;
   }
 
-  getStudentTaps(rollNumber: string, from?: string, to?: string): Observable<TapRecord[]> {
+  getStudentTaps(admissionNumber: string, from?: string, to?: string): Observable<TapRecord[]> {
     let params = new HttpParams();
     if (from) params = params.set('from', from);
     if (to) params = params.set('to', to);
     return this.http
-      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_TAPS(rollNumber)}`, { params })
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_TAPS(admissionNumber)}`, { params })
       .pipe(map(r => {
         const data = this.extractData(r);
         const raw = data && data.taps ? data.taps : [];
         return raw.map((t: any) => ({
           id: extractId(t._id),
-          rollNumber: t.roll_number || '',
+          admissionNumber: t.admission_number || '',
           mealSlot: t.meal ? formatMealLabel(t.meal) : '',
           tapTimestamp: t.tap_DateTime || 0,
           date: t.tap_Date || 0,
@@ -71,12 +71,12 @@ export class ReportsService {
       }));
   }
 
-  getStudentAttendance(rollNumber: string, from?: string, to?: string): Observable<AttendanceDay[]> {
+  getStudentAttendance(admissionNumber: string, from?: string, to?: string): Observable<AttendanceDay[]> {
     let params = new HttpParams();
     if (from) params = params.set('from', from);
     if (to) params = params.set('to', to);
     return this.http
-      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_ATTENDANCE(rollNumber)}`, { params })
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_ATTENDANCE(admissionNumber)}`, { params })
       .pipe(map(r => {
         const data = this.extractData(r);
         const records = data && data.records ? data.records : [];
@@ -137,11 +137,11 @@ export class ReportsService {
       }));
   }
 
-  getStudentChangelog(rollNumber: string, limit?: number): Observable<ChangelogEntry[]> {
+  getStudentChangelog(admissionNumber: string, limit?: number): Observable<ChangelogEntry[]> {
     let params = new HttpParams();
     if (limit) params = params.set('limit', limit.toString());
     return this.http
-      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_CHANGELOG(rollNumber)}`, { params })
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_CHANGELOG(admissionNumber)}`, { params })
       .pipe(map(r => {
         const data = this.extractData(r);
         const raw = data && data.logs ? data.logs : [];
@@ -184,7 +184,7 @@ export class ReportsService {
           }
           return {
             id: extractId(l._id),
-            rollNumber: l.roll_number || '',
+            admissionNumber: l.admission_number || '',
             action: l.action || '',
             description,
             timestamp: l.timestamp || 0,
@@ -194,15 +194,15 @@ export class ReportsService {
       }));
   }
 
-  getStudentPauseComp(rollNumber: string): Observable<any> {
+  getStudentPauseComp(admissionNumber: string): Observable<any> {
     return this.http
-      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_PAUSE_COMP(rollNumber)}`)
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_PAUSE_COMP(admissionNumber)}`)
       .pipe(map(r => this.extractData(r)));
   }
 
-  getStudentSubscriptionHistory(rollNumber: string): Observable<any[]> {
+  getStudentSubscriptionHistory(admissionNumber: string): Observable<any[]> {
     return this.http
-      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_SUBSCRIPTION_HISTORY(rollNumber)}`)
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_SUBSCRIPTION_HISTORY(admissionNumber)}`)
       .pipe(map(r => {
         const data = this.extractData(r);
         const raw = data && data.records ? data.records : [];
@@ -221,9 +221,9 @@ export class ReportsService {
     return Number(val) || 0;
   }
 
-  getStudentOverview(rollNumber: string): Observable<StudentOverview> {
+  getStudentOverview(admissionNumber: string): Observable<StudentOverview> {
     return this.http
-      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(rollNumber)}`)
+      .get<ReportsResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ADMISSION_NUMBER(admissionNumber)}`)
       .pipe(map(r => {
         const data = this.extractData(r);
         const student = data && data.student ? data.student : data;
@@ -270,7 +270,7 @@ export class ReportsService {
         const mealSlots = meals.map(formatMealLabel);
 
         return {
-          rollNumber: student.roll_number || '',
+          admissionNumber: student.admission_number || '',
           name: student.name || '',
           email: student.email || '',
           cardStatus: 'Active',
@@ -293,7 +293,7 @@ export class ReportsService {
   }
 
   getChangelog(paramsMap: {
-    action?: string; roll_number?: string; from?: string; to?: string; page?: number; size?: number;
+    action?: string; admission_number?: string; from?: string; to?: string; page?: number; size?: number;
   }): Observable<PaginatedResponse<ChangelogEntry>> {
     let params = new HttpParams();
     Object.entries(paramsMap).forEach(([k, v]) => {
@@ -306,7 +306,7 @@ export class ReportsService {
         const raw = data && data.logs ? data.logs : [];
         const mapped = raw.map((l: any) => ({
           id: extractId(l._id),
-          rollNumber: l.roll_number || '',
+          admissionNumber: l.admission_number || '',
           action: l.action || '',
           description: l.reason || (l.newValue ? 'Details updated' : ''),
           timestamp: l.timestamp || 0,
@@ -374,12 +374,12 @@ export class ReportsService {
   triggerFilteredExport(params: {
     type: string;
     format: string;
-    roll_number?: string;
+    admission_number?: string;
     from?: number;
     to?: number;
     mealSlots?: string[];
     statuses?: string[];
-    rollNumbers?: string[];
+    admissionNumbers?: string[];
     includeSummary?: boolean;
     includeDetail?: boolean;
   }): Observable<Blob> {

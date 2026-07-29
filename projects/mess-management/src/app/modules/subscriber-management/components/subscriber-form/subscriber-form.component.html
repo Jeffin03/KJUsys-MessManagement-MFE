@@ -25,20 +25,40 @@
     <!-- Row 2 -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
         <div class="flex flex-col">
-            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">E-mail</label>
+            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Class & Section</label>
             <input
                 class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                style="color:#1D1D1F;" placeholder="Enter e-mail" [(ngModel)]="form.email"
+                style="color:#1D1D1F;" placeholder="e.g. 10 A" [(ngModel)]="form.class_section"
                 (input)="validateForm()" />
-            <p *ngIf="errors.email" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.email }}</p>
+            <p *ngIf="errors.class_section" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.class_section }}</p>
         </div>
         <div class="flex flex-col">
-            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Roll Number</label>
+            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Admission Number</label>
             <input
                 class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                style="color:#1D1D1F;" placeholder="Enter roll number" [(ngModel)]="form.roll_number"
+                style="color:#1D1D1F;" placeholder="Enter admission number" [(ngModel)]="form.admission_number"
                 (input)="validateForm()" />
-            <p *ngIf="errors.roll_number" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.roll_number }}</p>
+            <p *ngIf="errors.admission_number" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.admission_number }}</p>
+        </div>
+    </div>
+
+    <!-- Row 3 -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+        <div class="flex flex-col">
+            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Hostel Name</label>
+            <input
+                class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
+                style="color:#1D1D1F;" placeholder="Enter hostel name" [(ngModel)]="form.hostel_name"
+                (input)="validateForm()" />
+            <p *ngIf="errors.hostel_name" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.hostel_name }}</p>
+        </div>
+        <div class="flex flex-col">
+            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Hostel Warden Name</label>
+            <input
+                class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
+                style="color:#1D1D1F;" placeholder="Enter warden name" [(ngModel)]="form.hostel_warden"
+                (input)="validateForm()" />
+            <p *ngIf="errors.hostel_warden" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.hostel_warden }}</p>
         </div>
     </div>
 
@@ -235,7 +255,7 @@
 
         <div class="flex gap-3 w-full *:flex-1 *:w-full">
             <lib-button type="secondary" label="No, cancel" (onClick)="cancelSuperUser()"></lib-button>
-            <lib-button type="primary" label="Yes, set as Super User" (onClick)="confirmSuperUser()"></lib-button>
+            <lib-button type="primary" label="Yes, Proceed" (onClick)="confirmSuperUser()"></lib-button>
         </div>
     </div>
 </div>

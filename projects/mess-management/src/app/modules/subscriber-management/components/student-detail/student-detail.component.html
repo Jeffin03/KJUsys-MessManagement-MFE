@@ -8,7 +8,7 @@
     </button>
     <div *ngIf="overview">
       <span class="text-sm font-semibold text-[#111827]">{{ overview.name }}</span>
-      <span class="text-[10px] text-[#6B7280] ml-2">{{ overview.rollNumber }}</span>
+      <span class="text-[10px] text-[#6B7280] ml-2">{{ overview.admissionNumber }}</span>
     </div>
   </div>
 
@@ -21,7 +21,7 @@
     <div class="p-4 sm:p-6">
 
       <div *ngIf="studentNotFound" class="flex items-center justify-center py-16">
-        <lib-empty-state type="no-results" title="Student Not Found" subtext="No subscriber found with roll number &quot;{{ rollNumber }}&quot;"></lib-empty-state>
+        <lib-empty-state type="no-results" title="Student Not Found" subtext="No subscriber found with admission number &quot;{{ admissionNumber }}&quot;"></lib-empty-state>
       </div>
 
       <ng-container *ngIf="!studentNotFound">
@@ -81,7 +81,7 @@
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-3 text-sm">
-            <div><span class="text-[#6B7280]">Roll Number:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.rollNumber || '--' }}</span></div>
+            <div><span class="text-[#6B7280]">Admission Number:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.admissionNumber || '--' }}</span></div>
             <div><span class="text-[#6B7280]">Email:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.email || '--' }}</span></div>
             <div><span class="text-[#6B7280]">Card Status:</span>
               <span class="font-medium ml-2" [style.color]="overview?.cardStatus === 'Active' ? '#007A55' : '#C70036'">

@@ -9,6 +9,7 @@ import { SubscriberStatsComponent } from './components/subscriber-stats/subscrib
 import { SubscriberTableComponent } from './components/subscriber-table/subscriber-table.component';
 import { AddSubscriberModalComponent } from './components/add-subscriber-modal/add-subscriber-modal.component';
 import { EditSubscriberModalComponent } from './components/edit-subscriber-modal/edit-subscriber-modal.component';
+import { BulkUploadModalComponent } from './components/bulk-upload-modal/bulk-upload-modal.component';
 
 import { Subscriber } from '../../shared/models/subscriber';
 import { SubscriberService } from './services/subscriber.service';
@@ -33,7 +34,8 @@ import { MealSlotService, MealSlotWithCode } from '../../shared/services/meal-sl
     BreadcrumbsTitleComponent,
     ButtonComponent,
     QuickModalComponent,
-    StudentDetailComponent
+    StudentDetailComponent,
+    BulkUploadModalComponent
   ],
   templateUrl: './subscriber-management.component.html',
   styleUrls: ['./subscriber-management.component.css']
@@ -63,8 +65,8 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
       { label: 'Hostel' },
       { label: 'Mess Management' }
     ];
-    if (this.selectedStudentRollNumber) {
-      crumbs.push({ label: this.selectedStudentRollNumber });
+    if (this.selectedStudentAdmissionNumber) {
+      crumbs.push({ label: this.selectedStudentAdmissionNumber });
     }
     return crumbs;
   }
@@ -92,11 +94,12 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   mealSlotList: any[] = [];
 
   showAddModal = false;
+  showBulkUploadModal = false;
   showCardModal = false;
   showEditModal = false;
   showQuickModal = false;
-  quickModalRollNumber: string | null = null;
-  selectedStudentRollNumber: string | null = null;
+  quickModalAdmissionNumber: string | null = null;
+  selectedStudentAdmissionNumber: string | null = null;
   detailRefreshKey = 0;
 
   subscriberFormData: any = null;
@@ -132,7 +135,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       const roll = params['student'];
       if (roll) {
-        this.selectedStudentRollNumber = roll;
+        this.selectedStudentAdmissionNumber = roll;
       }
     });
 
@@ -315,11 +318,14 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     this.subscriberService.getSubscribers(this.searchQuery, 0, 100000, planStr, statusStr).subscribe({
       next: ({ subscribers }) => {
         const exportData = subscribers;
-        const headers = ['Name', 'Email', 'Roll Number', 'Meal Plan', 'Status', 'Joined Date'];
+        const headers = ['Name', 'Admission Number', 'Hostel Name', 'Hostel Warden', 'Class', 'Section', 'Meal Plan', 'Status', 'Joined Date'];
         const rows = exportData.map(sub => [
           this.escapeCsv(sub.name),
-          this.escapeCsv(sub.email),
-          this.escapeCsv(sub.roll_number),
+          this.escapeCsv(sub.admission_number),
+          this.escapeCsv(sub.hostel_name),
+          this.escapeCsv(sub.hostel_warden),
+          this.escapeCsv(sub.class),
+          this.escapeCsv(sub.div),
           this.escapeCsv(sub.mealPlan),
           this.escapeCsv(sub.status),
           this.escapeCsv(sub.joinedDate),
@@ -360,14 +366,27 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     this.showAddModal = false;
   }
 
+  openBulkUploadModal(): void {
+    this.showBulkUploadModal = true;
+  }
+
+  closeBulkUploadModal(): void {
+    this.showBulkUploadModal = false;
+  }
+
+  onBulkUploadComplete(): void {
+    this.showBulkUploadModal = false;
+    this.fetchInitialData();
+  }
+
   onSubscriberSave(data: any): void {
     console.log('Creating new subscriber:', data);
 
     this.subscriberService.createSubscriber(data).subscribe({
       next: (res) => {
-        const newCustomerId = res.responseData?.data?.customer?._id?.$oid || res.responseData?.data?._id?.$oid || res.responseData?.data?.id;
-        console.log('Subscriber created with ID:', newCustomerId);
-        this.subscriberFormData = { ...data, backendId: newCustomerId };
+        const admissionNumber = res.responseData?.data?.admission_number || res.responseData?.data?.admissionNumber;
+        console.log('Subscriber created with admission number:', admissionNumber);
+        this.subscriberFormData = { ...data, admission_number: admissionNumber };
         this.toastService.success('Subscriber created successfully.');
         this.showAddModal = false;
         this.fetchInitialData();
@@ -403,8 +422,8 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
 
   updateSubscriber(data: any): void {
     console.log('Update subscriber with data:', data);
-    if (this.editSubscriberData && this.editSubscriberData.roll_number) {
-      this.subscriberService.updateSubscriber(this.editSubscriberData.roll_number, data).subscribe({
+    if (this.editSubscriberData && this.editSubscriberData.admission_number) {
+      this.subscriberService.updateSubscriber(this.editSubscriberData.admission_number, data).subscribe({
         next: (res) => {
           console.log('Successfully updated subscriber:', res);
           const innerStatus = res.responseData?.data?.status;
@@ -431,7 +450,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
         }
       });
     } else {
-      console.error('No subscriber roll number available for update');
+      console.error('No subscriber admission number available for update');
       this.showEditModal = false;
       this.editSubscriberData = null;
       this.fetchInitialData();
@@ -442,7 +461,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   openQuickModal(sub: Subscriber): void {
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { student: sub.roll_number },
+      queryParams: { student: sub.admission_number },
       queryParamsHandling: 'merge'
     });
   }
@@ -463,7 +482,7 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   }
 
   backFromStudentDetail(): void {
-    this.selectedStudentRollNumber = null;
+    this.selectedStudentAdmissionNumber = null;
     this.router.navigate([], { relativeTo: this.route, queryParams: { student: null }, queryParamsHandling: 'merge' });
   }
 
@@ -473,8 +492,8 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   }
 
   confirmDeleteSubscriber(): void {
-    if (this.pendingDeleteSubscriber && this.pendingDeleteSubscriber.roll_number) {
-      this.subscriberService.deleteSubscriber(this.pendingDeleteSubscriber.roll_number).subscribe({
+    if (this.pendingDeleteSubscriber && this.pendingDeleteSubscriber.admission_number) {
+      this.subscriberService.deleteSubscriber(this.pendingDeleteSubscriber.admission_number).subscribe({
         next: (res) => {
           this.toastService.success('Subscriber deleted successfully.');
           this.showDeleteConfirmPopup = false;

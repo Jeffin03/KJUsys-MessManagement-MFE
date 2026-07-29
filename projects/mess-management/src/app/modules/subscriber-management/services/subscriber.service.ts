@@ -10,9 +10,12 @@ import { MealSlotService } from '../../../shared/services/meal-slot.service';
 export interface BackendStudent {
   _id: { $oid: string };
   name: string;
-  roll_number: string;
+  admission_number: string;
   uid?: string;
-  email: string;
+  hostel_name: string;
+  hostel_warden: string;
+  class: string;
+  div: string;
   pauseReason?: string;
   dayPreference?: string;
   superUser?: boolean;
@@ -204,8 +207,11 @@ export class SubscriberService {
     return {
       id: student._id.$oid,
       name: student.name,
-      email: student.email,
-      roll_number: student.roll_number || 'N/A',
+      hostel_name: student.hostel_name || '',
+      hostel_warden: student.hostel_warden || '',
+      class: student.class || '',
+      div: student.div || '',
+      admission_number: student.admission_number || 'N/A',
       mealPlan: student.superUser ? 'Super User' : (mealPlanStr || 'None'),
       status: student.superUser ? 'Super User' : status,
       joinedDate: dateString,
@@ -252,19 +258,19 @@ export class SubscriberService {
     return request;
   }
 
-  getSubscriberById(roll_number: string): Observable<Subscriber> {
-    return this.http.get<ApiResponse<{ student: BackendStudent }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`)
+  getSubscriberById(admission_number: string): Observable<Subscriber> {
+    return this.http.get<ApiResponse<{ student: BackendStudent }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ADMISSION_NUMBER(admission_number)}`)
       .pipe(
         map(res => this.mapToSubscriber(res.responseData.data.student))
       );
   }
 
-  deleteSubscriber(roll_number: string): Observable<any> {
-    return this.http.delete<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`);
+  deleteSubscriber(admission_number: string): Observable<any> {
+    return this.http.delete<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ADMISSION_NUMBER(admission_number)}`);
   }
 
-  renewSubscriber(roll_number: string, duration_days: number = 30): Observable<any> {
-    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.STUDENT_RENEW(roll_number)}`, { duration_days });
+  renewSubscriber(admission_number: string, duration_days: number = 30): Observable<any> {
+    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.STUDENT_RENEW(admission_number)}`, { duration_days });
   }
 
   getExpiringSubscribers(): Observable<Subscriber[]> {
@@ -277,11 +283,23 @@ export class SubscriberService {
       );
   }
 
+  private splitClassSection(val: string): { class: string; div: string } {
+    const parts = (val || '').trim().split(/\s+/);
+    return {
+      class: parts[0] || '',
+      div: parts.slice(1).join(' ') || ''
+    };
+  }
+
   createSubscriber(formData: any): Observable<any> {
+    const cs = this.splitClassSection(formData.class_section);
     const payload: any = {
-      roll_number: formData.roll_number,
+      admission_number: formData.admission_number,
       name: `${formData.firstName} ${formData.lastName}`.trim(),
-      email: formData.email,
+      hostel_name: formData.hostel_name,
+      hostel_warden: formData.hostel_warden,
+      class: cs.class,
+      div: cs.div,
       superUser: !!formData.superUser
     };
 
@@ -326,9 +344,9 @@ export class SubscriberService {
     );
   }
 
-  updateSubscriber(roll_number: string, formData: any): Observable<any> {
+  updateSubscriber(admission_number: string, formData: any): Observable<any> {
     // First, fetch the existing student data to preserve pause dates correctly
-    return this.http.get<ApiResponse<{ student: any }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`).pipe(
+    return this.http.get<ApiResponse<{ student: any }>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ADMISSION_NUMBER(admission_number)}`).pipe(
       switchMap((existingRes: ApiResponse<{ student: any }>) => {
         const existingStudent = existingRes.responseData?.data?.student;
 
@@ -399,10 +417,14 @@ export class SubscriberService {
               subscription.end_Date += holidayCount * 24 * 60 * 60 * 1000;
             }
 
+            const cs = this.splitClassSection(formData.class_section);
             const payload: any = {
-              roll_number: formData.roll_number,
+              admission_number: formData.admission_number,
               name: `${formData.firstName} ${formData.lastName}`.trim(),
-              email: formData.email,
+              hostel_name: formData.hostel_name,
+              hostel_warden: formData.hostel_warden,
+              class: cs.class,
+              div: cs.div,
               superUser: !!formData.superUser
             };
 
@@ -414,14 +436,14 @@ export class SubscriberService {
               }
             }
 
-            return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(roll_number)}`, payload);
+            return this.http.put<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ADMISSION_NUMBER(admission_number)}`, payload);
           })
         );
       })
     );
   }
 
-  pauseSubscription(roll_number: string, pauseEndDate: string): Observable<any> {
+  pauseSubscription(admission_number: string, pauseEndDate: string): Observable<any> {
     // Convert pauseEndDate to timestamp (handles both 'DD/MM/YY' and ISO formats)
     const pauseEndTimestamp = this.parseDate(pauseEndDate);
 
@@ -429,7 +451,7 @@ export class SubscriberService {
       pauseEndDate: pauseEndTimestamp
     };
 
-    // Use roll_number for the endpoint (backend expects roll_number, not MongoDB _id)
-    return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_PAUSE(roll_number)}`, payload);
+    // Use admission_number for the endpoint (backend expects admission_number, not MongoDB _id)
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_PAUSE(admission_number)}`, payload);
   }
 }

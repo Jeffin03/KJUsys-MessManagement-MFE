@@ -14,7 +14,7 @@ interface SuggestionItem {
   label: string;
   insertText: string;
   previewValue: string;
-  variable: 'name' | 'rollno' | 'meal' | 'token' | 'date' | 'time';
+  variable: 'name' | 'admno' | 'meal' | 'token' | 'date' | 'time';
   description: string;
 }
 
@@ -126,7 +126,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   previewSubstitutions = {
     name: 'Alfie',
-    rollno: '22BCS001',
+    admno: '22BCS001',
     meal: '',
     date: '',
     time: ''
@@ -138,10 +138,10 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     { label: 'Long name',  insertText: '"name"', previewValue: 'Christopher', variable: 'name', description: '11 chars · e.g. Christopher' },
   ];
 
-  readonly rollnoSuggestions: SuggestionItem[] = [
-    { label: 'Alphanumeric',    insertText: '"rollno"', previewValue: '22BCS001', variable: 'rollno', description: '8 chars · e.g. 22BCS001' },
-    { label: 'Numeric only',    insertText: '"rollno"', previewValue: '2210001',  variable: 'rollno', description: '7 chars · e.g. 2210001' },
-    { label: 'Slash-separated', insertText: '"rollno"', previewValue: 'CS/22/001', variable: 'rollno', description: '9 chars · e.g. CS/22/001' },
+  readonly admnoSuggestions: SuggestionItem[] = [
+    { label: 'Alphanumeric',    insertText: '"admno"', previewValue: '22BCS001', variable: 'admno', description: '8 chars · e.g. 22BCS001' },
+    { label: 'Numeric only',    insertText: '"admno"', previewValue: '2210001',  variable: 'admno', description: '7 chars · e.g. 2210001' },
+    { label: 'Slash-separated', insertText: '"admno"', previewValue: 'CS/22/001', variable: 'admno', description: '9 chars · e.g. CS/22/001' },
   ];
 
   get mealSuggestions(): SuggestionItem[] {
@@ -188,7 +188,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     const mealFallback = this.previewSubstitutions.meal || this.slots[0]?.name || 'Meal';
     return text
       .replace(/"name"/g, this.previewSubstitutions.name)
-      .replace(/"rollno"/g, this.previewSubstitutions.rollno)
+      .replace(/"admno"/g, this.previewSubstitutions.admno)
       .replace(/"meal"/g, mealFallback)
       .replace(/"status"/g, this.previewStateName)
       .padEnd(16, ' ')
@@ -207,7 +207,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     const ss = String(now.getSeconds()).padStart(2, '0');
     return text
       .replace(/"name"/g, this.previewSubstitutions.name)
-      .replace(/"rollno"/g, this.previewSubstitutions.rollno)
+      .replace(/"admno"/g, this.previewSubstitutions.admno)
       .replace(/"meal"/g, mealFallback)
       .replace(/"token"/g, 'B-13')
       .replace(/"date"/g, this.previewSubstitutions.date || `${dd}/${mm}/${yy}`)
@@ -298,10 +298,10 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
   computeSuggestions(partialWord: string): SuggestionItem[] {
     const lw = partialWord.toLowerCase();
-    if (!lw) return [...this.nameSuggestions, ...this.rollnoSuggestions, ...this.mealSuggestions, ...this.tokenSuggestions, ...this.dateSuggestions, ...this.timeSuggestions];
+    if (!lw) return [...this.nameSuggestions, ...this.admnoSuggestions, ...this.mealSuggestions, ...this.tokenSuggestions, ...this.dateSuggestions, ...this.timeSuggestions];
     const results: SuggestionItem[] = [];
     if ('name'.startsWith(lw))   results.push(...this.nameSuggestions);
-    if ('rollno'.startsWith(lw)) results.push(...this.rollnoSuggestions);
+    if ('admno'.startsWith(lw)) results.push(...this.admnoSuggestions);
     if ('meal'.startsWith(lw))   results.push(...this.mealSuggestions);
     if ('token'.startsWith(lw))  results.push(...this.tokenSuggestions);
     if ('date'.startsWith(lw))   results.push(...this.dateSuggestions);
@@ -379,7 +379,7 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
 
     // Update which example the LCD preview uses
     if (item.variable === 'name')   this.previewSubstitutions.name   = item.previewValue;
-    if (item.variable === 'rollno') this.previewSubstitutions.rollno = item.previewValue;
+    if (item.variable === 'admno') this.previewSubstitutions.admno = item.previewValue;
     if (item.variable === 'meal')   this.previewSubstitutions.meal   = item.previewValue;
     if (item.variable === 'token') { /* token preview uses hardcoded value */ }
     if (item.variable === 'date')   this.previewSubstitutions.date   = item.previewValue;
@@ -420,10 +420,10 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     }
   }
 
-  getVariableBadgeClass(variable: 'name' | 'rollno' | 'meal' | 'token' | 'date' | 'time'): string {
+  getVariableBadgeClass(variable: 'name' | 'admno' | 'meal' | 'token' | 'date' | 'time'): string {
     switch (variable) {
       case 'name':   return 'bg-[#DBEAFE] text-[#1D4ED8]';
-      case 'rollno': return 'bg-[#FEF3C7] text-[#92400E]';
+      case 'admno': return 'bg-[#FEF3C7] text-[#92400E]';
       case 'meal':   return 'bg-[#D1FAE5] text-[#065F46]';
       case 'token':  return 'bg-[#E0E7FF] text-[#4338CA]';
       case 'date':   return 'bg-[#F3E8FF] text-[#7C3AED]';
@@ -432,10 +432,10 @@ export class ConfigureMealSlotsComponent implements OnChanges, OnDestroy {
     }
   }
 
-  getVariableIcon(variable: 'name' | 'rollno' | 'meal' | 'token' | 'date' | 'time'): string {
+  getVariableIcon(variable: 'name' | 'admno' | 'meal' | 'token' | 'date' | 'time'): string {
     switch (variable) {
       case 'name':   return '@';
-      case 'rollno': return '#';
+      case 'admno': return '#';
       case 'meal':   return '~';
       case 'token':  return '$';
       case 'date':   return 'D';

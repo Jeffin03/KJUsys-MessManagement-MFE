@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './subscriber-card-preview.component.html'
 })
 export class SubscriberCardPreviewComponent implements OnChanges {
-  @Input() roll_number = '';
+  @Input() admission_number = '';
   @Input() subscriberName = '';
 
   constructor(private cdr: ChangeDetectorRef) {}

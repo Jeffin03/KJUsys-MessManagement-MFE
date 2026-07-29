@@ -30,7 +30,7 @@ import type { TableColumn, PrimaryAction } from '@libs/table';
             type="text"
             [(ngModel)]="searchQuery"
             (input)="onSearchInput()"
-            placeholder="Search by roll number or name..."
+            placeholder="Search by admission number or name..."
             class="w-full h-[40px] pl-9 pr-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
           />
         </div>
@@ -62,10 +62,10 @@ export class StudentSearchComponent {
   results: any[] = [];
   loading = false;
   emptyTitle = 'Search for Students';
-  emptyDesc = 'Enter a roll number or name to browse student records';
+  emptyDesc = 'Enter an admission number or name to browse student records';
 
   columns: TableColumn[] = [
-    { key: 'rollNumber', label: 'ROLL NUMBER', minWidth: '130px' },
+    { key: 'admissionNumber', label: 'ADMISSION NUMBER', minWidth: '130px' },
     { key: 'displayName', label: 'SUBSCRIBER', minWidth: '200px' },
     { key: 'subscriptionStatus', label: 'STATUS', type: 'badge', minWidth: '100px',
       colorMap: { 'Active': { bg: '#155DFC33', text: '#155DFC' },
@@ -102,7 +102,7 @@ export class StudentSearchComponent {
     if (q.length < 2) {
       this.results = [];
       this.emptyTitle = 'Search for Students';
-      this.emptyDesc = 'Enter a roll number or name to browse student records';
+      this.emptyDesc = 'Enter an admission number or name to browse student records';
       return;
     }
     this.loading = true;
@@ -126,7 +126,7 @@ export class StudentSearchComponent {
               ? 'Lapsed'
               : 'Active';
           return {
-            rollNumber: s.roll_number || '',
+            admissionNumber: s.admission_number || '',
             displayName: s.name || '',
             subscriptionStatus: status,
             _raw: s,
@@ -136,8 +136,8 @@ export class StudentSearchComponent {
   }
 
   onPrimaryAction(event: { actionKey: string; row: any }): void {
-    const rollNumber = event.row.rollNumber || event.row.roll_number;
-    this.viewStudent.emit(rollNumber);
+    const admissionNumber = event.row.admissionNumber || event.row.admission_number;
+    this.viewStudent.emit(admissionNumber);
   }
 
 }

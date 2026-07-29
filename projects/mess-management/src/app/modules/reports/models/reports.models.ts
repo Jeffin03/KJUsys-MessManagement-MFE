@@ -1,6 +1,6 @@
 export interface TapRecord {
   id: string;
-  rollNumber: string;
+  admissionNumber: string;
   mealSlot: string;
   tapTimestamp: string;
   date: string;
@@ -30,7 +30,7 @@ export interface HolidayRecord {
 
 export interface ChangelogEntry {
   id: string;
-  rollNumber: string;
+  admissionNumber: string;
   action: string;
   description: string;
   timestamp: string;
@@ -39,7 +39,7 @@ export interface ChangelogEntry {
 
 export interface PauseRecord {
   id: string;
-  rollNumber: string;
+  admissionNumber: string;
   pauseStart: string;
   pauseEnd: string;
   reason: string;
@@ -60,7 +60,7 @@ export interface StudentSubscriptionSummary {
 }
 
 export interface StudentOverview {
-  rollNumber: string;
+  admissionNumber: string;
   name: string;
   email?: string;
   cardStatus: string;
@@ -88,7 +88,7 @@ export interface DailyAnalytics {
 }
 
 export interface PauseAuditEntry {
-  rollNumber: string;
+  admissionNumber: string;
   pauseStart: string;
   pauseEnd: string;
   reason: string;
@@ -98,7 +98,7 @@ export interface PauseAuditEntry {
 
 export interface AnomalyTap {
   id: string;
-  rollNumber: string;
+  admissionNumber: string;
   studentName: string;
   mealSlot: string;
   tapTimestamp: string;

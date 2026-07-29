@@ -162,10 +162,10 @@ interface KpiCard {
 
             <!-- Students -->
             <div>
-              <label class="block text-[10px] font-medium text-[#6B7280] mb-1.5">STUDENT ROLL NUMBERS (OPTIONAL)</label>
-              <input type="text" [(ngModel)]="exportRollNumbersInput" placeholder="e.g. 25MCAB24, 25MCAB25 (comma-separated)"
+              <label class="block text-[10px] font-medium text-[#6B7280] mb-1.5">STUDENT ADMISSION NUMBERS (OPTIONAL)</label>
+              <input type="text" [(ngModel)]="exportAdmissionNumbersInput" placeholder="e.g. 25MCAB24, 25MCAB25 (comma-separated)"
                 class="w-full h-[40px] px-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
-                (input)="exportRollNumbersInput = $any($event.target).value.toUpperCase()">
+                (input)="exportAdmissionNumbersInput = $any($event.target).value.toUpperCase()">
             </div>
 
             <!-- Include toggles + Output -->
@@ -251,9 +251,20 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   // Taps table
   tapColumns: TableColumn[] = [
     { key: 'customer', label: 'Subscriber', sortable: true, minWidth: '160px' },
-    { key: 'roll_number', label: 'Roll Number', sortable: true, minWidth: '130px' },
+    { key: 'admission_number', label: 'Admission Number', sortable: true, minWidth: '130px' },
     { key: 'mealSlot', label: 'Meal Slot', sortable: true, minWidth: '110px' },
     { key: 'time', label: 'Time', sortable: true, minWidth: '100px' },
+    {
+      key: 'isSuperUser',
+      label: 'Type',
+      sortable: true,
+      type: 'badge',
+      minWidth: '90px',
+      colorMap: {
+        'true': { bg: '#ECD6FF', text: '#9922FE' },
+      },
+      defaultColor: { bg: '#F3F4F6', text: '#6B7280' },
+    },
     {
       key: 'status',
       label: 'Status',
@@ -278,7 +289,7 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
   // Enhanced filter state
   exportStartDate: Date | null = null;
   exportEndDate: Date | null = null;
-  exportRollNumbersInput = '';
+  exportAdmissionNumbersInput = '';
   exportIncludeSummary = true;
   exportIncludeDetail = true;
   selectedMealSlots: any[] = [];
@@ -370,11 +381,11 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     const mealSlots = this.selectedMealSlots.map((s: any) => s.id);
     if (mealSlots.length > 0) params.mealSlots = mealSlots;
 
-    const rollNumbers = this.exportRollNumbersInput
+    const admissionNumbers = this.exportAdmissionNumbersInput
       .split(',')
       .map(r => r.trim())
       .filter(r => r.length > 0);
-    if (rollNumbers.length > 0) params.rollNumbers = rollNumbers;
+    if (admissionNumbers.length > 0) params.admissionNumbers = admissionNumbers;
 
     // Only send these if user changed them from defaults
     if (!this.exportIncludeSummary) params.includeSummary = false;
@@ -423,7 +434,7 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
       parts.push(slotNames);
     }
 
-    if (this.exportRollNumbersInput.trim()) {
+    if (this.exportAdmissionNumbersInput.trim()) {
       parts.push('students');
     }
 
@@ -436,7 +447,7 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.generatingExport = false;
     this.exportStartDate = null;
     this.exportEndDate = null;
-    this.exportRollNumbersInput = '';
+    this.exportAdmissionNumbersInput = '';
     this.selectedMealSlots = [];
     this.exportIncludeSummary = true;
     this.exportIncludeDetail = true;

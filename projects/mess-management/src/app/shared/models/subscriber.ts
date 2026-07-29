@@ -1,8 +1,11 @@
 export interface Subscriber {
   id: string | number;
   name: string;
-  email: string;
-  roll_number: string;
+  admission_number: string;
+  hostel_name: string;
+  hostel_warden: string;
+  class: string;
+  div: string;
   mealPlan: string;
   status: string;
   joinedDate: string;

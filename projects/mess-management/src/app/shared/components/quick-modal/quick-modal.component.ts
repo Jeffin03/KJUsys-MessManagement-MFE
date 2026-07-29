@@ -8,7 +8,7 @@ import { ButtonComponent } from '@libs/shared-ui';
 
 interface QuickStudent {
   name: string;
-  rollNumber: string;
+  admissionNumber: string;
   plan: string;
   status: string;
   cardStatus: string;
@@ -51,7 +51,7 @@ interface QuickStudent {
               </div>
               <div>
                 <p class="text-sm font-semibold text-[#111827]">{{ student.name }}</p>
-                <p class="text-[11px] text-[#6B7280]">{{ student.rollNumber }}</p>
+                <p class="text-[11px] text-[#6B7280]">{{ student.admissionNumber }}</p>
               </div>
             </div>
 
@@ -97,7 +97,7 @@ interface QuickStudent {
 })
 export class QuickModalComponent implements OnChanges {
   @Input() visible = false;
-  @Input() rollNumber: string | null = null;
+  @Input() admissionNumber: string | null = null;
   @Output() close = new EventEmitter<void>();
 
   private baseUrl = environment.baseUrl;
@@ -112,10 +112,10 @@ export class QuickModalComponent implements OnChanges {
   ) {}
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['visible'] && this.visible && this.rollNumber) {
+    if (changes['visible'] && this.visible && this.admissionNumber) {
       this.loadStudent();
     }
-    if (changes['rollNumber'] && this.visible && this.rollNumber) {
+    if (changes['admissionNumber'] && this.visible && this.admissionNumber) {
       this.loadStudent();
     }
   }
@@ -123,18 +123,18 @@ export class QuickModalComponent implements OnChanges {
   viewFullReport() {
     this.close.emit();
     this.router.navigate(['/kjusys/mess-management/subscriber-management'], {
-      queryParams: { student: this.rollNumber }
+      queryParams: { student: this.admissionNumber }
     });
   }
 
   private loadStudent() {
-    if (!this.rollNumber) return;
+    if (!this.admissionNumber) return;
     this.loading = true;
     this.error = '';
     this.student = null;
     this.cdr.detectChanges();
 
-    this.http.get<any>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ROLL_NUMBER(this.rollNumber)}`).subscribe({
+    this.http.get<any>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_BY_ADMISSION_NUMBER(this.admissionNumber)}`).subscribe({
       next: res => {
         const raw = res?.responseData?.data;
         const s = raw?.student || raw;
@@ -154,7 +154,7 @@ export class QuickModalComponent implements OnChanges {
 
         this.student = {
           name: s?.name || '',
-          rollNumber: s?.roll_number || '',
+          admissionNumber: s?.admission_number || '',
           plan: mealSlots.join(' + ') || 'None',
           status,
           cardStatus: 'Active',
@@ -181,7 +181,7 @@ export class QuickModalComponent implements OnChanges {
   }
 
   private loadAttendance() {
-    if (!this.rollNumber) return;
+    if (!this.admissionNumber) return;
     const from = new Date();
     from.setMonth(from.getMonth() - 6);
     const to = new Date();
@@ -192,7 +192,7 @@ export class QuickModalComponent implements OnChanges {
       to: to.getTime().toString()
     });
 
-    this.http.get<any>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_ATTENDANCE(this.rollNumber)}?${params}`).subscribe({
+    this.http.get<any>(`${this.baseUrl}${API_ENDPOINTS.STUDENT_ATTENDANCE(this.admissionNumber)}?${params}`).subscribe({
       next: res => {
         const data = res?.responseData?.data;
         const records: any[] = data?.records || [];

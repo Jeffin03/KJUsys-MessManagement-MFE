@@ -22,7 +22,7 @@
             <tr>
                 <th class="text-left px-6 py-3 text-[9px] font-bold text-[#6A7282] tracking-[0.08em] uppercase">
                     Subscriber</th>
-                <th class="text-left px-6 py-3 text-[9px] font-bold text-[#6A7282] tracking-[0.08em] uppercase">Roll Number
+                <th class="text-left px-6 py-3 text-[9px] font-bold text-[#6A7282] tracking-[0.08em] uppercase">Admission Number
                 </th>
                 <th class="text-left px-6 py-3 text-[9px] font-bold text-[#6A7282] tracking-[0.08em] uppercase">Meal
                     Slot</th>
@@ -35,9 +35,12 @@
         <tbody>
             <tr *ngFor="let entry of entries.slice(0, 15); let last = last" [class.border-b]="!last"
                 [class.border-[#E5E7EB]]="!last" (click)="onEntryClick.emit(entry)" class="cursor-pointer hover:bg-[#F9FAFB] transition-colors">
-                <td class="px-6 py-3 font-semibold text-[#111827]">{{ entry.customer }}</td>
+                <td class="px-6 py-3 font-semibold text-[#111827]">
+                    {{ entry.customer }}
+                    <span *ngIf="entry.isSuperUser" class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#ECD6FF] text-[#9922FE]">SU</span>
+                </td>
                 <td class="px-6 py-3 font-sans font-medium tracking-[-0.15px]" style="color:#4A5565; font-size:13px;">
-                    {{ entry.roll_number }}
+                    {{ entry.admission_number }}
                 </td>
                 <td class="px-6 py-3 font-semibold text-[#111827]">{{ entry.mealSlot }}</td>
                 <td class="px-6 py-3 text-[#4A5565]">{{ entry.time }}</td>

@@ -23,8 +23,8 @@ export class SubscriberCardModalComponent implements OnChanges, OnDestroy {
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
 
-  roll_number = '';
-  roll_numberError = '';
+  admission_number = '';
+  admission_numberError = '';
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -53,12 +53,12 @@ export class SubscriberCardModalComponent implements OnChanges, OnDestroy {
     }
   }
 
-  onRollNumberChange(): void {
-    if (this.roll_number.length === 0) {
-      this.roll_numberError = '';
+  onAdmissionNumberChange(): void {
+    if (this.admission_number.length === 0) {
+      this.admission_numberError = '';
       return;
     }
-    this.roll_numberError = '';
+    this.admission_numberError = '';
   }
 
   onPrevious(): void {
@@ -73,6 +73,6 @@ export class SubscriberCardModalComponent implements OnChanges, OnDestroy {
 
   onSave(): void {
     this.unlockScroll();
-    this.save.emit({ ...this.subscriber, roll_number: this.roll_number });
+    this.save.emit({ ...this.subscriber, admission_number: this.admission_number });
   }
 }

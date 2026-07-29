@@ -82,8 +82,8 @@ interface SubTabItem { id: string; label: string; count?: number; }
                 <option value="SCHEDULE_DELETED">Schedule Deleted</option>
               </select>
               <div class="relative flex-1 max-w-xs">
-                <input type="text" [(ngModel)]="changelogRollNumber" (input)="onChangelogRollInput()"
-                  placeholder="Filter by roll number..."
+                <input type="text" [(ngModel)]="changelogAdmissionNumber" (input)="onChangelogAdmissionInput()"
+                  placeholder="Filter by admission number..."
                   class="w-full h-[36px] pl-3 pr-3 text-xs border border-[#D1D5DB] rounded-[8px] bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" />
               </div>
               <div class="flex items-center gap-2">
@@ -126,7 +126,7 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
 
   // ── Pause Audit ──────────────────────────────────────────────────
   pauseAuditColumns: TableColumn[] = [
-    { key: 'rollNumber', label: 'ROLL NUMBER', sortable: true, minWidth: '130px' },
+    { key: 'admissionNumber', label: 'ADMISSION NUMBER', sortable: true, minWidth: '130px' },
     { key: 'pauseStart', label: 'PAUSE START', minWidth: '120px' },
     { key: 'pauseEnd', label: 'PAUSE END', minWidth: '120px' },
     { key: 'reason', label: 'REASON', minWidth: '160px' },
@@ -136,13 +136,13 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
   pauseAuditData: any[] = [];
   pauseAuditLoading = false;
   get uniquePauseViolators(): number {
-    return new Set(this.pauseAuditData.map((d: any) => d.rollNumber)).size;
+    return new Set(this.pauseAuditData.map((d: any) => d.admissionNumber)).size;
   }
 
   // ── Change Log ────────────────────────────────────────────────────
   changelogColumns: TableColumn[] = [
     { key: 'timestamp', label: 'TIMESTAMP', sortable: true, minWidth: '170px' },
-    { key: 'rollNumber', label: 'ROLL NUMBER', sortable: true, minWidth: '130px' },
+    { key: 'admissionNumber', label: 'ADMISSION NUMBER', sortable: true, minWidth: '130px' },
     {
       key: 'action', label: 'ACTION', type: 'badge', sortable: true, minWidth: '130px',
       colorMap: {
@@ -169,7 +169,7 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
   changelogData: any[] = [];
   changelogLoading = false;
   changelogActionFilter = '';
-  changelogRollNumber = '';
+  changelogAdmissionNumber = '';
   changelogStartDate: Date | null = null;
   changelogEndDate: Date | null = null;
   changelogFrom = '';
@@ -187,11 +187,11 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
     };
   }
 
-  private changelogRollSubject = new Subject<string>();
+  private changelogAdmissionSubject = new Subject<string>();
   private changelogRollSub: Subscription | null = null;
 
   ngOnInit() {
-    this.changelogRollSub = this.changelogRollSubject.pipe(
+    this.changelogRollSub = this.changelogAdmissionSubject.pipe(
       debounceTime(400),
       distinctUntilChanged()
     ).subscribe(() => this.loadChangelog());
@@ -236,8 +236,8 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
     this.loadChangelog();
   }
 
-  onChangelogRollInput() {
-    this.changelogRollSubject.next(this.changelogRollNumber);
+  onChangelogAdmissionInput() {
+    this.changelogAdmissionSubject.next(this.changelogAdmissionNumber);
   }
 
   onChangelogDateChange(value: string, field: 'from' | 'to') {
@@ -278,7 +278,7 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
 
   private loadChangelog() {
     this.changelogLoading = true;
-    const rollFilter = this.changelogRollNumber?.trim().toLowerCase();
+    const admissionFilter = this.changelogAdmissionNumber?.trim().toLowerCase();
     const actionFilter = this.changelogActionFilter;
     const fromTs = this.changelogFrom ? Number(this.changelogFrom) : 0;
     const toTs = this.changelogTo ? Number(this.changelogTo) : 0;
@@ -290,7 +290,7 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
       next: res => {
         const mapped = this.mapChangelogEntries(res.data || []);
         this.changelogRawData = mapped;
-        this.changelogData = this.applyChangelogFilters(mapped, rollFilter, actionFilter, fromTs, toTs);
+        this.changelogData = this.applyChangelogFilters(mapped, admissionFilter, actionFilter, fromTs, toTs);
         this.changelogLoading = false;
         this.cdr.detectChanges();
       },
@@ -301,9 +301,9 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private applyChangelogFilters(data: any[], rollFilter: string, actionFilter: string, fromTs: number, toTs: number): any[] {
+  private applyChangelogFilters(data: any[], admissionFilter: string, actionFilter: string, fromTs: number, toTs: number): any[] {
     return data.filter(entry => {
-      if (rollFilter && !entry.rollNumber.toLowerCase().includes(rollFilter)) return false;
+      if (admissionFilter && !entry.admissionNumber.toLowerCase().includes(admissionFilter)) return false;
       if (actionFilter && entry.action !== actionFilter) return false;
       if (fromTs && entry.timestamp < fromTs) return false;
       if (toTs && entry.timestamp > toTs) return false;
@@ -314,15 +314,15 @@ export class AuditToolsComponent implements OnInit, OnDestroy {
   private mapChangelogEntries(entries: any[]): any[] {
     return entries.map((entry: any) => ({
       timestamp: entry.timestamp ? new Date(entry.timestamp).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '',
-      rollNumber: entry.rollNumber || '',
+      admissionNumber: entry.admissionNumber || '',
       action: entry.action || '',
       description: entry.description || '',
     }));
   }
 
   exportChangelog() {
-    const rows = this.changelogData.map((d: any) => `${d.timestamp},${d.rollNumber},${d.action},"${d.description}"`);
-    const csv = ['Timestamp,Roll Number,Action,Description', ...rows].join('\n');
+    const rows = this.changelogData.map((d: any) => `${d.timestamp},${d.admissionNumber},${d.action},"${d.description}"`);
+    const csv = ['Timestamp,Admission Number,Action,Description', ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

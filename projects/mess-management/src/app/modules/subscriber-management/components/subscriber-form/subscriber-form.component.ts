@@ -50,8 +50,10 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   form: SubscriberFormValue = {
     firstName: '',
     lastName: '',
-    email: '',
-    roll_number: '',
+    class_section: '',
+    hostel_name: '',
+    hostel_warden: '',
+    admission_number: '',
     superUser: false,
     mealSlot: {
       startDate: '',
@@ -68,8 +70,10 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   errors: ValidationErrors = {
     firstName: '',
     lastName: '',
-    email: '',
-    roll_number: '',
+    class_section: '',
+    hostel_name: '',
+    hostel_warden: '',
+    admission_number: '',
     pauseEndDate: '',
     pauseStartDate: '',
     pauseReason: ''
@@ -194,7 +198,7 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
     this.renewing = true;
     this.renewError = '';
     this.cdr.detectChanges();
-    const sub = this.subscriberService.renewSubscriber(this.form.roll_number, this.renewDays).subscribe({
+    const sub = this.subscriberService.renewSubscriber(this.form.admission_number, this.renewDays).subscribe({
       next: (res: any) => {
         this.zone.run(() => {
           this.renewing = false;

@@ -9,7 +9,7 @@ Edit Subscriber modal (lapsed students only) but **reverted** — pending this d
 
 ## How renewal is currently logged (as-is behavior)
 
-Renewal is an **explicit admin action** via `POST /students/:roll_number/renew`
+Renewal is an **explicit admin action** via `POST /students/:admission_number/renew`
 (`StudentService.renewSubscription`). It is NOT automatic.
 
 ### Important caveats (current backend behavior)

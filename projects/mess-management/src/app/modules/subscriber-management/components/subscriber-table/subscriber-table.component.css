@@ -42,7 +42,7 @@
   color: #6B7280 !important;
 }
 
-/* Roll Number: font-medium text-text-sub */
+/* Admission Number: font-medium text-text-sub */
 :host .kjt-td:nth-child(2) {
   font-weight: 500 !important;
   color: #475467 !important;

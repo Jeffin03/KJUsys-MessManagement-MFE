@@ -136,10 +136,11 @@ export class DashboardService {
 
           return sortedTaps.map(t => ({
             customer: t.name,
-            roll_number: t.roll_number || 'N/A',
+            admission_number: t.admission_number || 'N/A',
             mealSlot: t.meal.charAt(0) + t.meal.slice(1).toLowerCase() as any,
             time: formatTapTime(t.tap_DateTime),
-            status: 'Allowed' as 'Allowed' | 'Not Subscribed'
+            status: 'Allowed' as 'Allowed' | 'Not Subscribed',
+            isSuperUser: t.isSuperUser || false
           }));
         }),
         shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })

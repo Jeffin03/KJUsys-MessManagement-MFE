@@ -9,12 +9,12 @@
       <lib-tabs [tabs]="tabs" [activeTabId]="activeTab" (tabChange)="onTabChange($event)"></lib-tabs>
     </div>
     <!-- Student Detail -->
-    <app-student-detail *ngIf="selectedStudentRollNumber" [rollNumber]="selectedStudentRollNumber" [refreshTrigger]="detailRefreshKey" (back)="backFromStudentDetail()"></app-student-detail>
+    <app-student-detail *ngIf="selectedStudentAdmissionNumber" [admissionNumber]="selectedStudentAdmissionNumber" [refreshTrigger]="detailRefreshKey" (back)="backFromStudentDetail()"></app-student-detail>
 
     <!-- Stats -->
-    <app-subscriber-stats *ngIf="!selectedStudentRollNumber" [stats]="stats"></app-subscriber-stats>
+    <app-subscriber-stats *ngIf="!selectedStudentAdmissionNumber" [stats]="stats"></app-subscriber-stats>
     <!-- Table -->
-    <app-subscriber-table *ngIf="!selectedStudentRollNumber" [subscribers]="subscribers" [isLoading]="isLoading" [mealSlotList]="mealSlotList"
+    <app-subscriber-table *ngIf="!selectedStudentAdmissionNumber" [subscribers]="subscribers" [isLoading]="isLoading" [mealSlotList]="mealSlotList"
       [totalItems]="totalItems" [currentPage]="currentPage" [pageSize]="pageSize"
       [clientPaginationMode]="clientPaginationMode"
       [selectedMealSlots]="selectedMealSlots" [selectedStatuses]="selectedStatuses"
@@ -30,7 +30,8 @@
       (pageChange)="onPageChange($event)"
       (sizeChange)="onSizeChange($event)"
       (exportRequest)="onExportRequest()"
-      (clearFilters)="fetchInitialData()"></app-subscriber-table>
+      (clearFilters)="fetchInitialData()"
+      (bulkUpload)="openBulkUploadModal()"></app-subscriber-table>
   </div>
   <!-- Footer -->
   <footer class="py-2 px-6 text-center bg-[#434B57] border-t border-[#E5E7EB]">
@@ -43,11 +44,14 @@
   (save)="onSubscriberSave($event)">
 </app-add-subscriber-modal>
 
+<app-bulk-upload-modal [isOpen]="showBulkUploadModal" (close)="closeBulkUploadModal()" (uploaded)="onBulkUploadComplete()">
+</app-bulk-upload-modal>
+
 <app-edit-subscriber-modal [hidden]="!showEditModal" [isOpen]="showEditModal" [subscriber]="editSubscriberData"
   (close)="closeEditModal()" (update)="updateSubscriber($event)">
 </app-edit-subscriber-modal>
 
-<app-quick-modal [visible]="showQuickModal" [rollNumber]="quickModalRollNumber" (close)="showQuickModal = false"></app-quick-modal>
+<app-quick-modal [visible]="showQuickModal" [admissionNumber]="quickModalAdmissionNumber" (close)="showQuickModal = false"></app-quick-modal>
 
 <!-- Delete Confirmation Popup -->
 <div *ngIf="showDeleteConfirmPopup" class="fixed z-[100] flex items-center justify-center inset-0" style="background:rgba(0,0,0,.15);">
@@ -64,7 +68,7 @@
 
         <!-- Message -->
         <p class="text-[15px] font-semibold text-[#111827] text-center leading-6">
-            Are you sure you want to delete {{ pendingDeleteSubscriber?.name }} [{{ pendingDeleteSubscriber?.roll_number }}]?
+            Are you sure you want to delete {{ pendingDeleteSubscriber?.name }} [{{ pendingDeleteSubscriber?.admission_number }}]?
         </p>
 
         <!-- Buttons -->

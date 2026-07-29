@@ -163,7 +163,7 @@ const ACTIVITY_COLORS: Record<string, { bg: string; text: string }> = {
   styleUrls: ['./student-detail.component.css'],
 })
 export class StudentDetailComponent implements OnChanges {
-  @Input() rollNumber = '';
+  @Input() admissionNumber = '';
   @Input() refreshTrigger = 0;
   @Output() back = new EventEmitter<void>();
 
@@ -308,11 +308,11 @@ export class StudentDetailComponent implements OnChanges {
   ) {}
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['rollNumber'] && this.rollNumber) {
+    if (changes['admissionNumber'] && this.admissionNumber) {
       this.activeTab = 'overview';
       this.resetAllData();
       this.loadAllData();
-    } else if (changes['refreshTrigger'] && this.rollNumber) {
+    } else if (changes['refreshTrigger'] && this.admissionNumber) {
       this.loadAllData();
     }
   }
@@ -359,7 +359,7 @@ export class StudentDetailComponent implements OnChanges {
     this.overviewLoading = true;
     this.overviewError = null;
     this.studentNotFound = false;
-    this.reportsService.getStudentOverview(this.rollNumber).subscribe({
+    this.reportsService.getStudentOverview(this.admissionNumber).subscribe({
       next: data => {
         this.overview = data;
         this.dayPreference = data?.dayPreference || 'all';
@@ -384,7 +384,7 @@ export class StudentDetailComponent implements OnChanges {
   private loadAttendance(from?: string, to?: string) {
     this.attendanceLoading = true;
     this.attendanceError = null;
-    this.reportsService.getStudentAttendance(this.rollNumber, from, to).subscribe({
+    this.reportsService.getStudentAttendance(this.admissionNumber, from, to).subscribe({
       next: data => {
         // Sort meal slots with 3am pivot for every day
         for (const day of data) {
@@ -446,7 +446,7 @@ export class StudentDetailComponent implements OnChanges {
   private loadChangelog() {
     this.changelogLoading = true;
     this.changelogError = null;
-    this.reportsService.getStudentChangelog(this.rollNumber, 100).subscribe({
+    this.reportsService.getStudentChangelog(this.admissionNumber, 100).subscribe({
       next: data => {
         this.changelogData = data;
         this.changelogLoading = false;
@@ -461,7 +461,7 @@ export class StudentDetailComponent implements OnChanges {
   private loadSubscriptionHistory() {
     this.historyLoading = true;
     this.historyError = null;
-    this.reportsService.getStudentSubscriptionHistory(this.rollNumber).subscribe({
+    this.reportsService.getStudentSubscriptionHistory(this.admissionNumber).subscribe({
       next: data => {
         this.subscriptionHistory = data;
         this.historyLoading = false;
@@ -476,7 +476,7 @@ export class StudentDetailComponent implements OnChanges {
   private loadPauseComp() {
     this.pauseLoading = true;
     this.pauseError = null;
-    this.reportsService.getStudentPauseComp(this.rollNumber).subscribe({
+    this.reportsService.getStudentPauseComp(this.admissionNumber).subscribe({
       next: data => {
         this.pauseCompData = data;
         this.pauseLoading = false;

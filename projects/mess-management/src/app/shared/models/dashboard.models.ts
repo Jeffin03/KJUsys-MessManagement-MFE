@@ -1,9 +1,10 @@
 export interface MealEntry {
   customer: string;
-  roll_number: string;
+  admission_number: string;
   mealSlot: 'Breakfast' | 'Lunch' | 'Dinner';
   time: string;
   status: 'Allowed' | 'Not Subscribed';
+  isSuperUser?: boolean;
 }
 
 export interface MealSlot {

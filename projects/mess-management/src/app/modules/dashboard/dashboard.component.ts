@@ -37,7 +37,7 @@ import { QuickModalComponent } from '../../shared/components/quick-modal/quick-m
 export class DashboardComponent implements OnInit, OnDestroy {
   private uptimeInterval: any;
   private hardwarePollingInterval: any;
-  private roll_numberLookup = new Map<string, string>();
+  private admission_numberLookup = new Map<string, string>();
   private activeByMealPlan: { [key: string]: { all: number; weekday: number; weekend: number } } = {};
   private activeByDayPreference = { all: 0, weekday: 0, weekend: 0 };
   private subscriptions = new Subscription();
@@ -86,7 +86,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   responseTimeMs = 0;
   hardwareSettingsOpen = false;
   showQuickModal = false;
-  quickModalRollNumber: string | null = null;
+  quickModalAdmissionNumber: string | null = null;
   isLoading = true;
   isHardwareRefreshing = false;
   errorMessage = '';
@@ -257,10 +257,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const activeByMealPlan: { [key: string]: { all: number; weekday: number; weekend: number } } = {};
     const activeByDayPreference = { all: 0, weekday: 0, weekend: 0 };
 
-    // Build roll number lookup map while counting active users and active by meal plan
-    this.roll_numberLookup.clear();
+    // Build admission number lookup map while counting active users and active by meal plan
+    this.admission_numberLookup.clear();
     for (const s of subscribers) {
-      this.roll_numberLookup.set(s.name, s.roll_number);
+      this.admission_numberLookup.set(s.name, s.admission_number);
       if (s.status === 'Active') {
         active++;
         const pref = s.dayPreference || 'all';
@@ -324,9 +324,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.stats[2].value = mealsServed;
     this.stats[3].value = Math.max(0, expected - mealsServed);
 
-    // Enrich taps with roll number and set recent entries (service already returns newest first)
+    // Enrich taps with admission number and set recent entries (service already returns newest first)
     if (taps.length > 0) {
-      this.recentEntries = this.enrichTapsWithRollNumber(taps);
+      this.recentEntries = this.enrichTapsWithAdmissionNumber(taps);
     }
 
     // Process meal slots with taps data
@@ -350,10 +350,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  private enrichTapsWithRollNumber(taps: MealEntry[]): MealEntry[] {
+  private enrichTapsWithAdmissionNumber(taps: MealEntry[]): MealEntry[] {
     return taps.map(t => ({
       ...t,
-      roll_number: this.roll_numberLookup.get(t.customer) || t.roll_number
+      admission_number: this.admission_numberLookup.get(t.customer) || t.admission_number
     }));
   }
 
@@ -401,7 +401,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Optimistic update: add the new tap to recent entries
     const newEntry = {
       customer: newTapData.name || 'Unknown',
-      roll_number: newTapData.roll_number || '',
+      admission_number: newTapData.admission_number || '',
       mealSlot: newTapData.meal.charAt(0) + newTapData.meal.slice(1).toLowerCase() as any,
       time: (() => {
         const ts = newTapData.tap_DateTime;
@@ -409,7 +409,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const millis = ts?.$numberLong ? Number(ts.$numberLong) : Number(ts);
         return new Date(millis).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       })(),
-      status: 'Allowed' as 'Allowed' | 'Not Subscribed'
+      status: 'Allowed' as 'Allowed' | 'Not Subscribed',
+      isSuperUser: newTapData.isSuperUser || false
     };
 
     // Add to beginning of recent entries (most recent first)
@@ -486,7 +487,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   onEntryClick(entry: MealEntry): void {
-    this.quickModalRollNumber = entry.roll_number;
+    this.quickModalAdmissionNumber = entry.admission_number;
     this.showQuickModal = true;
   }
 

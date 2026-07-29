@@ -5,10 +5,10 @@ export const API_ENDPOINTS = {
 
   // Students
   STUDENTS: '/students',
-  STUDENT_BY_ROLL_NUMBER: (rollNumber: string) => `/students/${rollNumber}`,
-  STUDENT_LOOKUP: (rollNumber: string) => `/students/lookup/${rollNumber}`,
-  STUDENT_RENEW: (rollNumber: string) => `/students/${rollNumber}/renew`,
-  STUDENT_PAUSE: (rollNumber: string) => `/students/${rollNumber}/pause`,
+  STUDENT_BY_ADMISSION_NUMBER: (admissionNumber: string) => `/students/${admissionNumber}`,
+  STUDENT_LOOKUP: (admissionNumber: string) => `/students/lookup/${admissionNumber}`,
+  STUDENT_RENEW: (admissionNumber: string) => `/students/${admissionNumber}/renew`,
+  STUDENT_PAUSE: (admissionNumber: string) => `/students/${admissionNumber}/pause`,
   STUDENTS_EXPIRING: '/students/expiring',
 
   // Schedule
@@ -28,11 +28,11 @@ export const API_ENDPOINTS = {
   REPORTS_ANALYTICS: '/reports/analytics',
 
   // Reports — Per-student
-  STUDENT_TAPS: (rollNumber: string) => `/students/${rollNumber}/taps`,
-  STUDENT_ATTENDANCE: (rollNumber: string) => `/students/${rollNumber}/attendance`,
-  STUDENT_CHANGELOG: (rollNumber: string) => `/students/${rollNumber}/changelog`,
-  STUDENT_PAUSE_COMP: (rollNumber: string) => `/students/${rollNumber}/pause-comp`,
-  STUDENT_SUBSCRIPTION_HISTORY: (rollNumber: string) => `/students/${rollNumber}/subscription-history`,
+  STUDENT_TAPS: (admissionNumber: string) => `/students/${admissionNumber}/taps`,
+  STUDENT_ATTENDANCE: (admissionNumber: string) => `/students/${admissionNumber}/attendance`,
+  STUDENT_CHANGELOG: (admissionNumber: string) => `/students/${admissionNumber}/changelog`,
+  STUDENT_PAUSE_COMP: (admissionNumber: string) => `/students/${admissionNumber}/pause-comp`,
+  STUDENT_SUBSCRIPTION_HISTORY: (admissionNumber: string) => `/students/${admissionNumber}/subscription-history`,
 
   // Reports — Changelog
   CHANGELOG: '/changelog',
@@ -54,5 +54,8 @@ export const API_ENDPOINTS = {
 
   // Display Config
   DISPLAY_CONFIG: '/display-config',
-  DISPLAY_CONFIG_BY_MEAL: (meal: string) => `/display-config/${meal}`
+  DISPLAY_CONFIG_BY_MEAL: (meal: string) => `/display-config/${meal}`,
+
+  // Bulk Upload
+  STUDENTS_BULK_UPLOAD: '/students/bulk-upload'
 };

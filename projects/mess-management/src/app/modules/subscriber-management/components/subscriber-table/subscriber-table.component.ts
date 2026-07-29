@@ -38,6 +38,7 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
   @Output() expiryChange = new EventEmitter<number | null>();
   @Output() exportRequest = new EventEmitter<void>();
   @Output() clearFilters = new EventEmitter<void>();
+  @Output() bulkUpload = new EventEmitter<void>();
 
   columns: TableColumn[] = [
     {
@@ -45,9 +46,12 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
       label: 'SUBSCRIBER',
       type: 'stacked',
       minWidth: '200px',
-      subFields: [{ key: 'email', type: 'text' }],
+      subFields: [{ key: 'hostel_name', type: 'text' }],
     },
-    { key: 'roll_number', label: 'ROLL NUMBER', minWidth: '130px' },
+    { key: 'admission_number', label: 'ADMISSION NUMBER', minWidth: '130px' },
+    { key: 'class', label: 'CLASS', minWidth: '80px' },
+    { key: 'div', label: 'SEC', minWidth: '60px' },
+    { key: 'hostel_warden', label: 'WARDEN', minWidth: '120px' },
     { key: 'mealPlan', label: 'MEAL PLAN', minWidth: '110px' },
     {
       key: 'status',
@@ -268,5 +272,9 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
 
   exportCSV(): void {
     this.exportRequest.emit();
+  }
+
+  onBulkUpload(): void {
+    this.bulkUpload.emit();
   }
 }

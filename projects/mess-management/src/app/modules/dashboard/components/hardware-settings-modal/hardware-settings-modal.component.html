@@ -80,7 +80,7 @@
                       (keyup.enter)="saveEdit(device._id)"
                       (keyup.escape)="cancelEdit()"
                       (blur)="saveEdit(device._id)">
-                    <lib-button type="secondary" label="Confirm Edit" (onClick)="saveEdit(device._id)"></lib-button>
+                    <lib-button type="primary" label="Save" (onClick)="saveEdit(device._id)"></lib-button>
                   </ng-template>
                 <div class="text-xs mt-0.5" style="color:#86868B;">
                   {{ device.type === 'esp32' ? 'ESP32 + ' + getOnlinePeripheralCount(device) + '/' + getTotalPeripheralCount(device) + ' peripherals' : getTypeIcon(device.type) + ' ' + device.type }} &middot; {{ getStatusLabel(device) }}
