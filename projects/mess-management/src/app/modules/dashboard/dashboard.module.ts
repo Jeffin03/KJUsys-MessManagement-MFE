@@ -5,7 +5,6 @@ import { DashboardComponent } from './dashboard.component';
 import { SubTabsModule } from '@libs/sub-tabs';
 import { TabsModule } from '@libs/tabs';
 
-
 @NgModule({
   imports: [
     CommonModule,
@@ -13,6 +12,8 @@ import { TabsModule } from '@libs/tabs';
     SubTabsModule,
     TabsModule,
     DashboardComponent
+  ],
+  declarations: [
   ]
 })
 export class DashboardModule { }

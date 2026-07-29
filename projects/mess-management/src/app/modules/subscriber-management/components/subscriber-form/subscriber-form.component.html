@@ -7,7 +7,7 @@
             <input
                 name="firstName" autocomplete="given-name"
                 class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                style="color:#1D1D1F;" placeholder="e.g. Alfie" [(ngModel)]="form.firstName"
+                style="color:#1D1D1F;" placeholder="Enter first name" [(ngModel)]="form.firstName"
                 (input)="validateForm()"
                 [style.--placeholder-color]="'#86868B'" />
             <p *ngIf="errors.firstName" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.firstName }}</p>
@@ -16,7 +16,7 @@
             <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Last Name</label>
             <input
                 class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                style="color:#1D1D1F;" placeholder="e.g. Mathew" [(ngModel)]="form.lastName"
+                style="color:#1D1D1F;" placeholder="Enter last name" [(ngModel)]="form.lastName"
                 (input)="validateForm()" />
             <p *ngIf="errors.lastName" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.lastName }}</p>
         </div>
@@ -28,7 +28,7 @@
             <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">E-mail</label>
             <input
                 class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                style="color:#1D1D1F;" placeholder="e.g. student@edu.com" [(ngModel)]="form.email"
+                style="color:#1D1D1F;" placeholder="Enter e-mail" [(ngModel)]="form.email"
                 (input)="validateForm()" />
             <p *ngIf="errors.email" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.email }}</p>
         </div>
@@ -36,7 +36,7 @@
             <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Roll Number</label>
             <input
                 class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                style="color:#1D1D1F;" placeholder="e.g. 25mca001" [(ngModel)]="form.roll_number"
+                style="color:#1D1D1F;" placeholder="Enter roll number" [(ngModel)]="form.roll_number"
                 (input)="validateForm()" />
             <p *ngIf="errors.roll_number" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.roll_number }}</p>
         </div>

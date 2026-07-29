@@ -408,11 +408,9 @@
 
                         <!-- Add / Update Slot -->
                         <div class="flex justify-end mt-8 gap-3">
-                            <lib-button *ngIf="isEditing" type="secondary" label="Cancel" (onClick)="cancelEdit()"></lib-button>
-                            <button (click)="addSlot()"
-                                class="px-6 py-3 rounded-xl border border-[#2563EB] bg-[#EEF4FF] text-[#2563EB] text-sm font-normal transition-all">
-                                {{ isEditing ? 'Update Slot' : '+ Add Slot' }}
-                            </button>
+                            <lib-button  type="secondary" label="Cancel" (onClick)="cancelEdit()"></lib-button>
+                            <lib-button type="primary" label="{{ isEditing ? 'Update Configuration' : 'Add Configuration' }}" (click)="addSlot()">                               
+                            </lib-button>
                         </div>
                     </div>
                 </div>
@@ -752,7 +750,7 @@
         </div>
 
         <!-- Fixed Footer -->
-        <div class="flex items-center justify-between px-7 py-5 border-t border-[#E5E7EB] bg-[#F9FAFA] flex-shrink-0">
+        <div *ngIf="activeTab =='displayPanel' || activeTab=='tokenCustomization'" class="flex items-center justify-between px-7 py-5 border-t border-[#E5E7EB] bg-[#F9FAFA] flex-shrink-0">
                 <lib-button type="secondary" label="Cancel" (onClick)="close()"></lib-button>
                 <lib-button type="primary" label="Save Configuration" (onClick)="saveConfiguration()"></lib-button>
         </div>
