@@ -3,7 +3,7 @@ export interface MealEntry {
   admission_number: string;
   mealSlot: 'Breakfast' | 'Lunch' | 'Dinner';
   time: string;
-  status: 'Allowed' | 'Not Subscribed';
+  status: 'Allowed' | 'Not Subscribed' | 'Super User';
   isSuperUser?: boolean;
 }
 

@@ -255,23 +255,13 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     { key: 'mealSlot', label: 'Meal Slot', sortable: true, minWidth: '110px' },
     { key: 'time', label: 'Time', sortable: true, minWidth: '100px' },
     {
-      key: 'isSuperUser',
-      label: 'Type',
-      sortable: true,
-      type: 'badge',
-      minWidth: '90px',
-      colorMap: {
-        'true': { bg: '#ECD6FF', text: '#9922FE' },
-      },
-      defaultColor: { bg: '#F3F4F6', text: '#6B7280' },
-    },
-    {
       key: 'status',
       label: 'Status',
       sortable: true,
       type: 'badge',
       minWidth: '100px',
       colorMap: {
+        'Super User': { bg: '#ECD6FF', text: '#9922FE' },
         'Allowed': { bg: '#F0FDF4', text: '#007A55' },
         'Not Subscribed': { bg: '#FFF1F2', text: '#C70036' },
       },
@@ -341,7 +331,7 @@ export class ReportsDashboardComponent implements OnInit, OnDestroy {
     this.tapsLoading = true;
     this.dashboardService.getTaps().subscribe({
       next: (taps) => {
-        this.tapData = taps;
+        this.tapData = taps.map(t => t.isSuperUser ? { ...t, status: 'Super User' } : t);
         this.tapsLoading = false;
         this.cdr.detectChanges();
       },
