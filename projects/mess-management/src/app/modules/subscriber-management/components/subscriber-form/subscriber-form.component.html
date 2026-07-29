@@ -3,22 +3,38 @@
     <!-- Row 1 -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
         <div class="flex flex-col">
-            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">First Name</label>
+            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Name</label>
             <input
-                name="firstName" autocomplete="given-name"
+                name="name" autocomplete="name"
                 class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                style="color:#1D1D1F;" placeholder="Enter first name" [(ngModel)]="form.firstName"
+                style="color:#1D1D1F;" placeholder="Enter name" [(ngModel)]="form.name"
                 (input)="validateForm()"
                 [style.--placeholder-color]="'#86868B'" />
-            <p *ngIf="errors.firstName" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.firstName }}</p>
+            <p *ngIf="errors.name" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.name }}</p>
         </div>
         <div class="flex flex-col">
-            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Last Name</label>
+            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Admission Number</label>
             <input
                 class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                style="color:#1D1D1F;" placeholder="Enter last name" [(ngModel)]="form.lastName"
-                (input)="validateForm()" />
-            <p *ngIf="errors.lastName" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.lastName }}</p>
+                style="color:#1D1D1F;" placeholder="Enter admission number" [(ngModel)]="form.admission_number"
+                (input)="onAdmissionNumberInput(); validateForm()" />
+            <p *ngIf="errors.admission_number" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.admission_number }}</p>
+            <!-- Lookup suggestion -->
+            <div *ngIf="lookupResult?.status === 'FOUND' && lookupResult?.student" class="mt-2 flex items-center justify-between rounded-lg bg-[#EEF2FF] border border-[#C7D2FE] px-3 py-2">
+                <div class="flex items-center gap-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#155DFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <span class="text-[11px] text-[#155DFC]">
+                        Student <span class="font-semibold">{{ lookupResult!.student!.name }}</span> already exists
+                    </span>
+                </div>
+                <button type="button" class="text-[10px] font-medium text-[#155DFC] hover:underline ml-2" (click)="onViewExistingStudent()">View</button>
+            </div>
+            <div *ngIf="lookupLoading" class="mt-2 flex items-center gap-2">
+                <div class="w-3 h-3 border-2 border-[#155DFC] border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-[10px] text-[#6B7280]">Checking...</span>
+            </div>
         </div>
     </div>
 
@@ -33,18 +49,6 @@
             <p *ngIf="errors.class_section" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.class_section }}</p>
         </div>
         <div class="flex flex-col">
-            <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Admission Number</label>
-            <input
-                class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
-                style="color:#1D1D1F;" placeholder="Enter admission number" [(ngModel)]="form.admission_number"
-                (input)="validateForm()" />
-            <p *ngIf="errors.admission_number" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.admission_number }}</p>
-        </div>
-    </div>
-
-    <!-- Row 3 -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-        <div class="flex flex-col">
             <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Hostel Name</label>
             <input
                 class="h-[42px] text-xs border border-gray-200 rounded-lg px-[13px] w-full box-border outline-none bg-white transition-colors duration-150 focus:border-blue-600"
@@ -52,6 +56,10 @@
                 (input)="validateForm()" />
             <p *ngIf="errors.hostel_name" class="mt-1 text-[10px]" style="color:#C70036;">{{ errors.hostel_name }}</p>
         </div>
+    </div>
+
+    <!-- Row 3 -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
         <div class="flex flex-col">
             <label class="text-[10px] font-medium mb-[7px]" style="color:#1D1D1F;">Hostel Warden Name</label>
             <input

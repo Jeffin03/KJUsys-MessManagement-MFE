@@ -81,19 +81,11 @@
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-3 text-sm">
+            <div><span class="text-[#6B7280]">Name:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.name || '--' }}</span></div>
+            <div><span class="text-[#6B7280]">Class & Section:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.classSection || '--' }}</span></div>
             <div><span class="text-[#6B7280]">Admission Number:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.admissionNumber || '--' }}</span></div>
-            <div><span class="text-[#6B7280]">Email:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.email || '--' }}</span></div>
-            <div><span class="text-[#6B7280]">Card Status:</span>
-              <span class="font-medium ml-2" [style.color]="overview?.cardStatus === 'Active' ? '#007A55' : '#C70036'">
-                {{ overview?.cardStatus || '--' }}
-              </span>
-            </div>
-            <div><span class="text-[#6B7280]">Start Date:</span> <span class="font-medium text-[#111827] ml-2">{{ fmtDate(overview?.subscription?.startDate) }}</span></div>
-            <div><span class="text-[#6B7280]">End Date:</span> <span class="font-medium text-[#111827] ml-2">{{ fmtDate(overview?.subscription?.endDate) }}</span></div>
-            <div><span class="text-[#6B7280]">Total Duration:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.subscription?.totalDays || '--' }} days</span></div>
-            <div><span class="text-[#6B7280]">Paused Days:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.subscription?.pausedDays || 0 }}</span></div>
-            <div><span class="text-[#6B7280]">Total Taps:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.totalTaps || 0 }}</span></div>
-            <div><span class="text-[#6B7280]">Day Preference:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.dayPreference === 'weekday' ? 'Weekdays Only' : overview?.dayPreference === 'weekend' ? 'Weekends Only' : 'All Days' }}</span></div>
+            <div><span class="text-[#6B7280]">Hostel Name:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.hostelName || '--' }}</span></div>
+            <div><span class="text-[#6B7280]">Hostel Warden Name:</span> <span class="font-medium text-[#111827] ml-2">{{ overview?.hostelWardenName || '--' }}</span></div>
           </div>
           </div>
           </ng-container>

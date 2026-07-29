@@ -46,6 +46,7 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
 
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
+  @Output() viewStudent = new EventEmitter<string>();
 
   mealSlots: MealSlotWithCode[] = [];
 
@@ -99,5 +100,9 @@ export class AddSubscriberModalComponent implements OnChanges, OnDestroy {
 
   onFormValidChange(valid: boolean): void {
     this.formValid = valid;
+  }
+
+  onViewExistingStudent(admissionNumber: string): void {
+    this.viewStudent.emit(admissionNumber);
   }
 }

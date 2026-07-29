@@ -66,6 +66,9 @@ export interface StudentOverview {
   cardStatus: string;
   dayPreference?: string;
   superUser?: boolean;
+  classSection?: string;
+  hostelName?: string;
+  hostelWardenName?: string;
   subscription?: StudentSubscriptionSummary;
   totalTaps: number;
   attendanceRate: number;

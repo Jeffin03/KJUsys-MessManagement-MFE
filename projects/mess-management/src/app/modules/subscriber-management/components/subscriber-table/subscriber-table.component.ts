@@ -40,6 +40,15 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
   @Output() clearFilters = new EventEmitter<void>();
   @Output() bulkUpload = new EventEmitter<void>();
 
+  /**
+   * Table column definitions for the subscriber list.
+   *
+   * - SUBSCRIBER: stacked column showing name (primary) + hostel_name (secondary).
+   * - CLASS & SEC: combined class + section from `classSection` computed field.
+   * - HOSTEL NAME: dedicated column for hostel name (also shown as subtitle under name).
+   * - STATUS: badge column with color-coded status (Active/Paused/Lapsed/Super User).
+   * - JOINED: stacked column showing join date (primary) + expiry warning (secondary).
+   */
   columns: TableColumn[] = [
     {
       key: 'name',
@@ -49,8 +58,8 @@ export class SubscriberTableComponent implements OnInit, OnDestroy {
       subFields: [{ key: 'hostel_name', type: 'text' }],
     },
     { key: 'admission_number', label: 'ADMISSION NUMBER', minWidth: '130px' },
-    { key: 'class', label: 'CLASS', minWidth: '80px' },
-    { key: 'div', label: 'SEC', minWidth: '60px' },
+    { key: 'classSection', label: 'CLASS & SEC', minWidth: '100px' },
+    { key: 'hostel_name', label: 'HOSTEL NAME', minWidth: '120px' },
     { key: 'hostel_warden', label: 'WARDEN', minWidth: '120px' },
     { key: 'mealPlan', label: 'MEAL PLAN', minWidth: '110px' },
     {

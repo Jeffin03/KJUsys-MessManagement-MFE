@@ -41,7 +41,7 @@
 </div>
 
 <app-add-subscriber-modal [hidden]="!showAddModal" [isOpen]="showAddModal" (close)="closeAddModal()"
-  (save)="onSubscriberSave($event)">
+  (save)="onSubscriberSave($event)" (viewStudent)="viewStudentFromLookup($event)">
 </app-add-subscriber-modal>
 
 <app-bulk-upload-modal [isOpen]="showBulkUploadModal" (close)="closeBulkUploadModal()" (uploaded)="onBulkUploadComplete()">

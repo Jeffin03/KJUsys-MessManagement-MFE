@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, shareReplay, tap, switchMap } from 'rxjs/operators';
+import { map, tap, switchMap } from 'rxjs/operators';
 import { Subscriber } from '../../../shared/models/subscriber';
 import { API_ENDPOINTS } from '../../../shared/constants/api-endpoints';
 import { environment } from '../../../../environments/environment';
@@ -48,8 +48,6 @@ export interface ApiResponse<T> {
 export class SubscriberService {
   private baseUrl = environment.baseUrl;
 
-  // Cache duration in milliseconds (5 minutes for subscriber data - less frequent changes)
-  private readonly CACHE_DURATION = 5 * 60 * 1000;
 
   constructor(
     private http: HttpClient,
@@ -109,6 +107,15 @@ export class SubscriberService {
     return isNaN(n) ? 0 : n;
   }
 
+  /**
+   * Maps a raw backend student object to the frontend Subscriber model.
+   *
+   * Key transformations:
+   * - Timestamps → formatted date strings (DD/MM/YY for forms, "DD Mon YY" for display)
+   * - Meal names → short codes via MealSlotService (e.g. "BREAKFAST" → "BRK")
+   * - `class` + `div` → combined `classSection` field (e.g. "II A")
+   * - Status computed from subscription dates, pause window, and superUser flag
+   */
   private mapToSubscriber(student: BackendStudent): Subscriber {
     const sub = student.subscription;
     const startTs = this.resolveNumeric(sub?.start_Date);
@@ -211,7 +218,8 @@ export class SubscriberService {
       hostel_warden: student.hostel_warden || '',
       class: student.class || '',
       div: student.div || '',
-      admission_number: student.admission_number || 'N/A',
+      classSection: ((student.class || '') + ' ' + (student.div || '')).trim(),
+      admission_number: student.admission_number || '',
       mealPlan: student.superUser ? 'Super User' : (mealPlanStr || 'None'),
       status: student.superUser ? 'Super User' : status,
       joinedDate: dateString,
@@ -250,11 +258,6 @@ export class SubscriberService {
       })
     );
 
-    if (!search && !plan && !status && page === 0) {
-      return request.pipe(
-        shareReplay({ bufferSize: 1, windowTime: this.CACHE_DURATION, refCount: true })
-      );
-    }
     return request;
   }
 
@@ -263,6 +266,14 @@ export class SubscriberService {
       .pipe(
         map(res => this.mapToSubscriber(res.responseData.data.student))
       );
+  }
+
+  lookupStudent(admission_number: string): Observable<{ status: string; student?: BackendStudent }> {
+    return this.http.get<ApiResponse<{ status: string; student?: BackendStudent }>>(
+      `${this.baseUrl}${API_ENDPOINTS.STUDENT_LOOKUP(admission_number)}`
+    ).pipe(
+      map(res => res.responseData?.data || { status: 'NEW_STUDENT' })
+    );
   }
 
   deleteSubscriber(admission_number: string): Observable<any> {
@@ -283,6 +294,15 @@ export class SubscriberService {
       );
   }
 
+  /**
+   * Splits a combined class-section string back into separate class and div fields.
+   * Used when sending data to the backend which stores them separately.
+   *
+   * Examples:
+   * - "II A" → { class: "II", div: "A" }
+   * - "X"    → { class: "X", div: "" }
+   * - ""     → { class: "", div: "" }
+   */
   private splitClassSection(val: string): { class: string; div: string } {
     const parts = (val || '').trim().split(/\s+/);
     return {
@@ -295,7 +315,7 @@ export class SubscriberService {
     const cs = this.splitClassSection(formData.class_section);
     const payload: any = {
       admission_number: formData.admission_number,
-      name: `${formData.firstName} ${formData.lastName}`.trim(),
+      name: formData.name.trim(),
       hostel_name: formData.hostel_name,
       hostel_warden: formData.hostel_warden,
       class: cs.class,
@@ -420,7 +440,7 @@ export class SubscriberService {
             const cs = this.splitClassSection(formData.class_section);
             const payload: any = {
               admission_number: formData.admission_number,
-              name: `${formData.firstName} ${formData.lastName}`.trim(),
+              name: formData.name.trim(),
               hostel_name: formData.hostel_name,
               hostel_warden: formData.hostel_warden,
               class: cs.class,

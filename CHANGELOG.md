@@ -5,6 +5,9 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 ## [Unreleased]
 
 ### Added
+- **Subscriber table combined CLASS & SEC column**: Merged separate `CLASS` and `SEC` columns into a single `CLASS & SEC` column for cleaner table layout. Added `classSection` computed field to `Subscriber` model that combines `class` and `div` from the backend.
+- **Subscriber table HOSTEL NAME column**: Added dedicated `HOSTEL NAME` column to the subscriber table for better visibility of hostel assignments.
+- **JSDoc documentation**: Added comprehensive JSDoc comments to `Subscriber` interface, `mapToSubscriber()`, `splitClassSection()`, table column definitions, and `onExportRequest()` explaining field mappings, transformations, and column layout.
 - **Responsive layout for mess-management module**: All components under `projects/mess-management/` now adapt across mobile, tablet, and desktop viewports.
 - **Calendar cell tint on mobile**: Holiday/paused cells use background color tinting on mobile instead of badge labels (hidden via `sm:hidden`).
 - **`slotCode()` helper** in `StudentDetailComponent`: Maps meal slot names to short codes (BRK, LNCH, SNK, DNR, BRN) for compact rendering.
@@ -15,6 +18,10 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **`loadHolidays` error handler in student detail**: Added silent `error: () => {}` to prevent unhandled RxJS notification.
 
 ### Changed
+- **CSV export columns updated**: Export now uses combined "Class & Section" column instead of separate "Class" and "Section" columns, matching the updated table layout.
+- **Subscriber model documentation**: `Subscriber` interface now has detailed JSDoc comments explaining each field, its source, and its purpose.
+- **`mapToSubscriber()` documentation**: Added JSDoc explaining key transformations (timestamps → dates, meal names → codes, class+div → classSection, status computation).
+- **`splitClassSection()` documentation**: Added JSDoc with examples showing how combined class-section strings are split for backend payloads.
 - **Dashboard layout**: Stats cards grid `grid-cols-4` → `grid-cols-2 lg:grid-cols-4`. Hardware status and entries table stacked vertically on mobile (`flex-col lg:flex-row`) with `order` classes — hardware above entries on mobile, original side-by-side on desktop.
 - **Meal slots header**: Switched from flex to `grid grid-cols-[1fr_auto]` so the Configure button stays right-aligned and the title/subtitle text wraps naturally when space is tight.
 - **Meal slot card stats**: Font sizes responsive (`text-[24px] sm:text-[36px]`).
@@ -107,6 +114,7 @@ All notable changes to the KJUsys Mess Management MFE are documented here.
 - **Validation error overwriting `firstName`**: Removed `errors.firstName = dateError` from `subscriber-form.service.ts` — date errors are handled separately via `dateError` in the component.
 
 ### Removed
+- **Separate CLASS and SEC table columns**: Replaced by the combined `CLASS & SEC` column.
 - **Test printer/display buttons from hardware settings modal**: Removed inline "Test" buttons, `testingPrintDeviceId`/`testingDisplayDeviceId` state, `markPendingCommand()`, `getPendingCommandSeconds()`, `hasPendingCommand()`, `testPrinter()`, `testDisplay()` methods, and `pendingCommandTimestamps` map.
 - **`testPrinter()`, `testDisplay()` from `HardwareManagementService`**: HTTP methods removed.
 - **`HARDWARE_TEST_PRINTER`, `HARDWARE_TEST_DISPLAY`, `HARDWARE_STOP` API endpoint constants**: Removed from `api-endpoints.ts`.

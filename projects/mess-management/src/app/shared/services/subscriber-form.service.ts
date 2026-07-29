@@ -3,8 +3,7 @@ import { MealSlotWithCode } from './meal-slot.service';
 import { Subscriber } from '../models/subscriber';
 
 export interface SubscriberFormValue {
-  firstName: string;
-  lastName: string;
+  name: string;
   class_section: string;
   hostel_name: string;
   hostel_warden: string;
@@ -23,8 +22,7 @@ export interface SubscriberFormValue {
 }
 
 export interface ValidationErrors {
-  firstName: string;
-  lastName: string;
+  name: string;
   class_section: string;
   hostel_name: string;
   hostel_warden: string;
@@ -85,8 +83,7 @@ export class SubscriberFormService {
 
   validateForm(form: SubscriberFormValue): ValidationErrors {
     const errors: ValidationErrors = {
-      firstName: '',
-      lastName: '',
+      name: '',
       class_section: '',
       hostel_name: '',
       hostel_warden: '',
@@ -98,14 +95,10 @@ export class SubscriberFormService {
 
     const nameRegex = /^[A-Za-zA-Z ]+$/;
 
-    if (!form.firstName.trim()) {
-      errors.firstName = 'First name is required';
-    } else if (!nameRegex.test(form.firstName)) {
-      errors.firstName = 'Only letters are allowed';
-    }
-
-    if (form.lastName.trim() && !nameRegex.test(form.lastName)) {
-      errors.lastName = 'Only letters are allowed';
+    if (!form.name.trim()) {
+      errors.name = 'Name is required';
+    } else if (!nameRegex.test(form.name)) {
+      errors.name = 'Only letters are allowed';
     }
 
     if (!form.class_section.trim()) {
@@ -160,8 +153,7 @@ export class SubscriberFormService {
 
   initializeForm(mealSlots: MealSlotWithCode[]): SubscriberFormValue {
     return {
-      firstName: '',
-      lastName: '',
+      name: '',
       class_section: '',
       hostel_name: '',
       hostel_warden: '',
@@ -183,10 +175,7 @@ export class SubscriberFormService {
   populateForm(subscriber: Subscriber, mealSlots: MealSlotWithCode[]): SubscriberFormValue {
     const form = this.initializeForm(mealSlots);
 
-    const nameParts = subscriber.name.split(' ');
-    form.firstName = nameParts[0] || '';
-    form.lastName = nameParts.slice(1).join(' ') || '';
-
+    form.name = subscriber.name || '';
     form.class_section = (subscriber.class + ' ' + subscriber.div).trim();
     form.hostel_name = subscriber.hostel_name || '';
     form.hostel_warden = subscriber.hostel_warden || '';
@@ -239,8 +228,7 @@ export class SubscriberFormService {
   }
 
   resetForm(form: SubscriberFormValue, mealSlots: MealSlotWithCode[]): void {
-    form.firstName = '';
-    form.lastName = '';
+    form.name = '';
     form.class_section = '';
     form.hostel_name = '';
     form.hostel_warden = '';

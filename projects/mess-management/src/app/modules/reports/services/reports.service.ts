@@ -276,6 +276,9 @@ export class ReportsService {
           cardStatus: 'Active',
           dayPreference: student.dayPreference || 'all',
           superUser: isSuperUser,
+          classSection: ((student.class || '') + ' ' + (student.div || '')).trim(),
+          hostelName: student.hostel_name || '',
+          hostelWardenName: student.hostel_warden || '',
           subscription: isSuperUser ? undefined : {
             currentPlan: mealSlots.join(' + ') || 'None',
             startDate,

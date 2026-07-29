@@ -6,6 +6,7 @@ import {
   OnChanges,
   SimpleChanges,
   AfterViewInit,
+  OnDestroy,
   HostListener,
   ChangeDetectorRef,
   ViewChild,
@@ -30,7 +31,7 @@ import { SharedToastService } from '@libs/shared-toast';
   templateUrl: './subscriber-form.component.html',
   styleUrls: ['./subscriber-form.component.css']
 })
-export class SubscriberFormComponent implements OnChanges, AfterViewInit {
+export class SubscriberFormComponent implements OnChanges, AfterViewInit, OnDestroy {
   @HostListener('document:keydown.escape')
   onEscapeKey() {
     this.onCancel();
@@ -46,10 +47,10 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   @Output() formSubmit = new EventEmitter<SubscriberFormValue>();
   @Output() formCancel = new EventEmitter<void>();
   @Output() formValidChange = new EventEmitter<boolean>();
+  @Output() viewExistingStudent = new EventEmitter<string>();
 
   form: SubscriberFormValue = {
-    firstName: '',
-    lastName: '',
+    name: '',
     class_section: '',
     hostel_name: '',
     hostel_warden: '',
@@ -68,8 +69,7 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   };
 
   errors: ValidationErrors = {
-    firstName: '',
-    lastName: '',
+    name: '',
     class_section: '',
     hostel_name: '',
     hostel_warden: '',
@@ -109,6 +109,11 @@ export class SubscriberFormComponent implements OnChanges, AfterViewInit {
   showRenewForm = false;
   renewStartDate: Date | null = null;
   renewEndDate: Date | null = null;
+
+  // Admission number lookup
+  lookupLoading = false;
+  lookupResult: { status: string; student?: any } | null = null;
+  private lookupDebounceTimer: any = null;
 
   get isEditMode(): boolean {
     return !!this.initialData;
@@ -332,7 +337,7 @@ onSubmit(): void {
 
   onSuperUserToggle(): void {
     if (!this.form.superUser) {
-      const name = `${this.form.firstName} ${this.form.lastName}`.trim() || 'this user';
+      const name = this.form.name.trim() || 'this user';
       this.superUserConfirmName = name;
       this.showSuperUserConfirm = true;
     } else {
@@ -357,6 +362,45 @@ onSubmit(): void {
 
   cancelSuperUser(): void {
     this.showSuperUserConfirm = false;
+  }
+
+  ngOnDestroy(): void {
+    if (this.lookupDebounceTimer) {
+      clearTimeout(this.lookupDebounceTimer);
+    }
+  }
+
+  onAdmissionNumberInput(): void {
+    this.lookupResult = null;
+    if (this.lookupDebounceTimer) {
+      clearTimeout(this.lookupDebounceTimer);
+    }
+    const admissionNumber = this.form.admission_number.trim();
+    if (!admissionNumber || admissionNumber.length < 3) {
+      this.lookupLoading = false;
+      return;
+    }
+    this.lookupLoading = true;
+    this.lookupDebounceTimer = setTimeout(() => {
+      this.subscriberService.lookupStudent(admissionNumber.toUpperCase()).subscribe({
+        next: (result) => {
+          this.lookupResult = result;
+          this.lookupLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.lookupResult = null;
+          this.lookupLoading = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }, 400);
+  }
+
+  onViewExistingStudent(): void {
+    if (this.lookupResult?.student?.admission_number) {
+      this.viewExistingStudent.emit(this.lookupResult.student.admission_number);
+    }
   }
 
   private pushDatesToDatePickers(): void {

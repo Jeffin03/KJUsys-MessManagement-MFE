@@ -311,6 +311,12 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     this.fetchSubscribers();
   }
 
+  /**
+   * Exports filtered subscribers to CSV.
+   * Columns: Name, Admission Number, Class & Section, Hostel Name, Hostel Warden,
+   * Meal Plan, Status, Joined Date.
+   * Uses BOM prefix for proper UTF-8 encoding in Excel.
+   */
   onExportRequest(): void {
     const planStr = this.selectedMealSlots.map(s => s.name || '').filter(Boolean).join(',');
     const statusStr = this.selectedStatuses.map(s => s.name || '').filter(Boolean).join(',');
@@ -318,14 +324,13 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     this.subscriberService.getSubscribers(this.searchQuery, 0, 100000, planStr, statusStr).subscribe({
       next: ({ subscribers }) => {
         const exportData = subscribers;
-        const headers = ['Name', 'Admission Number', 'Hostel Name', 'Hostel Warden', 'Class', 'Section', 'Meal Plan', 'Status', 'Joined Date'];
+        const headers = ['Name', 'Admission Number', 'Class & Section', 'Hostel Name', 'Hostel Warden', 'Meal Plan', 'Status', 'Joined Date'];
         const rows = exportData.map(sub => [
           this.escapeCsv(sub.name),
           this.escapeCsv(sub.admission_number),
+          this.escapeCsv(sub.classSection),
           this.escapeCsv(sub.hostel_name),
           this.escapeCsv(sub.hostel_warden),
-          this.escapeCsv(sub.class),
-          this.escapeCsv(sub.div),
           this.escapeCsv(sub.mealPlan),
           this.escapeCsv(sub.status),
           this.escapeCsv(sub.joinedDate),
@@ -484,6 +489,16 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
   backFromStudentDetail(): void {
     this.selectedStudentAdmissionNumber = null;
     this.router.navigate([], { relativeTo: this.route, queryParams: { student: null }, queryParamsHandling: 'merge' });
+  }
+
+  viewStudentFromLookup(admissionNumber: string): void {
+    this.showAddModal = false;
+    this.selectedStudentAdmissionNumber = admissionNumber;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { student: admissionNumber },
+      queryParamsHandling: 'merge'
+    });
   }
 
   cancelDeleteSubscriber(): void {
