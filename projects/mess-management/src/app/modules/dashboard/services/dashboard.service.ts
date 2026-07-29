@@ -136,7 +136,7 @@ export class DashboardService {
 
           return sortedTaps.map(t => ({
             customer: t.name,
-            admission_number: t.admission_number || t.roll_number || 'N/A',
+            admission_number: t.admission_number || 'N/A',
             mealSlot: t.meal.charAt(0) + t.meal.slice(1).toLowerCase() as any,
             time: formatTapTime(t.tap_DateTime),
             status: 'Allowed' as 'Allowed' | 'Not Subscribed',
