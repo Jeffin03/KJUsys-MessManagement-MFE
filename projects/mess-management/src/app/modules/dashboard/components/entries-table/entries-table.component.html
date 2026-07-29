@@ -1,5 +1,4 @@
-<div class="flex flex-col flex-1 min-w-0 bg-white border border-[#E5E7EB] rounded-2xl overflow-hidden overflow-x-auto">
-
+<div class="flex-1 overflow-hidden flex-col h-[600px] min-w-0 bg-white border border-[#E5E7EB] rounded-2xl "> 
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-[#E5E7EB] gap-2">
         <div class="flex items-center gap-2">
@@ -18,7 +17,7 @@
     </div>
 
     <!-- Table (only first 15 entries) -->
-    <table class="w-full text-[13px] mb-3 min-w-[500px]" *ngIf="entries.length > 0; else emptyState">
+    <table class="w-full text-[13px] min-w-[500px]" *ngIf="entries.length > 0; else emptyState">
         <thead class="bg-[#F9FAFB] border-b border-[#E5E7EB]">
             <tr>
                 <th class="text-left px-6 py-3 text-[9px] font-bold text-[#6A7282] tracking-[0.08em] uppercase">
@@ -53,7 +52,7 @@
 
     <!-- Empty State -->
     <ng-template #emptyState>
-        <div class="flex flex-col items-center justify-center py-16">
+        <div class="flex items-center justify-center h-full">
             <lib-empty-state type="no-results" title="No Recent Taps" subtext="Waiting for the first tap. Activity will appear here automatically when subscribers start using their ID cards."></lib-empty-state>
         </div>
     </ng-template>

@@ -28,7 +28,8 @@ interface HolidayGroup {
           <span class="text-sm font-semibold text-[#111827]">Holiday Calendar</span>
           <span class="text-[10px] text-[#6B7280]">Manage mess closure dates</span>
         </div>
-        <lib-button type="primary" label="Add Holiday" (onClick)="openAddForm()"></lib-button>
+        <lib-button  class="text-xs font-normal text-blue-600 hover:underline hover:text-blue-700 transition-colors" label="+ Add Holiday" (onClick)="openAddForm()"></lib-button>
+        
       </div>
 
       <!-- Add Holiday Form -->
@@ -632,6 +633,8 @@ export class HolidayCalendarComponent implements OnInit {
   }
 
   openAddForm() {
+      console.log('openAddForm called');
+  console.log('selectedDate', this.selectedDate);
     this.showAddForm = true;
     if (this.selectedDate) {
       const y = this.selectedDate.getFullYear();

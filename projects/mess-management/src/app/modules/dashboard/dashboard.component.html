@@ -1,7 +1,6 @@
 <div class="flex flex-col min-h-screen bg-[#FAFAFC] font-['Inter',sans-serif]">
 
-  <div class="flex-1 p-5 pb-0">
-
+<div class="p-5 pb-8">
     <!-- Breadcrumb -->
     <div class="mb-3">
       <lib-breadcrumbs-title title="Mess Management" [breadcrumbs]="breadcrumbs"></lib-breadcrumbs-title>
@@ -74,8 +73,8 @@
       <app-meal-slots [mealSlots]="mealSlots" [isHoliday]="isHoliday" (configurationSaved)="refreshMealSlots()"></app-meal-slots>
 
       <!-- Bottom Row: Table + Hardware -->
-      <div class="flex flex-col lg:flex-row gap-4">
-        <app-entries-table class="flex-1 min-w-0 order-2 lg:order-1" [entries]="recentEntries" (onEntryClick)="onEntryClick($event)"></app-entries-table>
+       <div class="flex flex-col lg:flex-row gap-4 lg:h-[740px]">
+          <app-entries-table class="flex-1 min-w-0 order-2 lg:order-1" [entries]="recentEntries" (onEntryClick)="onEntryClick($event)"></app-entries-table>
         <app-hardware-status class="w-full lg:w-[300px] order-1 lg:order-2 shrink-0" [hardware]="hardware" [uptimeSeconds]="uptimeSeconds" [responseTimeMs]="responseTimeMs" [isRefreshing]="isHardwareRefreshing" (refreshRequested)="onHardwareRefreshRequested()" (settingsRequested)="onHardwareSettingsRequested()"></app-hardware-status>
       </div>
     </div>
