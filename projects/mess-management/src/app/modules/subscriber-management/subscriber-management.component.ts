@@ -95,7 +95,6 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
 
   showAddModal = false;
   showBulkUploadModal = false;
-  showCardModal = false;
   showEditModal = false;
   showQuickModal = false;
   quickModalAdmissionNumber: string | null = null;
@@ -408,19 +407,9 @@ export class SubscriberManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  closeCardModal(): void {
-    this.showCardModal = false;
-  }
-
-  backToAddModal(): void {
-    this.showCardModal = false;
-    this.showAddModal = true;
-  }
-
   saveSubscriberConfiguration(data: any): void {
     console.log('Final Subscriber Configuration:', data);
 
-    this.showCardModal = false;
     this.fetchInitialData();
     this.cdr.detectChanges();
   }
