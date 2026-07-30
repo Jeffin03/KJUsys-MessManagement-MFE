@@ -2,14 +2,13 @@ import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, HostListe
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent, EmptyStateComponent } from '@libs/shared-ui';
-import { DropdownLibModule } from '@libs/dropdown-lib';
 import { SharedToastService } from '@libs/shared-toast';
 import { HardwareManagementService, HardwareDevice, HardwarePeripheral } from '../../../../shared/services/hardware-management.service';
 
 @Component({
   selector: 'app-hardware-settings-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent, DropdownLibModule, EmptyStateComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, EmptyStateComponent],
   templateUrl: './hardware-settings-modal.component.html',
 })
 export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
@@ -41,8 +40,6 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
   hmacCopied = false;
   hmacHashCopied = false;
 
-  selectedDeviceType: any[] = [];
-
   rotatingDeviceId = '';
   confirmingDeviceId = '';
   editingDeviceId: string | null = null;
@@ -53,10 +50,6 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
 
   showRotateConfirmPopup = false;
   pendingRotateDevice: HardwareDevice | null = null;
-
-  readonly deviceTypes = [
-    { id: 'esp32', title: 'ESP32 (LCD + Printer + Buzzer)' },
-  ];
 
   ngOnChanges(): void {
     const appRoot = document.querySelector('app-root') as HTMLElement;
@@ -235,10 +228,6 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
     return this.devices.filter(d => d.state === 'active');
   }
 
-  onDeviceTypeChange(selected: any[]): void {
-    this.registerType = selected[0]?.id || 'esp32';
-  }
-
   // ── Register Device ──
 
   registerDevice(): void {
@@ -270,7 +259,6 @@ export class HardwareSettingsModalComponent implements OnChanges, OnDestroy {
     this.registerMac = '';
     this.registerName = '';
     this.registerType = 'esp32';
-    this.selectedDeviceType = [];
   }
 
   // ── HMAC Popup ──

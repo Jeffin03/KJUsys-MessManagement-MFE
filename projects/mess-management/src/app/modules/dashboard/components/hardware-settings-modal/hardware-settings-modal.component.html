@@ -29,16 +29,6 @@
             [(ngModel)]="registerName"
             placeholder="Device name (e.g. ESP32 Main Gate)"
             class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400">
-          <lib-dropdown-lib
-            label="Device Type"
-            placeholder="Select type"
-            [singleSelection]="true"
-            [data]="deviceTypes"
-            idField="id"
-            textField="title"
-            [selectedItems]="selectedDeviceType"
-            (selectionChange)="onDeviceTypeChange($event)">
-          </lib-dropdown-lib>
           <div class="mt-1 flex justify-end">
             <lib-button label="Register Device" type="green" [loading]="isRegistering" (onClick)="registerDevice()"></lib-button>
           </div>
