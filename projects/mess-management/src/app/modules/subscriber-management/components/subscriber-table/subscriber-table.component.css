@@ -28,14 +28,7 @@
   vertical-align: middle !important;
 }
 
-/* Name: font-semibold text-text-main */
-:host .kjt-stacked-main {
-  font-weight: 600 !important;
-  font-size: 12px !important;
-  color: #1D2939 !important;
-}
-
-/* Email: text-xs text-text-muted */
+/* Expiry warning sub-text in joined column */
 :host .kjt-sub-text {
   font-size: 12px !important;
   font-weight: 500 !important;
