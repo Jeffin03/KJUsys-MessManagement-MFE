@@ -42,7 +42,7 @@
 }
 
 /* Meal Plan: font-semibold text-text-main */
-:host .kjt-td:nth-child(3) {
+:host .kjt-td:nth-child(6) {
   font-weight: 600 !important;
   color: #1D2939 !important;
 }
@@ -69,12 +69,12 @@
 }
 
 /* Joined: text-text-main */
-:host .kjt-td:nth-child(5) {
+:host .kjt-td:nth-child(8) {
   color: #1D2939 !important;
 }
 
 /* Expiry warning in joined column */
-:host ::ng-deep .kjt-td:nth-child(5) .kjt-sub-text {
+:host ::ng-deep .kjt-td:nth-child(8) .kjt-sub-text {
   color: #C70036 !important;
 }
 
