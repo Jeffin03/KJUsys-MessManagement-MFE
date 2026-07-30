@@ -46,8 +46,6 @@ export const API_ENDPOINTS = {
   HARDWARE: '/hardware',
   HARDWARE_CONNECT: '/hardware/connect',
   HARDWARE_BY_ID: (id: string) => `/hardware/${id}`,
-  HARDWARE_START_PAIRING: '/hardware/start-pairing',
-  HARDWARE_PAIR: '/hardware/pair',
   HARDWARE_CONFIRM: (id: string) => `/hardware/${id}/confirm`,
   HARDWARE_ROTATE_SECRET: (id: string) => `/hardware/${id}/rotate-secret`,
   HARDWARE_HEARTBEAT: '/hardware/heartbeat',

@@ -56,31 +56,11 @@ export class HardwareManagementService {
     return this.http.delete(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_BY_ID(deviceId)}`);
   }
 
-  startPairing(): Observable<{ code: string; expiresInMs: number }> {
-    return this.http.post<ApiResponse<{ code: string; expiresInMs: number }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_START_PAIRING}`, {})
-      .pipe(
-        map(res => res.responseData?.data)
-      );
-  }
-
-  pairDevice(macAddress: string, code: string): Observable<HardwareDevice> {
-    return this.http.post<ApiResponse<HardwareDevice>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_PAIR}`, { macAddress, code })
-      .pipe(
-        map(res => res.responseData?.data)
-      );
-  }
-
   confirmDevice(deviceId: string): Observable<{ status: string; hmacSecret: string; hmacSecretHash: string }> {
     return this.http.post<ApiResponse<{ status: string; hmacSecret: string; hmacSecretHash: string }>>(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_CONFIRM(deviceId)}`, {})
       .pipe(
         map(res => res.responseData?.data)
       );
-  }
-
-  cancelPairing(): Observable<any> {
-    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.HARDWARE_START_PAIRING}`, {}).pipe(
-      map(() => {})
-    );
   }
 
   rotateSecret(deviceId: string): Observable<{ newSecret: string; newSecretHash: string }> {

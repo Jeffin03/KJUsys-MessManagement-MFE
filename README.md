@@ -123,13 +123,11 @@ All requests are prefixed with the dynamically resolved base URL: `{base}/kjusys
 |---|---|---|---|
 | GET | `/hardware-status` | `DashboardService` | Devices status + server stats |
 | GET | `/hardware` | `HardwareManagementService` | List all devices |
-| POST | `/hardware/connect` | `HardwareManagementService` | Direct connect — registers device in active state with HMAC secret. Returns `{ device, hmacSecret, hmacSecretHash }`. |
+| POST | `/hardware/connect` | `HardwareManagementService` | Register device (direct connect). Returns `{ device, hmacSecret, hmacSecretHash }`. |
 | GET | `/hardware/:id` | `HardwareManagementService` | Single device |
 | PUT | `/hardware/:id` | `HardwareManagementService` | Update device |
 | DELETE | `/hardware/:id` | `HardwareManagementService` | Delete device |
-| POST | `/hardware/start-pairing` | `HardwareManagementService` | Open pairing window |
-| POST | `/hardware/pair` | `HardwareManagementService` | Pair device by MAC + code |
-| POST | `/hardware/:id/confirm` | `HardwareManagementService` | Confirm/activate device (generates HMAC secret + hash) |
+| POST | `/hardware/:id/confirm` | `HardwareManagementService` | Confirm/activate pending device |
 | POST | `/hardware/:id/rotate-secret` | `HardwareManagementService` | Rotate HMAC secret. Returns `{ newSecret, newSecretHash }`. |
 
 ### Display Configuration
